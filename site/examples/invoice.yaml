@@ -1,0 +1,38 @@
+output_name: invoice
+blocks:
+  - type: title
+    text: Invoice
+  - type: label_values
+    items:
+      - label: "Invoice #"
+        value: INV-2026-001
+      - label: Client
+        value: ACME Industries
+  - type: table
+    spec:
+      columns:
+        - label: Service
+          width: 5000
+        - label: Hours
+          width: 2180
+        - label: Amount
+          width: 2180
+      rows:
+        - cells:
+            - kind: text
+              text: Architecture Review
+            - kind: text
+              text: "12"
+            - kind: text
+              text: $2,400
+        - cells:
+            - kind: text
+              text: Implementation
+            - kind: text
+              text: "30"
+            - kind: text
+              text: $6,000
+  - type: label_values
+    items:
+      - label: Total
+        value: $8,400

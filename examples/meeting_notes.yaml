@@ -1,0 +1,21 @@
+output_name: meeting-notes
+blocks:
+  - type: title
+    text: Meeting Notes
+  - type: label_values
+    items:
+      - label: Date
+        value: 2026-03-10
+      - label: Attendees
+        value: Ops, Product, Engineering
+  - type: section
+    text: Agenda
+  - type: bullets
+    items:
+      - Review launch blockers
+      - Confirm rollout window
+      - Assign owners for follow-up
+  - type: section
+    text: Decisions
+  - type: body
+    text: Production launch approved for Friday.

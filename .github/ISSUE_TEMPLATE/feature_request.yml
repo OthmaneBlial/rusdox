@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a new capability, block type, config option, or CLI improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard, missing, or awkward today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the change as concretely as possible.
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who benefits most?
+      options:
+        - YAML authors
+        - CLI users
+        - Rust API users
+        - Template/gallery users
+        - Maintainers
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example YAML or API shape
+      description: Show the ideal authoring experience if you can.
+      render: yaml
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

@@ -1,0 +1,226 @@
+%PDF-1.7
+%€€€€
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+
+4 0 obj
+<<
+  /Length 2217
+>>
+stream
+BT
+/F2 26 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 229.94 697.22 Tm
+(Project) Tj
+1 0 0 1 316.71 697.22 Tm
+( ) Tj
+1 0 0 1 324.21 697.22 Tm
+(Brief) Tj
+ET
+BT
+/F2 11 Tf
+1 0 0 1 54 672.72 Tm
+(Project:) Tj
+1 0 0 1 93.88 672.72 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 97.05 672.72 Tm
+(RusDox) Tj
+1 0 0 1 135.33 672.72 Tm
+( ) Tj
+1 0 0 1 138.41 672.72 Tm
+(Launch) Tj
+1 0 0 1 175.37 672.72 Tm
+( ) Tj
+1 0 0 1 178.45 672.72 Tm
+(Pack) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 654.37 Tm
+(Owner:) Tj
+1 0 0 1 90.71 654.37 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 93.88 654.37 Tm
+(Platform) Tj
+1 0 0 1 137 654.37 Tm
+( ) Tj
+1 0 0 1 140.08 654.37 Tm
+(Team) Tj
+ET
+BT
+/F2 15 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 620.6 Tm
+(Objective) Tj
+ET
+BT
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 54 600.27 Tm
+(Ship) Tj
+1 0 0 1 76.22 600.27 Tm
+( ) Tj
+1 0 0 1 79.3 600.27 Tm
+(a) Tj
+1 0 0 1 85.24 600.27 Tm
+( ) Tj
+1 0 0 1 88.32 600.27 Tm
+(fast) Tj
+1 0 0 1 107.68 600.27 Tm
+( ) Tj
+1 0 0 1 110.76 600.27 Tm
+(Rust-native) Tj
+1 0 0 1 170.16 600.27 Tm
+( ) Tj
+1 0 0 1 173.24 600.27 Tm
+(document) Tj
+1 0 0 1 222.3 600.27 Tm
+( ) Tj
+1 0 0 1 225.38 600.27 Tm
+(pipeline) Tj
+1 0 0 1 264.32 600.27 Tm
+( ) Tj
+1 0 0 1 267.4 600.27 Tm
+(with) Tj
+1 0 0 1 289.84 600.27 Tm
+( ) Tj
+1 0 0 1 292.92 600.27 Tm
+(examples,) Tj
+1 0 0 1 344.4 600.27 Tm
+( ) Tj
+1 0 0 1 347.48 600.27 Tm
+(tests,) Tj
+1 0 0 1 375.86 600.27 Tm
+( ) Tj
+1 0 0 1 378.94 600.27 Tm
+(and) Tj
+1 0 0 1 396.76 600.27 Tm
+( ) Tj
+1 0 0 1 399.84 600.27 Tm
+(CI.) Tj
+ET
+BT
+/F2 15 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 564.99 Tm
+(Deliverables) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 544.67 Tm
+(-) Tj
+1 0 0 1 60.12 544.67 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 544.67 Tm
+(Core) Tj
+1 0 0 1 86.17 544.67 Tm
+( ) Tj
+1 0 0 1 89.25 544.67 Tm
+(crate) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 525.82 Tm
+(-) Tj
+1 0 0 1 60.12 525.82 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 525.82 Tm
+(Example) Tj
+1 0 0 1 107.07 525.82 Tm
+( ) Tj
+1 0 0 1 110.15 525.82 Tm
+(generators) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 506.97 Tm
+(-) Tj
+1 0 0 1 60.12 506.97 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 506.97 Tm
+(Validation) Tj
+1 0 0 1 113.23 506.97 Tm
+( ) Tj
+1 0 0 1 116.31 506.97 Tm
+(suite) Tj
+ET
+
+endstream
+endobj
+
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 612 792]
+  /Contents 4 0 R
+  /Resources <<
+    /Font <<
+      /F1 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica
+      >>
+      /F2 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Bold
+      >>
+      /F3 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Oblique
+      >>
+      /F4 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-BoldOblique
+      >>
+    >>
+  >>
+>>
+endobj
+
+xref
+0 5
+0000000000 65535 f
+0000000016 00000 n
+0000000070 00000 n
+0000002406 00000 n
+0000000134 00000 n
+trailer
+<<
+  /Size 5
+  /Root 1 0 R
+>>
+startxref
+2948
+%%EOF

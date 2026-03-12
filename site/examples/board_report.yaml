@@ -1,0 +1,114 @@
+output_name: board-report
+blocks:
+  - type: cover_title
+    text: Board Report
+  - type: subtitle
+    text: March 2026
+  - type: hero
+    text: Prepared automatically with RusDox
+  - type: metrics
+    items:
+      - label: ARR
+        value: $18.7M
+        tone: positive
+      - label: NRR
+        value: 117%
+        tone: neutral
+      - label: Cash Runway
+        value: 24 mo
+        tone: warning
+  - type: centered_note
+    text: Page two starts with a forced page break to simulate a proper leadership packet.
+  - type: page_heading
+    text: Board Narrative
+  - type: body
+    text: The company entered the quarter with stronger retention than forecast, a healthier sales mix, and lower infrastructure variance. The major concern remains hiring compression in customer operations and security review lead time for larger deals.
+  - type: body
+    text: Management recommends holding the current burn posture, leaning further into enterprise expansion, and continuing to delay lower-signal speculative projects until activation efficiency stabilizes.
+  - type: section
+    text: Board-Level Scorecard
+  - type: table
+    spec:
+      columns:
+        - label: Category
+          width: 2800
+        - label: Current
+          width: 2000
+        - label: Status
+          width: 1600
+        - label: Board Note
+          width: 2960
+      rows:
+        - cells:
+            - kind: text
+              text: ARR
+            - kind: text
+              text: $18.7M
+            - kind: status
+              text: Strong
+              tone: positive
+            - kind: text
+              text: Expansion revenue now carries 44% of net new ARR.
+        - cells:
+            - kind: text
+              text: Net Revenue Retention
+            - kind: text
+              text: 117%
+            - kind: status
+              text: Strong
+              tone: positive
+            - kind: text
+              text: Churn held below forecast and large accounts expanded earlier than expected.
+        - cells:
+            - kind: text
+              text: Security review cycle time
+            - kind: text
+              text: 31 days
+            - kind: status
+              text: Watch
+              tone: warning
+            - kind: text
+              text: Cycle time is manageable but still gating two seven-figure opportunities.
+        - cells:
+            - kind: text
+              text: Support leadership hiring
+            - kind: text
+              text: 1 open role
+            - kind: status
+              text: Risk
+              tone: risk
+            - kind: text
+              text: Backfill delay puts pressure on response-time targets for the next quarter.
+  - type: section
+    text: Capital Allocation
+  - type: table
+    spec:
+      columns:
+        - label: Bucket
+          width: 3200
+        - label: Investment
+          width: 2200
+        - label: Expected Outcome
+          width: 3960
+      rows:
+        - cells:
+            - kind: text
+              text: Core product
+            - kind: text
+              text: $1.2M
+            - kind: text
+              text: Accelerate analytics adoption and improve expansion leverage.
+        - cells:
+            - kind: text
+              text: Security and compliance
+            - kind: text
+              text: $420k
+            - kind: text
+              text: Shorten procurement cycles and reduce late-stage deal risk.
+        - cells:
+            - kind: text
+              text: Customer operations
+            - kind: text
+              text: $310k
+            - kind: text
+              text: Protect response SLAs and absorb enterprise account growth.

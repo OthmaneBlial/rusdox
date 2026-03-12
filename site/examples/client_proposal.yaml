@@ -1,0 +1,129 @@
+output_name: client-proposal
+blocks:
+  - type: title
+    text: Client Proposal
+  - type: subtitle
+    text: Automation strategy and delivery plan
+  - type: hero
+    text: Prepared for Northwind Logistics
+  - type: section
+    text: Engagement Goal
+  - type: body
+    text: Design and implement a document automation pipeline that produces board-ready operational reports, client packs, and internal review documents with consistent formatting and near-zero manual editing.
+  - type: section
+    text: Scope
+  - type: label_values
+    items:
+      - label: Phase 1
+        value: Discovery, document inventory, and output design system
+      - label: Phase 2
+        value: Template and generator implementation
+      - label: Phase 3
+        value: Validation, rollout support, and handoff
+  - type: section
+    text: Delivery Plan
+  - type: table
+    spec:
+      columns:
+        - label: Phase
+          width: 1700
+        - label: Duration
+          width: 1700
+        - label: Outcome
+          width: 5960
+      rows:
+        - cells:
+            - kind: text
+              text: Discover
+            - kind: text
+              text: 1 week
+            - kind: text
+              text: Map existing workflows and define the output set with stakeholders.
+        - cells:
+            - kind: text
+              text: Build
+            - kind: text
+              text: 3 weeks
+            - kind: text
+              text: Implement generators, formatting helpers, and delivery hooks.
+        - cells:
+            - kind: text
+              text: Rollout
+            - kind: text
+              text: 1 week
+            - kind: text
+              text: Run UAT, train operators, and finalize production controls.
+  - type: section
+    text: Commercials
+  - type: table
+    spec:
+      columns:
+        - label: Item
+          width: 4000
+        - label: Amount
+          width: 2000
+        - label: Notes
+          width: 3360
+      rows:
+        - cells:
+            - kind: text
+              text: Implementation fee
+            - kind: text
+              text: $24,000
+            - kind: text
+              text: Fixed price for the initial delivery scope.
+        - cells:
+            - kind: text
+              text: Optional managed support
+            - kind: text
+              text: $3,000/mo
+            - kind: text
+              text: Includes template changes, regression checks, and issue triage.
+  - type: section
+    text: Why This Works
+  - type: label_values
+    items:
+      - label: Speed
+        value: Minutes of manual formatting become one command
+      - label: Consistency
+        value: Every generated document uses the same structural rules
+      - label: Control
+        value: The output can be validated in CI before it reaches customers
+      - label: Risk
+        value: Minimal, because the rollout plan stages approval and UAT before cutover
+  - type: section
+    text: Decision Snapshot
+  - type: table
+    spec:
+      columns:
+        - label: Dimension
+          width: 3100
+        - label: Status
+          width: 2000
+        - label: Comment
+          width: 4260
+      rows:
+        - cells:
+            - kind: text
+              text: Budget posture
+            - kind: status
+              text: Approved
+              tone: positive
+            - kind: text
+              text: Implementation fee is fixed and support remains optional.
+        - cells:
+            - kind: text
+              text: Delivery risk
+            - kind: status
+              text: Contained
+              tone: positive
+            - kind: text
+              text: The phased rollout reduces cutover risk and preserves review checkpoints.
+        - cells:
+            - kind: text
+              text: Decision urgency
+            - kind: status
+              text: This Week
+              tone: warning
+            - kind: text
+              text: Closing by Friday preserves the preferred implementation slot.

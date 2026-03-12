@@ -1,0 +1,71 @@
+name: Bug report
+description: Report a reproducible problem in YAML rendering, DOCX output, PDF output, config, or the CLI.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please reduce the problem to the smallest example you can.
+  - type: input
+    id: version
+    attributes:
+      label: RusDox version or commit
+      placeholder: v0.1.0 or commit hash
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - YAML spec
+        - DOCX output
+        - PDF output
+        - Config
+        - CLI
+        - Rust API
+        - CI/release
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Ubuntu 24.04, macOS 14, Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: Paste the exact command you ran.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: spec
+    attributes:
+      label: Minimal YAML or Rust reproduction
+      description: Paste the smallest input that reproduces the issue.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Extra context
+      description: Add config snippets, screenshots, logs, or anything else that helps.

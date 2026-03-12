@@ -1,0 +1,37 @@
+[package]
+name = "rusdox"
+version = "0.1.0"
+edition = "2021"
+default-run = "rusdox"
+license = "MIT"
+description = "Generate DOCX and PDF from YAML at Rust speed."
+repository = "https://github.com/OthmaneBlial/rusdox"
+homepage = "https://github.com/OthmaneBlial/rusdox"
+documentation = "https://github.com/OthmaneBlial/rusdox/tree/master/docs"
+readme = "README.md"
+keywords = ["docx", "pdf", "yaml", "ooxml", "documents"]
+categories = ["command-line-utilities", "parser-implementations", "encoding"]
+
+[lib]
+name = "rusdox"
+path = "src/lib.rs"
+
+[dependencies]
+bitflags = "2.6"
+clap = { version = "4.5", features = ["derive"] }
+dialoguer = "0.11"
+pdf-writer = "0.14"
+quick-xml = "0.38"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+tempfile = "3.15"
+thiserror = "2.0"
+toml = "0.9"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+[profile.dev]
+opt-level = 2
+
+[profile.dev.package."*"]
+opt-level = 3

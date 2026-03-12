@@ -1,0 +1,28 @@
+output_name: table-report
+blocks:
+  - type: title
+    text: Quarterly Table Report
+  - type: table
+    spec:
+      columns:
+        - label: Quarter
+          width: 3120
+        - label: Revenue
+          width: 3120
+        - label: Growth
+          width: 3120
+      rows:
+        - cells:
+            - kind: text
+              text: Q1
+            - kind: text
+              text: $120,000
+            - kind: text
+              text: +14%
+        - cells:
+            - kind: text
+              text: Q2
+            - kind: text
+              text: $138,000
+            - kind: text
+              text: +9%

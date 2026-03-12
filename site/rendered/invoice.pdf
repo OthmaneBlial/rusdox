@@ -1,0 +1,202 @@
+%PDF-1.7
+%€€€€
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+
+4 0 obj
+<<
+  /Length 1746
+>>
+stream
+BT
+/F2 26 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 257.26 697.22 Tm
+(Invoice) Tj
+ET
+BT
+/F2 11 Tf
+1 0 0 1 54 672.72 Tm
+(Invoice) Tj
+1 0 0 1 95.24 672.72 Tm
+( ) Tj
+1 0 0 1 98.41 672.72 Tm
+(#:) Tj
+1 0 0 1 111.56 672.72 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 114.73 672.72 Tm
+(INV-2026-001) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 654.37 Tm
+(Client:) Tj
+1 0 0 1 87.08 654.37 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 90.26 654.37 Tm
+(ACME) Tj
+1 0 0 1 121.72 654.37 Tm
+( ) Tj
+1 0 0 1 124.8 654.37 Tm
+(Industries) Tj
+ET
+0.89 0.91 0.94 rg
+0.8 0.84 0.88 RG
+0.75 w
+54 617.2 250 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 61 628.22 Tm
+(Service) Tj
+ET
+0.89 0.91 0.94 rg
+304 617.2 109 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 311 628.22 Tm
+(Hours) Tj
+ET
+0.89 0.91 0.94 rg
+413 617.2 109 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 420 628.22 Tm
+(Amount) Tj
+ET
+0.97 0.98 0.99 rg
+54 587.2 250 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 61 597.72 Tm
+(Architecture) Tj
+1 0 0 1 116.4 597.72 Tm
+( ) Tj
+1 0 0 1 119.2 597.72 Tm
+(Review) Tj
+ET
+0.97 0.98 0.99 rg
+304 587.2 109 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 311 597.72 Tm
+(12) Tj
+ET
+0.97 0.98 0.99 rg
+413 587.2 109 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 420 597.72 Tm
+($2,400) Tj
+ET
+0.97 0.98 0.99 rg
+54 557.2 250 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 61 567.72 Tm
+(Implementation) Tj
+ET
+0.97 0.98 0.99 rg
+304 557.2 109 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 311 567.72 Tm
+(30) Tj
+ET
+0.97 0.98 0.99 rg
+413 557.2 109 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 420 567.72 Tm
+($6,000) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 533.02 Tm
+(Total:) Tj
+1 0 0 1 83.91 533.02 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 87.08 533.02 Tm
+($8,400) Tj
+ET
+
+endstream
+endobj
+
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 612 792]
+  /Contents 4 0 R
+  /Resources <<
+    /Font <<
+      /F1 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica
+      >>
+      /F2 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Bold
+      >>
+      /F3 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Oblique
+      >>
+      /F4 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-BoldOblique
+      >>
+    >>
+  >>
+>>
+endobj
+
+xref
+0 5
+0000000000 65535 f
+0000000016 00000 n
+0000000070 00000 n
+0000001935 00000 n
+0000000134 00000 n
+trailer
+<<
+  /Size 5
+  /Root 1 0 R
+>>
+startxref
+2477
+%%EOF

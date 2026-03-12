@@ -1,0 +1,39 @@
+name: Template request
+description: Suggest a reusable YAML template or example that would help more users adopt RusDox.
+title: "[Template]: "
+labels:
+  - template
+body:
+  - type: input
+    id: template_name
+    attributes:
+      label: Template name
+      placeholder: Board report, invoice, proposal, resume, memo
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: Who would use this template and what are they trying to produce?
+    validations:
+      required: true
+  - type: textarea
+    id: structure
+    attributes:
+      label: Suggested sections or document structure
+      description: List the title, sections, tables, bullets, metrics, and notes you expect.
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample content
+      description: Any sample wording or data that would make the template easier to build.
+  - type: textarea
+    id: value
+    attributes:
+      label: Why this belongs in the public examples
+      description: Explain why this template is broadly useful, not just custom to one company.
+    validations:
+      required: true

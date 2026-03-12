@@ -1,0 +1,33 @@
+output_name: formatting-showcase
+blocks:
+  - type: title
+    text: Formatting Showcase
+  - type: paragraph
+    spec:
+      runs:
+        - text: Bold
+          bold: true
+        - text: " | "
+        - text: Italic
+          italic: true
+        - text: " | "
+        - text: Underline
+          underline: single
+        - text: " | "
+        - text: Red
+          color: D00000
+        - text: " | "
+        - text: Shadow
+          shadow: true
+        - text: " | "
+        - text: Small Caps
+          small_caps: true
+        - text: " | "
+        - text: Strike
+          strikethrough: true
+        - text: " | "
+        - text: Super
+          vertical_align: superscript
+        - text: " | "
+        - text: Sub
+          vertical_align: subscript

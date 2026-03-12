@@ -1,0 +1,88 @@
+output_name: talent-profile
+blocks:
+  - type: title
+    text: Claire Delaunay
+  - type: hero
+    text: Head of Product Operations
+  - type: subtitle
+    text: Paris, France  |  claire.delaunay@example.com  |  +33 6 12 34 56 78
+  - type: section
+    text: Profile
+  - type: body
+    text: Operator with nine years of experience scaling post-sales systems, launch readiness, executive reporting, and cross-functional process design across B2B SaaS teams from Series A to public-company scale.
+  - type: section
+    text: Core Strengths
+  - type: table
+    spec:
+      columns:
+        - label: Area
+          width: 2500
+        - label: Depth
+          width: 1600
+        - label: Evidence
+          width: 5260
+      rows:
+        - cells:
+            - kind: text
+              text: Launch operations
+            - kind: text
+              text: Expert
+            - kind: text
+              text: Built launch control rooms and readiness reviews for 14 major releases.
+        - cells:
+            - kind: text
+              text: Executive reporting
+            - kind: text
+              text: Expert
+            - kind: text
+              text: Owned weekly operating packs for CEO, CRO, and board observers.
+        - cells:
+            - kind: text
+              text: Systems design
+            - kind: text
+              text: Advanced
+            - kind: text
+              text: Connected CRM, support, and product telemetry into a unified review workflow.
+  - type: section
+    text: Experience Highlights
+  - type: body
+    text: Led the operating cadence for a revenue organization growing from $12M to $48M ARR while reducing manual reporting effort by more than 70%.
+  - type: body
+    text: Partnered with product, finance, and success leadership to establish a single launch readiness score used in weekly executive reviews.
+  - type: section
+    text: Selected Deliverables
+  - type: table
+    spec:
+      columns:
+        - label: Deliverable
+          width: 3300
+        - label: Impact
+          width: 2200
+        - label: Detail
+          width: 3860
+      rows:
+        - cells:
+            - kind: text
+              text: Executive operating pack
+            - kind: text
+              text: Weekly
+            - kind: text
+              text: Aligned revenue, support, and launch signals in one document.
+        - cells:
+            - kind: text
+              text: Readiness dashboard
+            - kind: text
+              text: Launch quality
+            - kind: text
+              text: Reduced release-day surprises by making blockers visible early.
+        - cells:
+            - kind: text
+              text: Automation playbooks
+            - kind: text
+              text: Scale
+            - kind: text
+              text: Turned recurring document work into reusable systems.
+  - type: section
+    text: Signature
+  - type: tagline
+    text: Calm under load. Strong operator. Excellent writer.

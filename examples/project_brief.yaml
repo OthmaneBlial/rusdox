@@ -1,0 +1,21 @@
+output_name: project-brief
+blocks:
+  - type: title
+    text: Project Brief
+  - type: label_values
+    items:
+      - label: Project
+        value: RusDox Launch Pack
+      - label: Owner
+        value: Platform Team
+  - type: section
+    text: Objective
+  - type: body
+    text: Ship a fast Rust-native document pipeline with examples, tests, and CI.
+  - type: section
+    text: Deliverables
+  - type: bullets
+    items:
+      - Core crate
+      - Example generators
+      - Validation suite

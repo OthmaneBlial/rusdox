@@ -1,0 +1,12 @@
+output_name: hello-world
+blocks:
+  - type: paragraph
+    spec:
+      runs:
+        - text: "Hello "
+          bold: true
+        - text: from RusDox
+          italic: true
+          color: C1121F
+  - type: body
+    text: This file was generated with one command.

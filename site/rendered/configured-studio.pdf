@@ -1,0 +1,369 @@
+%PDF-1.7
+%€€€€
+
+1 0 obj
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+  /Type /Pages
+  /Kids [3 0 R]
+  /Count 1
+>>
+endobj
+
+4 0 obj
+<<
+  /Length 4546
+>>
+stream
+BT
+/F2 26 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 141.3 697.22 Tm
+(Configured) Tj
+1 0 0 1 271.45 697.22 Tm
+( ) Tj
+1 0 0 1 278.95 697.22 Tm
+(Studio) Tj
+1 0 0 1 356.61 697.22 Tm
+( ) Tj
+1 0 0 1 364.11 697.22 Tm
+(Example) Tj
+ET
+BT
+/F1 11 Tf
+0.39 0.45 0.55 rg
+1 0 0 1 227.57 672.72 Tm
+(Driven) Tj
+1 0 0 1 259.47 672.72 Tm
+( ) Tj
+1 0 0 1 262.55 672.72 Tm
+(by) Tj
+1 0 0 1 274.43 672.72 Tm
+( ) Tj
+1 0 0 1 277.51 672.72 Tm
+(values) Tj
+1 0 0 1 310.29 672.72 Tm
+( ) Tj
+1 0 0 1 313.37 672.72 Tm
+(in) Tj
+1 0 0 1 322.39 672.72 Tm
+( ) Tj
+1 0 0 1 325.47 672.72 Tm
+(rusdox.toml) Tj
+ET
+BT
+/F2 14 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 93.31 640.55 Tm
+(Edit) Tj
+1 0 0 1 119.55 640.55 Tm
+( ) Tj
+1 0 0 1 123.59 640.55 Tm
+(fonts,) Tj
+1 0 0 1 160.79 640.55 Tm
+( ) Tj
+1 0 0 1 164.83 640.55 Tm
+(spacing,) Tj
+1 0 0 1 219.62 640.55 Tm
+( ) Tj
+1 0 0 1 223.66 640.55 Tm
+(colors,) Tj
+1 0 0 1 267.79 640.55 Tm
+( ) Tj
+1 0 0 1 271.82 640.55 Tm
+(and) Tj
+1 0 0 1 295.18 640.55 Tm
+( ) Tj
+1 0 0 1 299.22 640.55 Tm
+(output) Tj
+1 0 0 1 340.18 640.55 Tm
+( ) Tj
+1 0 0 1 344.21 640.55 Tm
+(paths) Tj
+1 0 0 1 380.26 640.55 Tm
+( ) Tj
+1 0 0 1 384.3 640.55 Tm
+(without) Tj
+1 0 0 1 434.19 640.55 Tm
+( ) Tj
+1 0 0 1 438.23 640.55 Tm
+(recompiling.) Tj
+ET
+BT
+/F2 15 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 597.55 Tm
+(What) Tj
+1 0 0 1 89.54 597.55 Tm
+( ) Tj
+1 0 0 1 93.86 597.55 Tm
+(This) Tj
+1 0 0 1 125.07 597.55 Tm
+( ) Tj
+1 0 0 1 129.4 597.55 Tm
+(Demonstrates) Tj
+ET
+BT
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 54 577.22 Tm
+(The) Tj
+1 0 0 1 73.14 577.22 Tm
+( ) Tj
+1 0 0 1 76.22 577.22 Tm
+(same) Tj
+1 0 0 1 103.72 577.22 Tm
+( ) Tj
+1 0 0 1 106.8 577.22 Tm
+(document) Tj
+1 0 0 1 155.86 577.22 Tm
+( ) Tj
+1 0 0 1 158.94 577.22 Tm
+(file) Tj
+1 0 0 1 174.78 577.22 Tm
+( ) Tj
+1 0 0 1 177.86 577.22 Tm
+(can) Tj
+1 0 0 1 195.68 577.22 Tm
+( ) Tj
+1 0 0 1 198.76 577.22 Tm
+(produce) Tj
+1 0 0 1 238.14 577.22 Tm
+( ) Tj
+1 0 0 1 241.22 577.22 Tm
+(different) Tj
+1 0 0 1 283.02 577.22 Tm
+( ) Tj
+1 0 0 1 286.1 577.22 Tm
+(styles) Tj
+1 0 0 1 316.68 577.22 Tm
+( ) Tj
+1 0 0 1 319.76 577.22 Tm
+(by) Tj
+1 0 0 1 331.64 577.22 Tm
+( ) Tj
+1 0 0 1 334.72 577.22 Tm
+(loading) Tj
+1 0 0 1 370.58 577.22 Tm
+( ) Tj
+1 0 0 1 373.66 577.22 Tm
+(configuration) Tj
+1 0 0 1 438.56 577.22 Tm
+( ) Tj
+1 0 0 1 441.64 577.22 Tm
+(from) Tj
+1 0 0 1 464.74 577.22 Tm
+( ) Tj
+1 0 0 1 467.82 577.22 Tm
+(disk.) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 557.37 Tm
+(-) Tj
+1 0 0 1 60.12 557.37 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 557.37 Tm
+(Typography) Tj
+1 0 0 1 121.81 557.37 Tm
+( ) Tj
+1 0 0 1 124.89 557.37 Tm
+(is) Tj
+1 0 0 1 133.91 557.37 Tm
+( ) Tj
+1 0 0 1 136.99 557.37 Tm
+(configurable) Tj
+1 0 0 1 198.15 557.37 Tm
+( ) Tj
+1 0 0 1 201.23 557.37 Tm
+(through) Tj
+1 0 0 1 238.41 557.37 Tm
+( ) Tj
+1 0 0 1 241.49 557.37 Tm
+([typography].) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 538.52 Tm
+(-) Tj
+1 0 0 1 60.12 538.52 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 538.52 Tm
+(Spacing) Tj
+1 0 0 1 103.33 538.52 Tm
+( ) Tj
+1 0 0 1 106.41 538.52 Tm
+(is) Tj
+1 0 0 1 115.43 538.52 Tm
+( ) Tj
+1 0 0 1 118.51 538.52 Tm
+(configurable) Tj
+1 0 0 1 179.67 538.52 Tm
+( ) Tj
+1 0 0 1 182.75 538.52 Tm
+(through) Tj
+1 0 0 1 219.93 538.52 Tm
+( ) Tj
+1 0 0 1 223.01 538.52 Tm
+([spacing].) Tj
+ET
+BT
+/F2 11 Tf
+0.06 0.46 0.43 rg
+1 0 0 1 54 519.67 Tm
+(-) Tj
+1 0 0 1 60.12 519.67 Tm
+( ) Tj
+/F1 11 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 63.29 519.67 Tm
+(Color) Tj
+1 0 0 1 89.25 519.67 Tm
+( ) Tj
+1 0 0 1 92.33 519.67 Tm
+(palette) Tj
+1 0 0 1 126.65 519.67 Tm
+( ) Tj
+1 0 0 1 129.73 519.67 Tm
+(is) Tj
+1 0 0 1 138.75 519.67 Tm
+( ) Tj
+1 0 0 1 141.83 519.67 Tm
+(configurable) Tj
+1 0 0 1 202.99 519.67 Tm
+( ) Tj
+1 0 0 1 206.07 519.67 Tm
+(through) Tj
+1 0 0 1 243.25 519.67 Tm
+( ) Tj
+1 0 0 1 246.33 519.67 Tm
+([colors].) Tj
+ET
+BT
+/F2 15 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 54 485.39 Tm
+(Status) Tj
+1 0 0 1 99.73 485.39 Tm
+( ) Tj
+1 0 0 1 104.06 485.39 Tm
+(Table) Tj
+ET
+0.89 0.91 0.94 rg
+0.8 0.84 0.88 RG
+0.75 w
+54 446.25 160 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 61 457.27 Tm
+(Dimension) Tj
+ET
+0.89 0.91 0.94 rg
+214 446.25 160 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 221 457.27 Tm
+(Value) Tj
+ET
+0.89 0.91 0.94 rg
+374 446.25 148 31 re B
+BT
+/F2 10 Tf
+0.06 0.09 0.16 rg
+1 0 0 1 381 457.27 Tm
+(Status) Tj
+ET
+0.97 0.98 0.99 rg
+54 416.25 160 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 61 426.77 Tm
+(Config) Tj
+1 0 0 1 90 426.77 Tm
+( ) Tj
+1 0 0 1 92.8 426.77 Tm
+(source) Tj
+ET
+0.97 0.98 0.99 rg
+214 416.25 160 30 re B
+BT
+/F1 10 Tf
+0.28 0.33 0.41 rg
+1 0 0 1 221 426.77 Tm
+(rusdox.toml) Tj
+ET
+0.86 0.99 0.91 rg
+374 416.25 148 30 re B
+BT
+/F2 10 Tf
+0.09 0.4 0.2 rg
+1 0 0 1 430.7 426.77 Tm
+(Loaded) Tj
+ET
+
+endstream
+endobj
+
+3 0 obj
+<<
+  /Type /Page
+  /Parent 2 0 R
+  /MediaBox [0 0 612 792]
+  /Contents 4 0 R
+  /Resources <<
+    /Font <<
+      /F1 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica
+      >>
+      /F2 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Bold
+      >>
+      /F3 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-Oblique
+      >>
+      /F4 <<
+        /Type /Font
+        /Subtype /Type1
+        /BaseFont /Helvetica-BoldOblique
+      >>
+    >>
+  >>
+>>
+endobj
+
+xref
+0 5
+0000000000 65535 f
+0000000016 00000 n
+0000000070 00000 n
+0000004735 00000 n
+0000000134 00000 n
+trailer
+<<
+  /Size 5
+  /Root 1 0 R
+>>
+startxref
+5277
+%%EOF

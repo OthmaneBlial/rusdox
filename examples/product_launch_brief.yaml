@@ -1,0 +1,120 @@
+output_name: product-launch-brief
+blocks:
+  - type: title
+    text: Product Launch Brief
+  - type: subtitle
+    text: Analytics Module
+  - type: hero
+    text: Internal launch packet for GTM, support, and leadership
+  - type: section
+    text: Launch Narrative
+  - type: body
+    text: The analytics module turns weekly CSV exports into a live dashboard experience with trend summaries, cohort breakdowns, and alerting. The launch goal is to convert analyst-heavy workflows into a daily operating surface used by customer success and finance leads.
+  - type: section
+    text: What Changes For Customers
+  - type: bullets
+    items:
+      - Time-to-insight drops from hours to minutes for weekly reviews.
+      - Account health indicators move from static exports to live views.
+      - Ops leaders can spot expansion or churn signals before QBRs.
+  - type: section
+    text: Readiness Checklist
+  - type: table
+    spec:
+      columns:
+        - label: Area
+          width: 2700
+        - label: Owner
+          width: 1900
+        - label: Status
+          width: 1760
+        - label: Note
+          width: 3000
+      rows:
+        - cells:
+            - kind: text
+              text: Pricing and packaging
+            - kind: text
+              text: GTM
+            - kind: status
+              text: Ready
+              tone: positive
+            - kind: text
+              text: Approved by finance and legal.
+        - cells:
+            - kind: text
+              text: In-app onboarding
+            - kind: text
+              text: Product
+            - kind: status
+              text: Ready
+              tone: positive
+            - kind: text
+              text: Walkthrough complete and QA signed off.
+        - cells:
+            - kind: text
+              text: Support macros
+            - kind: text
+              text: Support
+            - kind: status
+              text: Watch
+              tone: warning
+            - kind: text
+              text: Two edge-case answers still need final screenshots.
+        - cells:
+            - kind: text
+              text: Security FAQ
+            - kind: text
+              text: Security
+            - kind: status
+              text: Risk
+              tone: risk
+            - kind: text
+              text: Pending sign-off on data residency wording.
+  - type: section
+    text: Milestones
+  - type: table
+    spec:
+      columns:
+        - label: Milestone
+          width: 4100
+        - label: Date
+          width: 2000
+        - label: Outcome
+          width: 3260
+      rows:
+        - cells:
+            - kind: text
+              text: Pilot complete
+            - kind: text
+              text: March 18
+            - kind: text
+              text: 10 design partners expanded usage
+        - cells:
+            - kind: text
+              text: Launch training
+            - kind: text
+              text: March 22
+            - kind: text
+              text: GTM and support enabled
+        - cells:
+            - kind: text
+              text: Commercial release
+            - kind: text
+              text: April 7
+            - kind: text
+              text: Open to all Growth and Enterprise tiers
+  - type: section
+    text: Success Metrics
+  - type: label_values
+    items:
+      - label: 30-day adoption
+        value: 35% of eligible customers
+      - label: Expansion signal
+        value: 15 pipeline opportunities influenced
+      - label: Support health
+        value: First-response SLA above 95%
+  - type: label_values
+    items:
+      - label: Narrative
+        value: Styling is inherited from rusdox.toml, not hardcoded in the document.

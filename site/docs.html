@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RusDox Documentation</title>
+    <meta
+      name="description"
+      content="Browse the RusDox documentation in a dedicated workspace with guides, examples, and community pages."
+    />
+    <meta property="og:title" content="RusDox Documentation" />
+    <meta
+      property="og:description"
+      content="A dedicated documentation workspace for RusDox."
+    />
+    <meta property="og:image" content="assets/social-preview-rusdox.png" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="docs">
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text">
+            <strong>RusDox</strong>
+            <span>Documentation</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="index.html">Overview</a>
+          <a class="is-active" href="docs.html">Docs</a>
+          <a href="index.html#examples">Examples</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="docs-page-head">
+          <div>
+            <p class="eyebrow">Documentation</p>
+            <h1>RusDox Documentation</h1>
+          </div>
+          <a class="button button-secondary" href="index.html">Back to overview</a>
+        </section>
+
+        <section class="docs-workspace">
+          <div class="docs-toolbar">
+            <label class="search-shell" for="doc-search">
+              <span>Filter docs</span>
+              <input
+                id="doc-search"
+                type="search"
+                placeholder="Type a doc title or topic"
+                data-doc-search
+              />
+            </label>
+            <div class="toolbar-note">
+              <span>Active file</span>
+              <strong data-doc-path>README.md</strong>
+            </div>
+          </div>
+
+          <div class="docs-layout">
+            <aside class="docs-sidebar" aria-label="Documentation navigation" data-doc-groups></aside>
+            <article class="docs-article">
+              <header class="docs-article-head">
+                <p class="article-kicker" data-doc-kicker>Overview</p>
+                <h2 data-doc-title>Loading documentation…</h2>
+                <p class="article-summary" data-doc-summary></p>
+                <div class="article-actions">
+                  <a class="button button-secondary" data-doc-source href="README.md" target="_blank" rel="noreferrer">
+                    Open source markdown
+                  </a>
+                </div>
+              </header>
+              <div class="docs-content prose" data-doc-content>
+                <p>Loading content…</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>RusDox docs workspace.</p>
+        <div class="footer-links">
+          <a href="index.html">Overview</a>
+          <a href="index.html#examples">Examples</a>
+          <a href="README.md" target="_blank" rel="noreferrer">README</a>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,117 @@
+output_name: executive-dashboard
+blocks:
+  - type: title
+    text: Executive Dashboard
+  - type: subtitle
+    text: Q2 performance summary generated entirely with RusDox
+  - type: hero
+    text: Revenue up. Delivery stable. Hiring pressure contained.
+  - type: centered_note
+    text: This document combines formatted narrative, metric cards, and board-ready tables.
+  - type: metrics
+    items:
+      - label: Net Revenue
+        value: $4.8M
+        tone: positive
+      - label: Gross Margin
+        value: 68%
+        tone: warning
+      - label: NPS
+        value: "61"
+        tone: neutral
+  - type: section
+    text: Executive Summary
+  - type: body
+    text: The operating model held under increased demand. Enterprise expansion offset a slower mid-market pipeline, and the support backlog stayed below the target threshold through the quarter.
+  - type: body
+    text: Leadership focus for the next 60 days is disciplined staffing, launch readiness for the analytics module, and reducing the onboarding drop-off rate in the first two weeks.
+  - type: section
+    text: Business Highlights
+  - type: bullets
+    items:
+      - Closed the largest annual contract in company history with a three-year term.
+      - Reduced incident volume by 27% after the infrastructure hardening sprint.
+      - Lifted activation by 11 points after simplifying the first-run setup path.
+  - type: section
+    text: Delivery Health
+  - type: table
+    spec:
+      columns:
+        - label: Workstream
+          width: 2900
+        - label: Owner
+          width: 1900
+        - label: Status
+          width: 1760
+        - label: Commentary
+          width: 2800
+      rows:
+        - cells:
+            - kind: text
+              text: Analytics launch
+            - kind: text
+              text: Product
+            - kind: status
+              text: On Track
+              tone: positive
+            - kind: text
+              text: Pilot complete, commercial launch planned for April 7.
+        - cells:
+            - kind: text
+              text: Security review
+            - kind: text
+              text: Platform
+            - kind: status
+              text: Watch
+              tone: warning
+            - kind: text
+              text: Vendor evidence pack outstanding on two medium-risk controls.
+        - cells:
+            - kind: text
+              text: Support tooling
+            - kind: text
+              text: Operations
+            - kind: status
+              text: On Track
+              tone: positive
+            - kind: text
+              text: Macro automation reduced average handling time by 14%.
+  - type: section
+    text: Risk Register
+  - type: table
+    spec:
+      columns:
+        - label: Risk
+          width: 2700
+        - label: Impact
+          width: 1900
+        - label: Mitigation
+          width: 4760
+      rows:
+        - cells:
+            - kind: text
+              text: Late enterprise security approvals
+            - kind: status
+              text: Medium
+              tone: warning
+            - kind: text
+              text: Pre-stage evidence packs and assign a named escalation owner per account.
+        - cells:
+            - kind: text
+              text: Hiring delay for senior support lead
+            - kind: status
+              text: High
+              tone: risk
+            - kind: text
+              text: Use interim contractor coverage and compress interview loop to five business days.
+  - type: section
+    text: Next 30 Days
+  - type: label_values
+    items:
+      - label: Priority 1
+        value: Launch analytics module to the first 25 production customers
+      - label: Priority 2
+        value: Close support lead hire and finalize the on-call operating model
+      - label: Priority 3
+        value: Publish activation funnel dashboard to all functional leads
+  - type: spacer

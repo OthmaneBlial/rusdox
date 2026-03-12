@@ -1,0 +1,37 @@
+output_name: configured-studio
+blocks:
+  - type: title
+    text: Configured Studio Example
+  - type: subtitle
+    text: Driven by values in rusdox.toml
+  - type: hero
+    text: Edit fonts, spacing, colors, and output paths without recompiling.
+  - type: section
+    text: What This Demonstrates
+  - type: body
+    text: The same document file can produce different styles by loading configuration from disk.
+  - type: bullets
+    items:
+      - Typography is configurable through [typography].
+      - Spacing is configurable through [spacing].
+      - Color palette is configurable through [colors].
+  - type: section
+    text: Status Table
+  - type: table
+    spec:
+      columns:
+        - label: Dimension
+          width: 3200
+        - label: Value
+          width: 3200
+        - label: Status
+          width: 2960
+      rows:
+        - cells:
+            - kind: text
+              text: Config source
+            - kind: text
+              text: rusdox.toml
+            - kind: status
+              text: Loaded
+              tone: positive

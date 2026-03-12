@@ -1,0 +1,89 @@
+# RusDox configuration template
+# This file is optional. If present, future CLI/example workflows can load it.
+# Missing values always fall back to library defaults.
+
+profile_name = "RusDox Default"
+
+[output]
+# Directory for generated DOCX files
+docx_dir = "generated"
+# Directory for generated PDF preview files
+pdf_dir = "rendered"
+# Set false to skip PDF generation
+emit_pdf_preview = true
+
+[typography]
+# Font family used by studio helpers
+font_family = "Arial"
+title_size_pt = 26.0
+subtitle_size_pt = 11.0
+hero_size_pt = 14.0
+section_size_pt = 15.0
+body_size_pt = 11.0
+note_size_pt = 10.0
+table_size_pt = 10.0
+metric_label_size_pt = 10.0
+metric_value_size_pt = 18.0
+
+[spacing]
+# DOCX spacing units are twips (1/20 point)
+title_before_twips = 240
+title_after_twips = 120
+subtitle_after_twips = 280
+hero_after_twips = 240
+section_before_twips = 220
+section_after_twips = 90
+body_after_twips = 100
+bullet_after_twips = 80
+label_value_after_twips = 70
+spacer_after_twips = 120
+note_after_twips = 120
+metric_label_before_twips = 60
+metric_label_after_twips = 20
+metric_value_after_twips = 80
+table_header_before_twips = 50
+table_header_after_twips = 50
+table_data_before_twips = 40
+table_data_after_twips = 40
+table_status_before_twips = 40
+table_status_after_twips = 40
+
+[colors]
+# Six-digit hex values without '#'
+ink = "0F172A"
+slate = "475569"
+muted = "64748B"
+accent = "0F766E"
+gold = "B45309"
+red = "B91C1C"
+green = "166534"
+soft = "E2E8F0"
+pale = "F8FAFC"
+mint = "DCFCE7"
+amber = "FEF3C7"
+rose = "FEE2E2"
+table_border = "CBD5E1"
+
+[table]
+default_width_twips = 9360
+metric_cell_width_twips = 3120
+grid_border_size_eighth_pt = 8
+card_border_size_eighth_pt = 10
+pdf_cell_padding_x_pt = 7.0
+pdf_cell_padding_y_pt = 6.0
+pdf_after_spacing_pt = 12.0
+pdf_grid_stroke_width_pt = 0.75
+
+[pdf]
+# Letter page size defaults
+page_width_pt = 612.0
+page_height_pt = 792.0
+margin_x_pt = 54.0
+margin_top_pt = 54.0
+margin_bottom_pt = 54.0
+default_text_size_pt = 11.0
+default_line_height_pt = 14.0
+line_height_multiplier = 1.35
+baseline_factor = 0.82
+text_width_bias_regular = 1.0
+text_width_bias_bold = 1.03

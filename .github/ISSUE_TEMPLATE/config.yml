@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: RusDox documentation
+    url: https://github.com/OthmaneBlial/rusdox/tree/master/docs
+    about: Start with the docs before opening an issue.
+  - name: Support guide
+    url: https://github.com/OthmaneBlial/rusdox/blob/master/SUPPORT.md
+    about: See what details to include for bugs, styling issues, and API questions.

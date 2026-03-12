@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RusDox | Large DOCX and PDF generation at Rust speed</title>
+    <meta
+      name="description"
+      content="RusDox is a pure Rust document engine that can generate 1000-page DOCX and PDF files in under a second. Explore the benchmark, use cases, examples, and docs."
+    />
+    <meta property="og:title" content="RusDox | Large DOCX and PDF generation at Rust speed" />
+    <meta
+      property="og:description"
+      content="Generate large DOCX and PDF files programmatically at Rust speed, without Word or LibreOffice."
+    />
+    <meta property="og:image" content="assets/social-preview-rusdox.png" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="home">
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text">
+            <strong>RusDox</strong>
+            <span>Sub-second DOCX and PDF generation</span>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a class="is-active" href="index.html">Overview</a>
+          <a href="docs.html">Docs</a>
+          <a href="#examples">Examples</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero-block">
+          <div class="hero-copy">
+            <p class="eyebrow">Programmatic document generation at Rust speed</p>
+            <h1>Generate 1000-page DOCX and PDF files in under a second.</h1>
+            <p class="lede">
+              RusDox is a pure Rust engine for creating Word and PDF files programmatically.
+              It turns YAML into large reports, dashboards, proposals, invoices, and internal
+              document packs without Microsoft Word, LibreOffice, or slow office conversions.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#benchmark">See the benchmark proof</a>
+              <a class="button button-secondary" href="#examples">Browse example outputs</a>
+            </div>
+          </div>
+
+          <aside class="hero-aside">
+            <article class="panel">
+              <p class="eyebrow">Proof points</p>
+              <dl class="metric-list">
+                <div>
+                  <dt>1000-page release run</dt>
+                  <dd>679.86 ms</dd>
+                </div>
+                <div>
+                  <dt>DOCX render</dt>
+                  <dd>234.32 ms</dd>
+                </div>
+                <div>
+                  <dt>PDF render</dt>
+                  <dd>284.91 ms</dd>
+                </div>
+              </dl>
+            </article>
+            <article class="panel panel-code">
+              <p class="eyebrow">What makes it practical</p>
+              <code>rusdox examples/product_launch_brief.yaml</code>
+              <button
+                class="button button-secondary button-compact"
+                type="button"
+                data-copy="rusdox examples/product_launch_brief.yaml"
+              >
+                Copy command
+              </button>
+              <ul class="compact-list">
+                <li><strong>Authoring</strong> YAML-first document specs</li>
+                <li><strong>Runtime</strong> Pure Rust render path</li>
+                <li><strong>Dependency</strong> No Word or LibreOffice</li>
+                <li><strong>generated/</strong> product-launch-brief.docx</li>
+                <li><strong>rendered/</strong> product-launch-brief.pdf</li>
+              </ul>
+            </article>
+          </aside>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Why teams use it</p>
+            <h2>Built for document generation work that usually becomes slow, brittle, or painful.</h2>
+            <p>
+              RusDox is useful when documents are too important to build manually and too large
+              or too frequent for slow office-based pipelines.
+            </p>
+          </div>
+          <div class="three-up">
+            <article class="panel">
+              <p class="eyebrow">Executive reporting</p>
+              <h3>Board packs, dashboards, and recurring operating reviews.</h3>
+              <p>
+                Generate leadership documents quickly enough to keep them in regular automation
+                flows instead of turning them into manual formatting work.
+              </p>
+            </article>
+            <article class="panel">
+              <p class="eyebrow">Client document automation</p>
+              <h3>Proposals, invoices, launch briefs, and polished outward-facing files.</h3>
+              <p>
+                Keep formatting consistent across customer deliverables while generating both
+                Word and PDF from the same structured source.
+              </p>
+            </article>
+            <article class="panel">
+              <p class="eyebrow">High-volume internal generation</p>
+              <h3>Large exports and template-driven jobs without office runtime overhead.</h3>
+              <p>
+                Use Rust speed where document size and generation frequency make slower stacks
+                painful in CI, backend jobs, and internal tooling.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">Documentation and API</p>
+            <h2>Learn the system, then automate it.</h2>
+            <p>
+              Read the authoring model, configuration, CLI surface, examples, and Rust API in one place.
+            </p>
+          </div>
+          <div class="docs-spotlight">
+            <article class="panel panel-feature">
+              <p class="eyebrow">Documentation workspace</p>
+              <h3>Open the full docs and work from the real project material.</h3>
+              <p>
+                Browse getting started, YAML blocks, configuration, CLI usage, examples,
+                Rust API guidance, and the community pages in one focused reading surface.
+              </p>
+              <a class="button button-primary" href="docs.html">Go to docs</a>
+            </article>
+            <div class="panel">
+              <p class="eyebrow">Key reading</p>
+              <div class="doc-preview-list" data-doc-preview></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="eyebrow">How it stays usable</p>
+            <h2>Keep content, style, and generation separate.</h2>
+          </div>
+          <div class="three-up">
+            <article class="panel step-card">
+              <span class="step-index">01</span>
+              <h3>Write blocks in order</h3>
+              <p>
+                Titles, paragraphs, bullets, metrics, and tables are declared top to bottom
+                in YAML so the source reads like the document.
+              </p>
+              <pre><code>blocks:
+  - type: title
+    text: Weekly Brief
+  - type: body
+    text: Pipeline grew 14% week over week.</code></pre>
+            </article>
+            <article class="panel step-card">
+              <span class="step-index">02</span>
+              <h3>Move design into config</h3>
+              <p>
+                Typography, spacing, colors, output folders, and PDF behavior stay in config
+                instead of being repeated in every file.
+              </p>
+              <ul class="compact-list">
+                <li>`[typography]`</li>
+                <li>`[spacing]`</li>
+                <li>`[colors]`</li>
+                <li>`[output]`</li>
+              </ul>
+            </article>
+            <article class="panel step-card">
+              <span class="step-index">03</span>
+              <h3>Render with CLI or Rust</h3>
+              <p>
+                Start with the CLI. Move to `DocumentSpec`, `Studio`, or the low-level document
+                model only when the content becomes dynamic or highly custom.
+              </p>
+              <div class="chip-row">
+                <span>CLI</span>
+                <span>DocumentSpec</span>
+                <span>Studio</span>
+                <span>Document</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="examples">
+          <div class="section-head">
+            <p class="eyebrow">Examples</p>
+            <h2>Real specs, real outputs, no mockups.</h2>
+            <p>
+              The cards below link directly to the YAML specs, DOCX files, and PDF previews.
+            </p>
+          </div>
+          <div class="example-grid" data-example-grid></div>
+        </section>
+
+        <section class="section" id="benchmark">
+          <div class="section-head">
+            <p class="eyebrow">Benchmark</p>
+            <h2>1000 pages. DOCX plus PDF. Still under one second in release mode.</h2>
+          </div>
+          <div class="benchmark-layout">
+            <article class="panel chart-panel">
+              <img
+                src="assets/benchmark-stress-1000-pages.svg"
+                alt="RusDox 1000 page stress benchmark chart"
+                loading="lazy"
+              />
+            </article>
+            <article class="panel stat-panel">
+              <dl class="benchmark-list">
+                <div>
+                  <dt>Release total</dt>
+                  <dd>679.86 ms</dd>
+                </div>
+                <div>
+                  <dt>DOCX render</dt>
+                  <dd>234.32 ms</dd>
+                </div>
+                <div>
+                  <dt>PDF preview</dt>
+                  <dd>284.91 ms</dd>
+                </div>
+                <div>
+                  <dt>Parse stage</dt>
+                  <dd>132.78 ms</dd>
+                </div>
+              </dl>
+              <p class="muted">
+                Reproduce it with `scripts/generate_stress_yaml.sh` and
+                `scripts/run_stress_yaml.sh --release`.
+              </p>
+            </article>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="site-footer">
+        <p>RusDox. Generate large DOCX and PDF files programmatically at Rust speed.</p>
+        <div class="footer-links">
+          <a href="docs.html">Docs</a>
+          <a href="#examples">Examples</a>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
