@@ -1,5 +1,9 @@
 use crate::run::Run;
 
+const MAX_LIST_LEVEL: u8 = 8;
+const DEFAULT_BULLET_LIST_ID: u32 = 1;
+const DEFAULT_NUMBERED_LIST_ID: u32 = 2;
+
 /// Paragraph alignment options.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParagraphAlignment {
@@ -37,10 +41,108 @@ impl ParagraphAlignment {
     }
 }
 
+/// Semantic paragraph list kinds supported by the DOCX writer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParagraphListKind {
+    /// Bulleted list formatting.
+    Bullet,
+    /// Decimal numbered list formatting.
+    Decimal,
+}
+
+impl ParagraphListKind {
+    pub(crate) fn from_number_format(value: &str) -> Option<Self> {
+        match value {
+            "bullet" => Some(Self::Bullet),
+            "decimal" => Some(Self::Decimal),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_number_format(self) -> &'static str {
+        match self {
+            Self::Bullet => "bullet",
+            Self::Decimal => "decimal",
+        }
+    }
+}
+
+/// Semantic DOCX numbering metadata for a paragraph.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ParagraphList {
+    kind: ParagraphListKind,
+    level: u8,
+    id: u32,
+}
+
+impl ParagraphList {
+    /// Creates a top-level bullet list item using the default shared list id.
+    pub fn bullet() -> Self {
+        Self::bullet_with_id(DEFAULT_BULLET_LIST_ID)
+    }
+
+    /// Creates a top-level bullet list item with an explicit list id.
+    pub fn bullet_with_id(id: u32) -> Self {
+        Self {
+            kind: ParagraphListKind::Bullet,
+            level: 0,
+            id: sanitize_list_id(id),
+        }
+    }
+
+    /// Creates a top-level decimal numbered list item using the default shared list id.
+    pub fn numbered() -> Self {
+        Self::numbered_with_id(DEFAULT_NUMBERED_LIST_ID)
+    }
+
+    /// Creates a top-level decimal numbered list item with an explicit list id.
+    pub fn numbered_with_id(id: u32) -> Self {
+        Self {
+            kind: ParagraphListKind::Decimal,
+            level: 0,
+            id: sanitize_list_id(id),
+        }
+    }
+
+    /// Returns the list kind.
+    pub fn kind(&self) -> ParagraphListKind {
+        self.kind
+    }
+
+    /// Returns the nesting level.
+    pub fn level(&self) -> u8 {
+        self.level
+    }
+
+    /// Returns the logical list id.
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    /// Sets the nesting level, clamped to the OOXML-supported range `0..=8`.
+    pub fn with_level(mut self, level: u8) -> Self {
+        self.level = level.min(MAX_LIST_LEVEL);
+        self
+    }
+
+    pub(crate) fn from_parts(kind: ParagraphListKind, id: u32, level: u8) -> Self {
+        Self {
+            kind,
+            level: level.min(MAX_LIST_LEVEL),
+            id: sanitize_list_id(id),
+        }
+    }
+}
+
+fn sanitize_list_id(id: u32) -> u32 {
+    id.max(1)
+}
+
 /// A block-level text container made up of one or more runs.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Paragraph {
     runs: Vec<Run>,
+    list: Option<ParagraphList>,
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
@@ -80,6 +182,29 @@ impl Paragraph {
     /// Returns mutable access to the paragraph runs.
     pub fn runs_mut(&mut self) -> std::slice::IterMut<'_, Run> {
         self.runs.iter_mut()
+    }
+
+    /// Returns the semantic list metadata, if present.
+    pub fn list(&self) -> Option<&ParagraphList> {
+        self.list.as_ref()
+    }
+
+    /// Sets semantic list metadata in a builder-friendly way.
+    pub fn with_list(mut self, list: ParagraphList) -> Self {
+        self.list = Some(list);
+        self
+    }
+
+    /// Sets semantic list metadata in place.
+    pub fn set_list(&mut self, list: ParagraphList) -> &mut Self {
+        self.list = Some(list);
+        self
+    }
+
+    /// Removes semantic list metadata in place.
+    pub fn clear_list(&mut self) -> &mut Self {
+        self.list = None;
+        self
     }
 
     /// Returns the paragraph alignment, if present.
@@ -139,6 +264,7 @@ impl Paragraph {
 
     pub(crate) fn from_parts(
         runs: Vec<Run>,
+        list: Option<ParagraphList>,
         alignment: Option<ParagraphAlignment>,
         spacing_before: Option<u32>,
         spacing_after: Option<u32>,
@@ -146,6 +272,7 @@ impl Paragraph {
     ) -> Self {
         Self {
             runs,
+            list,
             alignment,
             spacing_before,
             spacing_after,
@@ -154,7 +281,8 @@ impl Paragraph {
     }
 
     pub(crate) fn has_properties(&self) -> bool {
-        self.alignment.is_some()
+        self.list.is_some()
+            || self.alignment.is_some()
             || self.spacing_before.is_some()
             || self.spacing_after.is_some()
             || self.page_break_before
@@ -163,7 +291,7 @@ impl Paragraph {
 
 #[cfg(test)]
 mod tests {
-    use super::{Paragraph, ParagraphAlignment};
+    use super::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
     use crate::Run;
 
     #[test]
@@ -219,12 +347,17 @@ mod tests {
     #[test]
     fn builder_sets_spacing_alignment_and_page_break() {
         let paragraph = Paragraph::new()
+            .with_list(ParagraphList::bullet().with_level(2))
             .with_alignment(ParagraphAlignment::Center)
             .spacing_before(120)
             .spacing_after(240)
             .page_break_before()
             .add_run(Run::from_text("x"));
 
+        assert_eq!(
+            paragraph.list(),
+            Some(&ParagraphList::bullet().with_level(2))
+        );
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Center));
         assert_eq!(paragraph.spacing_before_value(), Some(120));
         assert_eq!(paragraph.spacing_after_value(), Some(240));
@@ -242,6 +375,9 @@ mod tests {
     fn has_properties_detects_any_non_default_property() {
         assert!(!Paragraph::new().has_properties());
         assert!(Paragraph::new()
+            .with_list(ParagraphList::bullet())
+            .has_properties());
+        assert!(Paragraph::new()
             .with_alignment(ParagraphAlignment::Center)
             .has_properties());
         assert!(Paragraph::new().spacing_before(100).has_properties());
@@ -254,6 +390,7 @@ mod tests {
         let runs = vec![Run::from_text("one"), Run::from_text("two")];
         let paragraph = Paragraph::from_parts(
             runs,
+            Some(ParagraphList::numbered_with_id(9).with_level(1)),
             Some(ParagraphAlignment::Justified),
             Some(160),
             Some(180),
@@ -261,9 +398,34 @@ mod tests {
         );
 
         assert_eq!(paragraph.text(), "onetwo");
+        assert_eq!(
+            paragraph.list(),
+            Some(&ParagraphList::numbered_with_id(9).with_level(1))
+        );
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Justified));
         assert_eq!(paragraph.spacing_before_value(), Some(160));
         assert_eq!(paragraph.spacing_after_value(), Some(180));
         assert!(paragraph.has_page_break_before());
+    }
+
+    #[test]
+    fn list_builders_clamp_invalid_ids_and_levels() {
+        let bullet = ParagraphList::bullet_with_id(0).with_level(99);
+        let numbered = ParagraphList::numbered_with_id(7).with_level(3);
+
+        assert_eq!(bullet.kind(), ParagraphListKind::Bullet);
+        assert_eq!(bullet.id(), 1);
+        assert_eq!(bullet.level(), 8);
+        assert_eq!(numbered.kind(), ParagraphListKind::Decimal);
+        assert_eq!(numbered.id(), 7);
+        assert_eq!(numbered.level(), 3);
+    }
+
+    #[test]
+    fn clear_list_removes_semantic_numbering() {
+        let mut paragraph = Paragraph::new().with_list(ParagraphList::bullet());
+        assert!(paragraph.list().is_some());
+        paragraph.clear_list();
+        assert!(paragraph.list().is_none());
     }
 }

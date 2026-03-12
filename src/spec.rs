@@ -139,6 +139,7 @@ pub enum BlockSpec {
     Tagline { text: String },
     Paragraph { spec: ParagraphSpec },
     Bullets { items: Vec<String> },
+    Numbered { items: Vec<String> },
     LabelValues { items: Vec<LabelValueSpec> },
     Metrics { items: Vec<MetricSpec> },
     Table { spec: TableSpec },
@@ -346,6 +347,16 @@ where
     }
 }
 
+pub fn numbered<I, S>(items: I) -> BlockSpec
+where
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+{
+    BlockSpec::Numbered {
+        items: items.into_iter().map(Into::into).collect(),
+    }
+}
+
 pub fn label_values<I, L, V>(items: I) -> BlockSpec
 where
     I: IntoIterator<Item = (L, V)>,
@@ -495,8 +506,8 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        body, bullets, col, document, label_values, metric, metrics, paragraph, row, section,
-        status, table, title, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone,
+        body, bullets, col, document, label_values, metric, metrics, numbered, paragraph, row,
+        section, status, table, title, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone,
         UnderlineStyleSpec,
     };
 
@@ -507,6 +518,7 @@ mod tests {
             section("Summary"),
             body("Everything is readable."),
             bullets(["Fast", "Configurable"]),
+            numbered(["One", "Two"]),
             label_values([("Owner", "Finance")]),
             metrics([metric("ARR", "$18.7M", Tone::Positive)]),
             table(

@@ -31,7 +31,7 @@ mod xml_utils;
 
 pub use document::{Document, DocumentBlockRef, DocumentMode};
 pub use error::{DocxError, Result};
-pub use paragraph::{Paragraph, ParagraphAlignment};
+pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 pub use run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 pub use table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,

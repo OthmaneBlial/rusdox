@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::io::{BufRead, Cursor, Write};
 
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
@@ -5,7 +6,7 @@ use quick_xml::{Reader, Writer};
 
 use crate::document::BodyBlock;
 use crate::error::{DocxError, Result};
-use crate::paragraph::{Paragraph, ParagraphAlignment};
+use crate::paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 use crate::run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 use crate::table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
@@ -52,7 +53,12 @@ pub(crate) struct ParsedDocument {
     pub(crate) section_properties: SectionProperties,
 }
 
-pub(crate) fn parse_document_xml(xml: &[u8]) -> Result<ParsedDocument> {
+type NumberingDefinitions = BTreeMap<u32, ParagraphListKind>;
+
+pub(crate) fn parse_document_xml(
+    xml: &[u8],
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<ParsedDocument> {
     let mut reader = Reader::from_reader(Cursor::new(xml));
     reader.config_mut().trim_text(false);
 
@@ -60,7 +66,7 @@ pub(crate) fn parse_document_xml(xml: &[u8]) -> Result<ParsedDocument> {
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) if local_name(start.name().as_ref()) == b"body" => {
-                let parsed = parse_body(&mut reader)?;
+                let parsed = parse_body(&mut reader, numbering)?;
                 return Ok(parsed);
             }
             Event::Empty(start) if local_name(start.name().as_ref()) == b"body" => {
@@ -109,7 +115,355 @@ pub(crate) fn write_document_xml(
     Ok(writer.into_inner())
 }
 
-fn parse_body<R>(reader: &mut Reader<R>) -> Result<ParsedDocument>
+pub(crate) fn parse_numbering_xml(xml: &[u8]) -> Result<NumberingDefinitions> {
+    let mut reader = Reader::from_reader(Cursor::new(xml));
+    reader.config_mut().trim_text(false);
+
+    let mut abstract_definitions = BTreeMap::new();
+    let mut numbering = BTreeMap::new();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"numbering" => {}
+                b"abstractNum" => {
+                    let Some(abstract_id) = attribute_value(&start, b"abstractNumId")
+                        .and_then(|value| value.parse::<u32>().ok())
+                    else {
+                        skip_current_element(&mut reader)?;
+                        buffer.clear();
+                        continue;
+                    };
+
+                    if let Some(kind) = parse_abstract_numbering(&mut reader)? {
+                        abstract_definitions.insert(abstract_id, kind);
+                    }
+                }
+                b"num" => {
+                    let Some(num_id) = attribute_value(&start, b"numId")
+                        .and_then(|value| value.parse::<u32>().ok())
+                    else {
+                        skip_current_element(&mut reader)?;
+                        buffer.clear();
+                        continue;
+                    };
+
+                    if let Some(abstract_id) = parse_numbering_instance(&mut reader)? {
+                        if let Some(kind) = abstract_definitions.get(&abstract_id).copied() {
+                            numbering.insert(num_id, kind);
+                        }
+                    }
+                }
+                _ => {}
+            },
+            Event::Empty(_) => {}
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(numbering)
+}
+
+pub(crate) fn write_numbering_xml(body: &[BodyBlock]) -> Result<Vec<u8>> {
+    let numbering = collect_numbering_instances(body)?;
+    let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
+    writer.write_event(Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
+
+    let mut numbering_root = BytesStart::new("w:numbering");
+    numbering_root.push_attribute(("xmlns:w", WORD_NS));
+    writer.write_event(Event::Start(numbering_root))?;
+
+    write_abstract_numbering(&mut writer, 1, ParagraphListKind::Bullet)?;
+    write_abstract_numbering(&mut writer, 2, ParagraphListKind::Decimal)?;
+
+    for (num_id, kind) in numbering {
+        let mut num = BytesStart::new("w:num");
+        let num_id_string = num_id.to_string();
+        num.push_attribute(("w:numId", num_id_string.as_str()));
+        writer.write_event(Event::Start(num))?;
+
+        let mut abstract_num = BytesStart::new("w:abstractNumId");
+        abstract_num.push_attribute((
+            "w:val",
+            match kind {
+                ParagraphListKind::Bullet => "1",
+                ParagraphListKind::Decimal => "2",
+            },
+        ));
+        writer.write_event(Event::Empty(abstract_num))?;
+        writer.write_event(Event::End(BytesEnd::new("w:num")))?;
+    }
+
+    writer.write_event(Event::End(BytesEnd::new("w:numbering")))?;
+    Ok(writer.into_inner())
+}
+
+fn parse_abstract_numbering<R>(reader: &mut Reader<R>) -> Result<Option<ParagraphListKind>>
+where
+    R: BufRead,
+{
+    let mut kind = None;
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"lvl" => {
+                    if kind.is_none() {
+                        kind = parse_abstract_level(reader)?;
+                    } else {
+                        skip_current_element(reader)?;
+                    }
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => {
+                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() {
+                    kind = attribute_value(&start, b"val")
+                        .and_then(|value| ParagraphListKind::from_number_format(&value));
+                }
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"abstractNum" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:abstractNum",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(kind)
+}
+
+fn parse_abstract_level<R>(reader: &mut Reader<R>) -> Result<Option<ParagraphListKind>>
+where
+    R: BufRead,
+{
+    let mut kind = None;
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"numFmt" => {
+                    if kind.is_none() {
+                        kind = attribute_value(&start, b"val")
+                            .and_then(|value| ParagraphListKind::from_number_format(&value));
+                    }
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => {
+                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() {
+                    kind = attribute_value(&start, b"val")
+                        .and_then(|value| ParagraphListKind::from_number_format(&value));
+                }
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"lvl" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:lvl",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(kind)
+}
+
+fn parse_numbering_instance<R>(reader: &mut Reader<R>) -> Result<Option<u32>>
+where
+    R: BufRead,
+{
+    let mut abstract_id = None;
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"abstractNumId" => {
+                    abstract_id =
+                        attribute_value(&start, b"val").and_then(|value| value.parse::<u32>().ok());
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => {
+                if local_name(start.name().as_ref()) == b"abstractNumId" {
+                    abstract_id =
+                        attribute_value(&start, b"val").and_then(|value| value.parse().ok());
+                }
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"num" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:num",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(abstract_id)
+}
+
+fn collect_numbering_instances(body: &[BodyBlock]) -> Result<BTreeMap<u32, ParagraphListKind>> {
+    let mut numbering = BTreeMap::new();
+
+    for block in body {
+        match block {
+            BodyBlock::Paragraph(paragraph) => {
+                collect_paragraph_numbering(paragraph, &mut numbering)?
+            }
+            BodyBlock::Table(table) => {
+                for row in table.rows() {
+                    for cell in row.cells() {
+                        for paragraph in cell.paragraphs() {
+                            collect_paragraph_numbering(paragraph, &mut numbering)?;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(numbering)
+}
+
+fn collect_paragraph_numbering(
+    paragraph: &Paragraph,
+    numbering: &mut BTreeMap<u32, ParagraphListKind>,
+) -> Result<()> {
+    let Some(list) = paragraph.list() else {
+        return Ok(());
+    };
+
+    if let Some(existing) = numbering.insert(list.id(), list.kind()) {
+        if existing != list.kind() {
+            return Err(DocxError::parse(format!(
+                "conflicting paragraph list kinds for list id {}",
+                list.id()
+            )));
+        }
+    }
+
+    Ok(())
+}
+
+fn write_abstract_numbering<W>(
+    writer: &mut Writer<W>,
+    abstract_num_id: u32,
+    kind: ParagraphListKind,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut abstract_num = BytesStart::new("w:abstractNum");
+    let abstract_num_id_string = abstract_num_id.to_string();
+    abstract_num.push_attribute(("w:abstractNumId", abstract_num_id_string.as_str()));
+    writer.write_event(Event::Start(abstract_num))?;
+
+    let mut multi_level_type = BytesStart::new("w:multiLevelType");
+    multi_level_type.push_attribute((
+        "w:val",
+        match kind {
+            ParagraphListKind::Bullet => "hybridMultilevel",
+            ParagraphListKind::Decimal => "multilevel",
+        },
+    ));
+    writer.write_event(Event::Empty(multi_level_type))?;
+
+    for level in 0_u8..=8 {
+        write_list_level(writer, kind, level)?;
+    }
+
+    writer.write_event(Event::End(BytesEnd::new("w:abstractNum")))?;
+    Ok(())
+}
+
+fn write_list_level<W>(writer: &mut Writer<W>, kind: ParagraphListKind, level: u8) -> Result<()>
+where
+    W: Write,
+{
+    let mut level_start = BytesStart::new("w:lvl");
+    let level_string = level.to_string();
+    level_start.push_attribute(("w:ilvl", level_string.as_str()));
+    writer.write_event(Event::Start(level_start))?;
+
+    let mut start = BytesStart::new("w:start");
+    start.push_attribute(("w:val", "1"));
+    writer.write_event(Event::Empty(start))?;
+
+    let mut num_fmt = BytesStart::new("w:numFmt");
+    num_fmt.push_attribute(("w:val", kind.as_number_format()));
+    writer.write_event(Event::Empty(num_fmt))?;
+
+    let level_text = list_level_text(kind, level);
+    let mut lvl_text = BytesStart::new("w:lvlText");
+    lvl_text.push_attribute(("w:val", level_text.as_str()));
+    writer.write_event(Event::Empty(lvl_text))?;
+
+    let mut level_jc = BytesStart::new("w:lvlJc");
+    level_jc.push_attribute(("w:val", "left"));
+    writer.write_event(Event::Empty(level_jc))?;
+
+    writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+    let mut ind = BytesStart::new("w:ind");
+    let left = (720_u32 * (u32::from(level) + 1)).to_string();
+    ind.push_attribute(("w:left", left.as_str()));
+    ind.push_attribute(("w:hanging", "360"));
+    writer.write_event(Event::Empty(ind))?;
+    writer.write_event(Event::End(BytesEnd::new("w:pPr")))?;
+
+    writer.write_event(Event::End(BytesEnd::new("w:lvl")))?;
+    Ok(())
+}
+
+fn list_level_text(kind: ParagraphListKind, level: u8) -> String {
+    match kind {
+        ParagraphListKind::Bullet => match level % 3 {
+            0 => "\u{2022}".to_string(),
+            1 => "o".to_string(),
+            _ => "\u{25A0}".to_string(),
+        },
+        ParagraphListKind::Decimal => {
+            let mut text = String::new();
+            for index in 1..=usize::from(level) + 1 {
+                if !text.is_empty() {
+                    text.push('.');
+                }
+                text.push('%');
+                text.push_str(&index.to_string());
+            }
+            text.push('.');
+            text
+        }
+    }
+}
+
+fn parse_body<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<ParsedDocument>
 where
     R: BufRead,
 {
@@ -120,8 +474,8 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
-                b"p" => body.push(BodyBlock::Paragraph(parse_paragraph(reader)?)),
-                b"tbl" => body.push(BodyBlock::Table(Box::new(parse_table(reader)?))),
+                b"p" => body.push(BodyBlock::Paragraph(parse_paragraph(reader, numbering)?)),
+                b"tbl" => body.push(BodyBlock::Table(Box::new(parse_table(reader, numbering)?))),
                 b"sectPr" => section_properties = parse_section_properties(reader)?,
                 _ => skip_current_element(reader)?,
             },
@@ -150,11 +504,15 @@ where
     })
 }
 
-fn parse_paragraph<R>(reader: &mut Reader<R>) -> Result<Paragraph>
+fn parse_paragraph<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<Paragraph>
 where
     R: BufRead,
 {
     let mut runs = Vec::new();
+    let mut list = None;
     let mut alignment = None;
     let mut spacing_before = None;
     let mut spacing_after = None;
@@ -166,7 +524,8 @@ where
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"r" => runs.push(parse_run(reader)?),
                 b"pPr" => {
-                    let properties = parse_paragraph_properties(reader)?;
+                    let properties = parse_paragraph_properties(reader, numbering)?;
+                    list = properties.list;
                     alignment = properties.alignment;
                     spacing_before = properties.spacing_before;
                     spacing_after = properties.spacing_after;
@@ -194,6 +553,7 @@ where
 
     Ok(Paragraph::from_parts(
         runs,
+        list,
         alignment,
         spacing_before,
         spacing_after,
@@ -203,13 +563,17 @@ where
 
 #[derive(Default)]
 struct ParsedParagraphProperties {
+    list: Option<ParagraphList>,
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
     page_break_before: bool,
 }
 
-fn parse_paragraph_properties<R>(reader: &mut Reader<R>) -> Result<ParsedParagraphProperties>
+fn parse_paragraph_properties<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<ParsedParagraphProperties>
 where
     R: BufRead,
 {
@@ -219,6 +583,9 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"numPr" => {
+                    properties.list = parse_numbering_properties(reader, numbering)?;
+                }
                 b"jc" => {
                     if let Some(value) = attribute_value(&start, b"val") {
                         properties.alignment = Some(ParagraphAlignment::from_xml(&value));
@@ -239,6 +606,9 @@ where
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"numPr" => {
+                    properties.list = None;
+                }
                 b"jc" => {
                     if let Some(value) = attribute_value(&start, b"val") {
                         properties.alignment = Some(ParagraphAlignment::from_xml(&value));
@@ -269,6 +639,63 @@ where
     }
 
     Ok(properties)
+}
+
+fn parse_numbering_properties<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<Option<ParagraphList>>
+where
+    R: BufRead,
+{
+    let mut level = 0_u8;
+    let mut num_id = None;
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"ilvl" => {
+                    level = attribute_value(&start, b"val")
+                        .and_then(|value| value.parse::<u8>().ok())
+                        .unwrap_or(0);
+                    skip_current_element(reader)?;
+                }
+                b"numId" => {
+                    num_id = attribute_value(&start, b"val").and_then(|value| value.parse().ok());
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"ilvl" => {
+                    level = attribute_value(&start, b"val")
+                        .and_then(|value| value.parse::<u8>().ok())
+                        .unwrap_or(0);
+                }
+                b"numId" => {
+                    num_id = attribute_value(&start, b"val").and_then(|value| value.parse().ok());
+                }
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"numPr" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:numPr",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(num_id.and_then(|id| {
+        numbering
+            .and_then(|definitions| definitions.get(&id).copied())
+            .map(|kind| ParagraphList::from_parts(kind, id, level))
+    }))
 }
 
 fn parse_run<R>(reader: &mut Reader<R>) -> Result<Run>
@@ -409,7 +836,7 @@ where
     Ok(text)
 }
 
-fn parse_table<R>(reader: &mut Reader<R>) -> Result<Table>
+fn parse_table<R>(reader: &mut Reader<R>, numbering: Option<&NumberingDefinitions>) -> Result<Table>
 where
     R: BufRead,
 {
@@ -421,7 +848,7 @@ where
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"tblPr" => properties = parse_table_properties(reader)?,
-                b"tr" => rows.push(parse_table_row(reader)?),
+                b"tr" => rows.push(parse_table_row(reader, numbering)?),
                 _ => skip_current_element(reader)?,
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"tbl" => {
@@ -482,7 +909,10 @@ where
     Ok(properties)
 }
 
-fn parse_table_row<R>(reader: &mut Reader<R>) -> Result<TableRow>
+fn parse_table_row<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<TableRow>
 where
     R: BufRead,
 {
@@ -492,7 +922,7 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
-                b"tc" => cells.push(parse_table_cell(reader)?),
+                b"tc" => cells.push(parse_table_cell(reader, numbering)?),
                 _ => skip_current_element(reader)?,
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"tr" => {
@@ -511,7 +941,10 @@ where
     Ok(TableRow::from_parts(cells))
 }
 
-fn parse_table_cell<R>(reader: &mut Reader<R>) -> Result<TableCell>
+fn parse_table_cell<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<TableCell>
 where
     R: BufRead,
 {
@@ -523,7 +956,7 @@ where
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"tcPr" => properties = parse_table_cell_properties(reader)?,
-                b"p" => paragraphs.push(parse_paragraph(reader)?),
+                b"p" => paragraphs.push(parse_paragraph(reader, numbering)?),
                 b"tbl" => {
                     skip_current_element(reader)?;
                 }
@@ -761,6 +1194,21 @@ where
     writer.write_event(Event::Start(BytesStart::new("w:p")))?;
     if paragraph.has_properties() {
         writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+        if let Some(list) = paragraph.list() {
+            writer.write_event(Event::Start(BytesStart::new("w:numPr")))?;
+
+            let mut level = BytesStart::new("w:ilvl");
+            let level_string = list.level().to_string();
+            level.push_attribute(("w:val", level_string.as_str()));
+            writer.write_event(Event::Empty(level))?;
+
+            let mut num_id = BytesStart::new("w:numId");
+            let num_id_string = list.id().to_string();
+            num_id.push_attribute(("w:val", num_id_string.as_str()));
+            writer.write_event(Event::Empty(num_id))?;
+
+            writer.write_event(Event::End(BytesEnd::new("w:numPr")))?;
+        }
         if let Some(alignment) = paragraph.alignment() {
             let mut start = BytesStart::new("w:jc");
             start.push_attribute(("w:val", alignment.as_xml_value()));
@@ -1153,9 +1601,9 @@ fn local_name(name: &[u8]) -> &[u8] {
 
 #[cfg(test)]
 mod tests {
-    use super::write_document_xml;
+    use super::{parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml};
     use crate::document::BodyBlock;
-    use crate::{Paragraph, Run, Table, TableCell, TableRow};
+    use crate::{Paragraph, ParagraphList, Run, Table, TableCell, TableRow};
 
     #[test]
     fn writer_emits_space_preserve_for_boundary_whitespace() {
@@ -1234,5 +1682,77 @@ mod tests {
         assert!(xml.contains(r#"<w:rFonts w:ascii="Arial""#));
         assert!(xml.contains(r#"<w:sz w:val="36""#));
         assert!(xml.contains(r#"<w:shd w:val="clear" w:color="auto" w:fill="E2E8F0""#));
+    }
+
+    #[test]
+    fn writer_emits_semantic_numbering_properties() {
+        let paragraph = Paragraph::new()
+            .with_list(ParagraphList::bullet_with_id(7).with_level(2))
+            .add_run(Run::from_text("Item"));
+        let document_xml = write_document_xml(
+            &[BodyBlock::Paragraph(paragraph)],
+            &super::SectionProperties::default(),
+        )
+        .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
+        let xml = String::from_utf8_lossy(&document_xml);
+
+        assert!(xml.contains("<w:numPr>"));
+        assert!(xml.contains(r#"<w:ilvl w:val="2"/>"#));
+        assert!(xml.contains(r#"<w:numId w:val="7"/>"#));
+        assert!(!xml.contains("• Item"));
+    }
+
+    #[test]
+    fn numbering_part_defines_bullet_and_decimal_instances() {
+        let body = [
+            BodyBlock::Paragraph(
+                Paragraph::new()
+                    .with_list(ParagraphList::bullet_with_id(3))
+                    .add_run(Run::from_text("Bullet")),
+            ),
+            BodyBlock::Paragraph(
+                Paragraph::new()
+                    .with_list(ParagraphList::numbered_with_id(9).with_level(1))
+                    .add_run(Run::from_text("Number")),
+            ),
+        ];
+        let numbering_xml =
+            write_numbering_xml(&body).unwrap_or_else(|error| panic!("write numbering: {error}"));
+        let xml = String::from_utf8_lossy(&numbering_xml);
+
+        assert!(xml.contains(r#"<w:abstractNum w:abstractNumId="1">"#));
+        assert!(xml.contains(r#"<w:abstractNum w:abstractNumId="2">"#));
+        assert!(xml.contains(r#"<w:num w:numId="3">"#));
+        assert!(xml.contains(r#"<w:num w:numId="9">"#));
+        assert!(xml.contains(r#"<w:numFmt w:val="bullet"/>"#));
+        assert!(xml.contains(r#"<w:numFmt w:val="decimal"/>"#));
+    }
+
+    #[test]
+    fn parser_restores_semantic_numbering_from_document_and_numbering_parts() {
+        let body = [BodyBlock::Paragraph(
+            Paragraph::new()
+                .with_list(ParagraphList::numbered_with_id(4).with_level(1))
+                .add_run(Run::from_text("Alpha")),
+        )];
+        let numbering_xml =
+            write_numbering_xml(&body).unwrap_or_else(|error| panic!("write numbering: {error}"));
+        let numbering = parse_numbering_xml(&numbering_xml)
+            .unwrap_or_else(|error| panic!("parse numbering: {error}"));
+        let document_xml = write_document_xml(&body, &super::SectionProperties::default())
+            .unwrap_or_else(|error| panic!("write document: {error}"));
+        let parsed = parse_document_xml(&document_xml, Some(&numbering))
+            .unwrap_or_else(|error| panic!("parse document: {error}"));
+
+        let paragraph = match parsed.body.first() {
+            Some(BodyBlock::Paragraph(paragraph)) => paragraph,
+            other => panic!("expected paragraph body block, got {other:?}"),
+        };
+
+        assert_eq!(
+            paragraph.list(),
+            Some(&ParagraphList::numbered_with_id(4).with_level(1))
+        );
+        assert_eq!(paragraph.text(), "Alpha");
     }
 }

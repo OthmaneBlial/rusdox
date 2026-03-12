@@ -10,13 +10,17 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 use crate::error::{DocxError, Result};
 use crate::paragraph::Paragraph;
 use crate::table::Table;
-use crate::xml_utils::{parse_document_xml, write_document_xml, SectionProperties};
+use crate::xml_utils::{
+    parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml,
+    SectionProperties,
+};
 
 const CONTENT_TYPES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
   <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
@@ -32,7 +36,9 @@ const PACKAGE_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalon
 "#;
 
 const DOCUMENT_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdRusDoxNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+</Relationships>
 "#;
 
 const APP_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -162,6 +168,7 @@ impl Document {
         let mut archive = ZipArchive::new(reader)?;
         let mut package_parts = BTreeMap::new();
         let mut document_xml = None;
+        let mut numbering = None;
 
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index)?;
@@ -170,6 +177,9 @@ impl Document {
             entry.read_to_end(&mut bytes)?;
             if name == "word/document.xml" {
                 document_xml = Some(bytes);
+            } else if name == "word/numbering.xml" {
+                numbering = Some(parse_numbering_xml(&bytes)?);
+                package_parts.insert(name, bytes);
             } else {
                 package_parts.insert(name, bytes);
             }
@@ -177,7 +187,7 @@ impl Document {
 
         let document_xml = document_xml
             .ok_or_else(|| DocxError::parse("missing OOXML part: word/document.xml"))?;
-        let parsed = parse_document_xml(&document_xml)?;
+        let parsed = parse_document_xml(&document_xml, numbering.as_ref())?;
 
         Ok(Self {
             mode: match mode {
@@ -313,12 +323,13 @@ impl Document {
 
         let mut archive = ZipWriter::new(writer);
         let options = FileOptions::default().compression_method(CompressionMethod::Deflated);
+        let package_parts = self.render_package_parts()?;
 
         archive.start_file("word/document.xml", options)?;
         let document_xml = write_document_xml(&self.body, &self.section_properties)?;
         archive.write_all(&document_xml)?;
 
-        for (name, contents) in &self.package_parts {
+        for (name, contents) in &package_parts {
             archive.start_file(name, options)?;
             archive.write_all(contents)?;
         }
@@ -326,6 +337,67 @@ impl Document {
         archive.finish()?;
         Ok(())
     }
+
+    fn render_package_parts(&self) -> Result<BTreeMap<String, Vec<u8>>> {
+        let mut package_parts = self.package_parts.clone();
+        package_parts.insert(
+            "word/numbering.xml".to_string(),
+            write_numbering_xml(&self.body)?,
+        );
+        ensure_numbering_content_type(&mut package_parts)?;
+        ensure_numbering_relationship(&mut package_parts)?;
+        Ok(package_parts)
+    }
+}
+
+fn ensure_numbering_content_type(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+    let xml = parts
+        .entry("[Content_Types].xml".to_string())
+        .or_insert_with(|| CONTENT_TYPES_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Types>",
+        r#"PartName="/word/numbering.xml""#,
+        r#"  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+"#,
+    )
+}
+
+fn ensure_numbering_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+    let xml = parts
+        .entry("word/_rels/document.xml.rels".to_string())
+        .or_insert_with(|| DOCUMENT_RELS_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Relationships>",
+        r#"Target="numbering.xml""#,
+        r#"  <Relationship Id="rIdRusDoxNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
+"#,
+    )
+}
+
+fn ensure_xml_fragment(
+    xml_bytes: &mut Vec<u8>,
+    closing_tag: &str,
+    needle: &str,
+    fragment: &str,
+) -> Result<()> {
+    let mut xml = String::from_utf8(xml_bytes.clone())
+        .map_err(|_| DocxError::parse("OOXML package part was not valid UTF-8"))?;
+
+    if xml.contains(needle) {
+        return Ok(());
+    }
+
+    let Some(index) = xml.rfind(closing_tag) else {
+        return Err(DocxError::parse(format!(
+            "malformed OOXML package part: missing closing tag {closing_tag}"
+        )));
+    };
+
+    xml.insert_str(index, fragment);
+    *xml_bytes = xml.into_bytes();
+    Ok(())
 }
 
 fn default_package_parts() -> BTreeMap<String, Vec<u8>> {
@@ -351,6 +423,7 @@ fn default_package_parts() -> BTreeMap<String, Vec<u8>> {
         "word/styles.xml".to_string(),
         STYLES_XML.as_bytes().to_vec(),
     );
+    parts.insert("word/numbering.xml".to_string(), Vec::new());
     parts
 }
 
@@ -547,5 +620,43 @@ mod tests {
 
         assert_eq!(paragraph.text(), "p");
         assert_eq!(table.text(), "t");
+    }
+
+    #[test]
+    fn render_package_parts_preserves_existing_relationships_and_adds_numbering() {
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("Item")));
+        document.package_parts.insert(
+            "[Content_Types].xml".to_string(),
+            br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>
+"#
+            .to_vec(),
+        );
+        document.package_parts.insert(
+            "word/_rels/document.xml.rels".to_string(),
+            br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>
+"#
+            .to_vec(),
+        );
+
+        let parts = document
+            .render_package_parts()
+            .expect("render package parts");
+        let content_types =
+            String::from_utf8(parts["[Content_Types].xml"].clone()).expect("utf8 content types");
+        let rels = String::from_utf8(parts["word/_rels/document.xml.rels"].clone())
+            .expect("utf8 relationships");
+
+        assert!(content_types.contains(r#"PartName="/word/numbering.xml""#));
+        assert!(rels.contains(r#"Target="styles.xml""#));
+        assert!(rels.contains(r#"Target="numbering.xml""#));
     }
 }

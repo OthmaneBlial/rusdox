@@ -22,8 +22,8 @@ use crate::{
         ParagraphSpec as BlockParagraphSpec, RunSpec as BlockRunSpec, TableSpec as BlockTableSpec,
         Tone, UnderlineStyleSpec, VerticalAlignSpec,
     },
-    Border, BorderStyle, Document, DocumentBlockRef, Paragraph, ParagraphAlignment, Run, Table,
-    TableBorders, TableCell, TableRow, UnderlineStyle, VerticalAlign,
+    Border, BorderStyle, Document, DocumentBlockRef, Paragraph, ParagraphAlignment, ParagraphList,
+    Run, Table, TableBorders, TableCell, TableRow, UnderlineStyle, VerticalAlign,
 };
 
 /// Default config file expected in the current working directory.
@@ -294,23 +294,39 @@ impl Studio {
             )
     }
 
-    /// Builds a bullet paragraph.
-    pub fn bullet(&self, text: &str) -> Paragraph {
+    fn list_item(&self, text: &str, list: ParagraphList) -> Paragraph {
         Paragraph::new()
+            .with_list(list)
             .spacing_after(self.config.spacing.bullet_after_twips)
-            .add_run(
-                Run::from_text("• ")
-                    .font(self.config.typography.font_family.clone())
-                    .size_points(points_to_u16(self.config.typography.body_size_pt))
-                    .bold()
-                    .color(&self.config.colors.accent),
-            )
             .add_run(
                 Run::from_text(text)
                     .font(self.config.typography.font_family.clone())
                     .size_points(points_to_u16(self.config.typography.body_size_pt))
                     .color(&self.config.colors.slate),
             )
+    }
+
+    /// Builds a bullet paragraph.
+    pub fn bullet(&self, text: &str) -> Paragraph {
+        self.list_item(text, ParagraphList::bullet())
+    }
+
+    /// Builds a numbered list paragraph.
+    pub fn numbered(&self, text: &str) -> Paragraph {
+        self.list_item(text, ParagraphList::numbered())
+    }
+
+    fn list_with_id(&self, text: &str, list: ParagraphList) -> Paragraph {
+        self.list_item(text, list)
+    }
+
+    fn next_list_id(document: &Document) -> u32 {
+        document
+            .paragraphs()
+            .filter_map(|paragraph| paragraph.list().map(|list| list.id()))
+            .max()
+            .unwrap_or(0)
+            + 1
     }
 
     /// Builds a label-value paragraph.
@@ -547,8 +563,19 @@ impl Studio {
                 document.push_paragraph(self.paragraph_from_spec(spec));
             }
             BlockSpec::Bullets { items } => {
+                let list_id = Self::next_list_id(document);
                 for item in items {
-                    document.push_paragraph(self.bullet(item));
+                    document.push_paragraph(
+                        self.list_with_id(item, ParagraphList::bullet_with_id(list_id)),
+                    );
+                }
+            }
+            BlockSpec::Numbered { items } => {
+                let list_id = Self::next_list_id(document);
+                for item in items {
+                    document.push_paragraph(
+                        self.list_with_id(item, ParagraphList::numbered_with_id(list_id)),
+                    );
                 }
             }
             BlockSpec::LabelValues { items } => {
@@ -756,6 +783,11 @@ pub fn body(text: &str) -> Paragraph {
 /// Builds a bullet paragraph using default config values.
 pub fn bullet(text: &str) -> Paragraph {
     configured_studio().bullet(text)
+}
+
+/// Builds a numbered list paragraph using default config values.
+pub fn numbered(text: &str) -> Paragraph {
+    configured_studio().numbered(text)
 }
 
 /// Builds a label-value paragraph using default config values.
@@ -2424,7 +2456,10 @@ mod tests {
     use crate::spec::{
         ParagraphAlignmentSpec, ParagraphSpec, RunSpec, UnderlineStyleSpec, VerticalAlignSpec,
     };
-    use crate::{Document, Paragraph, ParagraphAlignment, Run, TableCell, TableRow, VerticalAlign};
+    use crate::{
+        Document, Paragraph, ParagraphAlignment, ParagraphList, Run, TableCell, TableRow,
+        VerticalAlign,
+    };
 
     fn default_pdf_settings() -> PdfRenderSettings {
         PdfRenderSettings::from_config(&RusdoxConfig::default())
@@ -2664,6 +2699,19 @@ mod tests {
             Some("IBM Plex Sans")
         );
         assert_eq!(run.properties().font_size, Some(26));
+    }
+
+    #[test]
+    fn semantic_list_helpers_do_not_prefix_literal_markers() {
+        let studio = Studio::new(RusdoxConfig::default());
+
+        let bullet = studio.bullet("Alpha");
+        let numbered = studio.numbered("Beta");
+
+        assert_eq!(bullet.text(), "Alpha");
+        assert_eq!(bullet.list(), Some(&ParagraphList::bullet()));
+        assert_eq!(numbered.text(), "Beta");
+        assert_eq!(numbered.list(), Some(&ParagraphList::numbered()));
     }
 
     #[test]

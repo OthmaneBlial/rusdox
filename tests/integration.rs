@@ -1,8 +1,8 @@
 use std::io::{Cursor, Read, Write};
 
 use rusdox::{
-    Border, BorderStyle, Document, DocumentMode, Paragraph, ParagraphAlignment, Run, Table,
-    TableBorders, TableCell, TableRow, UnderlineStyle,
+    Border, BorderStyle, Document, DocumentMode, Paragraph, ParagraphAlignment, ParagraphList, Run,
+    Table, TableBorders, TableCell, TableRow, UnderlineStyle,
 };
 use tempfile::tempdir;
 use zip::write::FileOptions;
@@ -226,6 +226,78 @@ fn tabs_and_line_breaks_round_trip_and_emit_structured_ooxml() -> Result<(), rus
     assert!(xml.contains("<w:tab/>"));
     assert!(xml.matches("<w:br/>").count() >= 2);
     assert!(!xml.contains("Alpha\tBeta"));
+
+    Ok(())
+}
+
+#[test]
+fn semantic_lists_round_trip_and_emit_numbering_parts() -> Result<(), rusdox::DocxError> {
+    let mut document = Document::new();
+    document.push_paragraph(
+        Paragraph::new()
+            .with_list(ParagraphList::bullet_with_id(3))
+            .add_run(Run::from_text("First bullet")),
+    );
+    document.push_paragraph(
+        Paragraph::new()
+            .with_list(ParagraphList::bullet_with_id(3))
+            .add_run(Run::from_text("Second bullet")),
+    );
+    document.push_paragraph(
+        Paragraph::new()
+            .with_list(ParagraphList::numbered_with_id(4).with_level(1))
+            .add_run(Run::from_text("Nested number")),
+    );
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    let paragraphs: Vec<_> = reopened.paragraphs().collect();
+    assert_eq!(paragraphs.len(), 3);
+    assert_eq!(
+        paragraphs[0].list(),
+        Some(&ParagraphList::bullet_with_id(3))
+    );
+    assert_eq!(
+        paragraphs[1].list(),
+        Some(&ParagraphList::bullet_with_id(3))
+    );
+    assert_eq!(
+        paragraphs[2].list(),
+        Some(&ParagraphList::numbered_with_id(4).with_level(1))
+    );
+    assert_eq!(paragraphs[0].text(), "First bullet");
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+    assert!(document_xml.contains("<w:numPr>"));
+    assert!(!document_xml.contains("• First bullet"));
+
+    let mut numbering_xml = String::new();
+    archive
+        .by_name("word/numbering.xml")?
+        .read_to_string(&mut numbering_xml)?;
+    assert!(numbering_xml.contains(r#"w:numId="3""#));
+    assert!(numbering_xml.contains(r#"w:numId="4""#));
+
+    let mut content_types = String::new();
+    archive
+        .by_name("[Content_Types].xml")?
+        .read_to_string(&mut content_types)?;
+    assert!(content_types.contains("/word/numbering.xml"));
+
+    let mut rels = String::new();
+    archive
+        .by_name("word/_rels/document.xml.rels")?
+        .read_to_string(&mut rels)?;
+    assert!(rels.contains("relationships/numbering"));
 
     Ok(())
 }

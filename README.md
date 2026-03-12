@@ -223,7 +223,7 @@ The current foundation focuses on fast, typed support for:
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Deferred areas include numbering, images, headers and footers, comments, tracked changes, and advanced style inheritance.
+Deferred areas include images, headers and footers, comments, tracked changes, and advanced style inheritance.
 
 ## Development
 
