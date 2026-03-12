@@ -4,13 +4,16 @@
 //! that build rich `.docx` files programmatically and optionally emit PDF
 //! previews.
 
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
-use pdf_writer::{Name, Pdf, Rect, Ref};
+use fontdb::{Database as FontDatabase, Family as FontFamily, Query as FontQuery};
+use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
+use pdf_writer::{Name, Pdf, Rect, Ref, Str};
 
 use crate::{
     config::RusdoxConfig,
@@ -949,7 +952,7 @@ impl PdfRenderSettings {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum PdfFont {
     Regular,
     Bold,
@@ -958,28 +961,53 @@ enum PdfFont {
 }
 
 impl PdfFont {
-    fn resource_name(self) -> Name<'static> {
+    fn width_bias(self, settings: PdfRenderSettings) -> f32 {
         match self {
-            Self::Regular => Name(b"F1"),
-            Self::Bold => Name(b"F2"),
-            Self::Oblique => Name(b"F3"),
-            Self::BoldOblique => Name(b"F4"),
+            Self::Regular | Self::Oblique => settings.text_width_bias_regular,
+            Self::Bold | Self::BoldOblique => settings.text_width_bias_bold,
         }
     }
 
-    fn base_font_name(self) -> Name<'static> {
+    fn fontdb_weight(self) -> fontdb::Weight {
         match self {
-            Self::Regular => Name(b"Helvetica"),
-            Self::Bold => Name(b"Helvetica-Bold"),
-            Self::Oblique => Name(b"Helvetica-Oblique"),
-            Self::BoldOblique => Name(b"Helvetica-BoldOblique"),
+            Self::Bold | Self::BoldOblique => fontdb::Weight::BOLD,
+            Self::Regular | Self::Oblique => fontdb::Weight::NORMAL,
+        }
+    }
+
+    fn fontdb_style(self) -> fontdb::Style {
+        match self {
+            Self::Oblique | Self::BoldOblique => fontdb::Style::Italic,
+            Self::Regular | Self::Bold => fontdb::Style::Normal,
         }
     }
 }
 
-#[derive(Clone, Copy)]
-struct TextStyle {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct PdfFontRequest {
+    family: String,
     font: PdfFont,
+}
+
+impl PdfFontRequest {
+    fn new(family: impl Into<String>, font: PdfFont) -> Self {
+        Self {
+            family: family.into(),
+            font,
+        }
+    }
+}
+
+#[derive(Clone)]
+struct RequestedTextStyle {
+    font_request: PdfFontRequest,
+    size: f32,
+    color: Rgb,
+}
+
+#[derive(Clone, Copy)]
+struct TextPaintStyle {
+    font_id: usize,
     size: f32,
     color: Rgb,
 }
@@ -987,7 +1015,20 @@ struct TextStyle {
 #[derive(Clone)]
 struct TextSpan {
     text: String,
-    style: TextStyle,
+    glyphs: Vec<u16>,
+    style: TextPaintStyle,
+    width: f32,
+}
+
+#[derive(Clone, Copy)]
+struct UsedCharacter {
+    cid: u16,
+    glyph_id: u16,
+    pdf_width: f32,
+}
+
+struct ShapedToken {
+    spans: Vec<TextSpan>,
     width: f32,
 }
 
@@ -1061,9 +1102,446 @@ impl PdfLayout {
     }
 }
 
+const PDF_FONT_SYSTEM_INFO: SystemInfo<'static> = SystemInfo {
+    registry: Str(b"Adobe"),
+    ordering: Str(b"Identity"),
+    supplement: 0,
+};
+
+const PDF_SANS_FALLBACKS: &[&str] = &[
+    "Noto Sans",
+    "Liberation Sans",
+    "DejaVu Sans",
+    "Arial Unicode MS",
+    "Droid Sans Fallback",
+];
+
+const PDF_SERIF_FALLBACKS: &[&str] = &[
+    "Noto Serif",
+    "Liberation Serif",
+    "DejaVu Serif",
+    "Times New Roman",
+];
+
+const PDF_MONO_FALLBACKS: &[&str] = &[
+    "Noto Sans Mono",
+    "Liberation Mono",
+    "DejaVu Sans Mono",
+    "Courier New",
+];
+
+const PDF_CJK_FALLBACKS: &[&str] = &[
+    "Droid Sans Fallback",
+    "Noto Sans CJK SC",
+    "WenQuanYi Zen Hei",
+    "Noto Serif CJK SC",
+];
+
+const PDF_ARABIC_FALLBACKS: &[&str] = &["Noto Sans Arabic", "Noto Naskh Arabic", "Amiri"];
+
+const PDF_HEBREW_FALLBACKS: &[&str] = &["Noto Sans Hebrew", "Noto Serif Hebrew"];
+
+const PDF_DEVANAGARI_FALLBACKS: &[&str] = &["Noto Sans Devanagari", "Noto Serif Devanagari"];
+
+struct PdfFontSystem {
+    db: &'static FontDatabase,
+    settings: PdfRenderSettings,
+    default_family: String,
+    face_cache: HashMap<(fontdb::ID, PdfFont), usize>,
+    family_cache: HashMap<PdfFontRequest, Option<usize>>,
+    request_cache: HashMap<PdfFontRequest, Vec<usize>>,
+    faces: Vec<ResolvedPdfFace>,
+}
+
+impl PdfFontSystem {
+    fn new(config: &RusdoxConfig, settings: PdfRenderSettings) -> Self {
+        let default_family = config.typography.font_family.trim();
+        Self {
+            db: system_font_db(),
+            settings,
+            default_family: if default_family.is_empty() {
+                "Arial".to_string()
+            } else {
+                default_family.to_string()
+            },
+            face_cache: HashMap::new(),
+            family_cache: HashMap::new(),
+            request_cache: HashMap::new(),
+            faces: Vec::new(),
+        }
+    }
+
+    fn default_family(&self) -> &str {
+        &self.default_family
+    }
+
+    fn used_face_ids(&self) -> Vec<usize> {
+        self.faces
+            .iter()
+            .enumerate()
+            .filter_map(|(index, face)| face.is_used().then_some(index))
+            .collect()
+    }
+
+    fn face(&self, font_id: usize) -> &ResolvedPdfFace {
+        &self.faces[font_id]
+    }
+
+    fn shape_text(&mut self, style: &RequestedTextStyle, text: &str) -> crate::Result<ShapedToken> {
+        let normalized = normalize_pdf_text(text);
+        if normalized.is_empty() {
+            return Ok(ShapedToken {
+                spans: Vec::new(),
+                width: 0.0,
+            });
+        }
+
+        let base_faces = self.resolve_base_faces(&style.font_request)?;
+        let mut spans = Vec::new();
+        let mut total_width = 0.0;
+        let mut current_font_id = None;
+        let mut current_text = String::new();
+        let mut current_glyphs = Vec::new();
+        let mut current_width = 0.0;
+
+        for ch in normalized.chars() {
+            let font_id = self.resolve_face_for_char(&style.font_request, &base_faces, ch);
+            let used = self.faces[font_id].ensure_char(ch);
+            let advance = self.faces[font_id].advance_points(used, style.size);
+
+            if current_font_id != Some(font_id) && !current_glyphs.is_empty() {
+                spans.push(TextSpan {
+                    text: std::mem::take(&mut current_text),
+                    glyphs: std::mem::take(&mut current_glyphs),
+                    style: TextPaintStyle {
+                        font_id: current_font_id.expect("font id"),
+                        size: style.size,
+                        color: style.color,
+                    },
+                    width: current_width,
+                });
+                current_width = 0.0;
+            }
+
+            current_font_id = Some(font_id);
+            current_text.push(ch);
+            current_glyphs.push(used.cid);
+            current_width += advance;
+            total_width += advance;
+        }
+
+        if let Some(font_id) = current_font_id {
+            spans.push(TextSpan {
+                text: current_text,
+                glyphs: current_glyphs,
+                style: TextPaintStyle {
+                    font_id,
+                    size: style.size,
+                    color: style.color,
+                },
+                width: current_width,
+            });
+        }
+
+        Ok(ShapedToken {
+            spans,
+            width: total_width,
+        })
+    }
+
+    fn resolve_base_faces(&mut self, request: &PdfFontRequest) -> crate::Result<Vec<usize>> {
+        if let Some(cached) = self.request_cache.get(request) {
+            return Ok(cached.clone());
+        }
+
+        let mut faces = Vec::new();
+        for family in base_font_family_candidates(&request.family) {
+            if let Some(font_id) = self.resolve_face_by_family(&family, request.font) {
+                if !faces.contains(&font_id) {
+                    faces.push(font_id);
+                }
+            }
+        }
+
+        if faces.is_empty() {
+            return Err(crate::DocxError::parse(format!(
+                "could not find an embeddable TrueType font for '{}'",
+                request.family
+            )));
+        }
+
+        self.request_cache.insert(request.clone(), faces.clone());
+        Ok(faces)
+    }
+
+    fn resolve_face_for_char(
+        &mut self,
+        request: &PdfFontRequest,
+        base_faces: &[usize],
+        ch: char,
+    ) -> usize {
+        for &font_id in base_faces {
+            if self.faces[font_id].supports_char(ch) {
+                return font_id;
+            }
+        }
+
+        for &family in script_specific_fallback_families(ch) {
+            if let Some(font_id) = self.resolve_face_by_family(family, request.font) {
+                if self.faces[font_id].supports_char(ch) {
+                    return font_id;
+                }
+            }
+        }
+
+        base_faces[0]
+    }
+
+    fn resolve_face_by_family(&mut self, family: &str, font: PdfFont) -> Option<usize> {
+        let request = PdfFontRequest::new(family, font);
+        if let Some(cached) = self.family_cache.get(&request) {
+            return *cached;
+        }
+
+        let families = [FontFamily::Name(family)];
+        let query = FontQuery {
+            families: &families,
+            weight: font.fontdb_weight(),
+            stretch: fontdb::Stretch::Normal,
+            style: font.fontdb_style(),
+        };
+
+        let resolved = self
+            .db
+            .query(&query)
+            .and_then(|db_id| self.load_face(db_id, font));
+        self.family_cache.insert(request, resolved);
+        resolved
+    }
+
+    fn load_face(&mut self, db_id: fontdb::ID, font: PdfFont) -> Option<usize> {
+        if let Some(&cached) = self.face_cache.get(&(db_id, font)) {
+            return Some(cached);
+        }
+
+        let resource_index = self.faces.len();
+        let face = ResolvedPdfFace::load(self.db, db_id, font, self.settings, resource_index)?;
+        self.faces.push(face);
+        self.face_cache.insert((db_id, font), resource_index);
+        Some(resource_index)
+    }
+}
+
+struct ResolvedPdfFace {
+    family_name: String,
+    base_font_name: String,
+    type0_font_name: String,
+    cmap_name: String,
+    resource_name: String,
+    font_bytes: Vec<u8>,
+    face_index: u32,
+    units_per_em: f32,
+    width_bias: f32,
+    default_width: f32,
+    missing_width: f32,
+    missing_width_units: u16,
+    avg_width: f32,
+    max_width: f32,
+    bbox: Rect,
+    ascent: f32,
+    descent: f32,
+    cap_height: f32,
+    italic_angle: f32,
+    font_flags: FontFlags,
+    stem_v: f32,
+    used_chars: BTreeMap<char, UsedCharacter>,
+    next_cid: u16,
+}
+
+impl ResolvedPdfFace {
+    fn load(
+        db: &FontDatabase,
+        db_id: fontdb::ID,
+        font: PdfFont,
+        settings: PdfRenderSettings,
+        resource_index: usize,
+    ) -> Option<Self> {
+        let info = db.face(db_id)?;
+        let family_name = info
+            .families
+            .first()
+            .map(|(family, _)| family.clone())
+            .unwrap_or_else(|| "Rusdox Sans".to_string());
+        let post_script_name = if info.post_script_name.is_empty() {
+            family_name.clone()
+        } else {
+            info.post_script_name.clone()
+        };
+
+        db.with_face_data(db_id, |font_data, face_index| {
+            if !supports_embedded_truetype(font_data) {
+                return None;
+            }
+
+            let face = ttf_parser::Face::parse(font_data, face_index).ok()?;
+            if matches!(
+                face.permissions(),
+                Some(ttf_parser::Permissions::Restricted)
+            ) {
+                return None;
+            }
+
+            let units_per_em = f32::from(face.units_per_em());
+            let missing_width_units = face
+                .glyph_hor_advance(ttf_parser::GlyphId(0))
+                .or_else(|| {
+                    face.glyph_index(' ')
+                        .and_then(|glyph_id| face.glyph_hor_advance(glyph_id))
+                })
+                .unwrap_or(face.units_per_em() / 2);
+            let width_bias = font.width_bias(settings);
+            let default_width =
+                scale_font_units(f32::from(missing_width_units), units_per_em) * width_bias;
+            let bbox = face.global_bounding_box();
+            let bbox = Rect::new(
+                scale_font_units(f32::from(bbox.x_min), units_per_em),
+                scale_font_units(f32::from(bbox.y_min), units_per_em),
+                scale_font_units(f32::from(bbox.x_max), units_per_em),
+                scale_font_units(f32::from(bbox.y_max), units_per_em),
+            );
+            let cap_height = scale_font_units(
+                f32::from(face.capital_height().unwrap_or(face.ascender())),
+                units_per_em,
+            );
+            let ascent = scale_font_units(f32::from(face.ascender()), units_per_em);
+            let descent = scale_font_units(f32::from(face.descender()), units_per_em);
+            let bbox_width = (bbox.x2 - bbox.x1).abs().max(default_width);
+
+            let mut font_flags = FontFlags::SYMBOLIC;
+            if face.is_monospaced() {
+                font_flags |= FontFlags::FIXED_PITCH;
+            }
+            if face.italic_angle() != 0.0 || face.is_italic() {
+                font_flags |= FontFlags::ITALIC;
+            }
+            if face.is_bold() {
+                font_flags |= FontFlags::FORCE_BOLD;
+            }
+
+            Some(Self {
+                family_name,
+                base_font_name: sanitize_pdf_name_component(&post_script_name),
+                type0_font_name: format!(
+                    "{}-Identity-H",
+                    sanitize_pdf_name_component(&post_script_name)
+                ),
+                cmap_name: format!("{}-UTF16", sanitize_pdf_name_component(&post_script_name)),
+                resource_name: format!("F{}", resource_index + 1),
+                font_bytes: font_data.to_vec(),
+                face_index,
+                units_per_em,
+                width_bias,
+                default_width,
+                missing_width: default_width,
+                missing_width_units,
+                avg_width: default_width,
+                max_width: bbox_width,
+                bbox,
+                ascent,
+                descent,
+                cap_height,
+                italic_angle: face.italic_angle(),
+                font_flags,
+                stem_v: if face.is_bold() { 120.0 } else { 80.0 },
+                used_chars: BTreeMap::new(),
+                next_cid: 1,
+            })
+        })?
+    }
+
+    fn is_used(&self) -> bool {
+        !self.used_chars.is_empty()
+    }
+
+    fn supports_char(&self, ch: char) -> bool {
+        self.lookup_glyph(ch).is_some()
+    }
+
+    fn ensure_char(&mut self, ch: char) -> UsedCharacter {
+        if let Some(&used) = self.used_chars.get(&ch) {
+            return used;
+        }
+
+        let (glyph_id, advance_units) = self
+            .lookup_glyph(ch)
+            .unwrap_or((0, self.missing_width_units));
+        let used = UsedCharacter {
+            cid: self.next_cid,
+            glyph_id,
+            pdf_width: scale_font_units(f32::from(advance_units), self.units_per_em)
+                * self.width_bias,
+        };
+        self.next_cid = self.next_cid.saturating_add(1);
+        self.used_chars.insert(ch, used);
+        self.avg_width = self.avg_width.max(used.pdf_width);
+        self.max_width = self.max_width.max(used.pdf_width);
+        used
+    }
+
+    fn advance_points(&self, used: UsedCharacter, size: f32) -> f32 {
+        (used.pdf_width * size) / 1000.0
+    }
+
+    fn cid_to_gid_map_data(&self) -> Vec<u8> {
+        let max_cid = self
+            .used_chars
+            .values()
+            .map(|used| used.cid)
+            .max()
+            .unwrap_or(0);
+        let mut data = vec![0; (usize::from(max_cid) + 1) * 2];
+        for used in self.used_chars.values() {
+            let index = usize::from(used.cid) * 2;
+            data[index] = (used.glyph_id >> 8) as u8;
+            data[index + 1] = (used.glyph_id & 0x00FF) as u8;
+        }
+        data
+    }
+
+    fn ordered_used_chars(&self) -> Vec<(char, UsedCharacter)> {
+        let mut characters = self
+            .used_chars
+            .iter()
+            .map(|(&ch, &used)| (ch, used))
+            .collect::<Vec<_>>();
+        characters.sort_by_key(|(_, used)| used.cid);
+        characters
+    }
+
+    fn lookup_glyph(&self, ch: char) -> Option<(u16, u16)> {
+        let face = ttf_parser::Face::parse(&self.font_bytes, self.face_index).ok()?;
+        let glyph_id = face.glyph_index(ch)?;
+        let advance_units = face
+            .glyph_hor_advance(glyph_id)
+            .unwrap_or(self.missing_width_units);
+        Some((glyph_id.0, advance_units))
+    }
+}
+
+#[derive(Clone, Copy)]
+struct PdfFaceObjectIds {
+    type0_id: Ref,
+    cid_font_id: Ref,
+    font_descriptor_id: Ref,
+    font_file_id: Ref,
+    to_unicode_id: Ref,
+    cid_to_gid_map_id: Ref,
+}
+
 fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> crate::Result<()> {
     let settings = PdfRenderSettings::from_config(config);
-    let pages = layout_document(document, settings);
+    let mut font_system = PdfFontSystem::new(config, settings);
+    let pages = layout_document(document, settings, &mut font_system)?;
     let catalog_id = Ref::new(1);
     let page_tree_id = Ref::new(2);
     let mut next_id = 3;
@@ -1077,6 +1555,21 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
         next_id += 1;
     }
 
+    let used_face_ids = font_system.used_face_ids();
+    let mut font_object_ids = HashMap::new();
+    for &face_id in &used_face_ids {
+        let object_ids = PdfFaceObjectIds {
+            type0_id: Ref::new(next_id),
+            cid_font_id: Ref::new(next_id + 1),
+            font_descriptor_id: Ref::new(next_id + 2),
+            font_file_id: Ref::new(next_id + 3),
+            to_unicode_id: Ref::new(next_id + 4),
+            cid_to_gid_map_id: Ref::new(next_id + 5),
+        };
+        next_id += 6;
+        font_object_ids.insert(face_id, object_ids);
+    }
+
     let estimated_capacity = pages
         .iter()
         .map(|page| page.ops.len() * 96)
@@ -1088,8 +1581,63 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
         .kids(page_ids.iter().copied())
         .count(i32::try_from(page_ids.len()).unwrap_or(i32::MAX));
 
+    for &face_id in &used_face_ids {
+        let face = font_system.face(face_id);
+        let object_ids = font_object_ids[&face_id];
+        let cid_to_gid_map = face.cid_to_gid_map_data();
+        let unicode_cmap_bytes = {
+            let mut cmap = UnicodeCmap::new(Name(face.cmap_name.as_bytes()), PDF_FONT_SYSTEM_INFO);
+            for (ch, used) in face.ordered_used_chars() {
+                cmap.pair(used.cid, ch);
+            }
+            cmap.finish().into_vec()
+        };
+
+        pdf.stream(object_ids.font_file_id, &face.font_bytes);
+        pdf.stream(object_ids.cid_to_gid_map_id, &cid_to_gid_map);
+        pdf.cmap(object_ids.to_unicode_id, &unicode_cmap_bytes)
+            .name(Name(face.cmap_name.as_bytes()))
+            .system_info(PDF_FONT_SYSTEM_INFO);
+
+        pdf.font_descriptor(object_ids.font_descriptor_id)
+            .name(Name(face.base_font_name.as_bytes()))
+            .family(Str(face.family_name.as_bytes()))
+            .flags(FontFlags::from_bits_retain(face.font_flags.bits()))
+            .bbox(face.bbox)
+            .italic_angle(face.italic_angle)
+            .ascent(face.ascent)
+            .descent(face.descent)
+            .cap_height(face.cap_height)
+            .stem_v(face.stem_v)
+            .avg_width(face.avg_width)
+            .max_width(face.max_width)
+            .missing_width(face.missing_width)
+            .font_file2(object_ids.font_file_id);
+
+        {
+            let mut cid_font = pdf.cid_font(object_ids.cid_font_id);
+            cid_font
+                .subtype(CidFontType::Type2)
+                .base_font(Name(face.base_font_name.as_bytes()))
+                .system_info(PDF_FONT_SYSTEM_INFO)
+                .font_descriptor(object_ids.font_descriptor_id)
+                .default_width(face.default_width)
+                .cid_to_gid_map_stream(object_ids.cid_to_gid_map_id);
+            let mut widths = cid_font.widths();
+            for (_, used) in face.ordered_used_chars() {
+                widths.consecutive(used.cid, [used.pdf_width]);
+            }
+        }
+
+        pdf.type0_font(object_ids.type0_id)
+            .base_font(Name(face.type0_font_name.as_bytes()))
+            .encoding_predefined(Name(b"Identity-H"))
+            .descendant_font(object_ids.cid_font_id)
+            .to_unicode(object_ids.to_unicode_id);
+    }
+
     for ((page, page_id), content_id) in pages.iter().zip(&page_ids).zip(&content_ids) {
-        let content = render_page_content(page, settings);
+        let content = render_page_content(page, settings, &font_system);
         pdf.stream(*content_id, &content);
 
         let mut page_writer = pdf.page(*page_id);
@@ -1105,16 +1653,12 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
 
         let mut resources = page_writer.resources();
         let mut fonts = resources.fonts();
-        for font in [
-            PdfFont::Regular,
-            PdfFont::Bold,
-            PdfFont::Oblique,
-            PdfFont::BoldOblique,
-        ] {
-            fonts
-                .insert(font.resource_name())
-                .start::<pdf_writer::writers::Type1Font>()
-                .base_font(font.base_font_name());
+        for &face_id in &used_face_ids {
+            let face = font_system.face(face_id);
+            fonts.pair(
+                Name(face.resource_name.as_bytes()),
+                font_object_ids[&face_id].type0_id,
+            );
         }
     }
 
@@ -1122,28 +1666,41 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
     Ok(())
 }
 
-fn layout_document(document: &Document, settings: PdfRenderSettings) -> Vec<Page> {
+fn layout_document(
+    document: &Document,
+    settings: PdfRenderSettings,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<Vec<Page>> {
     let mut layout = PdfLayout::new(settings);
 
     for block in document.blocks() {
         match block {
             DocumentBlockRef::Paragraph(paragraph) => {
-                layout_paragraph_block(&mut layout, paragraph)
+                layout_paragraph_block(&mut layout, paragraph, font_system)?
             }
-            DocumentBlockRef::Table(table) => layout_table_block(&mut layout, table),
+            DocumentBlockRef::Table(table) => layout_table_block(&mut layout, table, font_system)?,
         }
     }
 
-    layout.pages
+    Ok(layout.pages)
 }
 
-fn layout_paragraph_block(layout: &mut PdfLayout, paragraph: &Paragraph) {
+fn layout_paragraph_block(
+    layout: &mut PdfLayout,
+    paragraph: &Paragraph,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<()> {
     if paragraph.has_page_break_before() && layout.cursor_y > layout.settings.margin_top {
         layout.push_page();
     }
 
     layout.cursor_y += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
-    let lines = layout_paragraph_lines(paragraph, layout.settings.content_width, layout.settings);
+    let lines = layout_paragraph_lines(
+        paragraph,
+        layout.settings.content_width,
+        layout.settings,
+        font_system,
+    )?;
 
     if lines.is_empty() {
         layout.ensure_space(layout.settings.default_line_height);
@@ -1164,9 +1721,14 @@ fn layout_paragraph_block(layout: &mut PdfLayout, paragraph: &Paragraph) {
     }
 
     layout.cursor_y += twips_to_points(paragraph.spacing_after_value().unwrap_or(0));
+    Ok(())
 }
 
-fn layout_table_block(layout: &mut PdfLayout, table: &Table) {
+fn layout_table_block(
+    layout: &mut PdfLayout,
+    table: &Table,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<()> {
     let total_width = table
         .properties()
         .width
@@ -1175,7 +1737,7 @@ fn layout_table_block(layout: &mut PdfLayout, table: &Table) {
         .min(layout.settings.content_width);
 
     for row in table.rows() {
-        let row_layout = layout_row(row, total_width, layout.settings);
+        let row_layout = layout_row(row, total_width, layout.settings, font_system)?;
         layout.ensure_space(row_layout.height);
         let y_top = layout.cursor_y;
 
@@ -1208,6 +1770,7 @@ fn layout_table_block(layout: &mut PdfLayout, table: &Table) {
     }
 
     layout.cursor_y += layout.settings.table_after_spacing;
+    Ok(())
 }
 
 struct RowLayout {
@@ -1227,7 +1790,12 @@ struct CellLine {
     layout: LineLayout,
 }
 
-fn layout_row(row: &TableRow, total_width: f32, settings: PdfRenderSettings) -> RowLayout {
+fn layout_row(
+    row: &TableRow,
+    total_width: f32,
+    settings: PdfRenderSettings,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<RowLayout> {
     let cell_count = row.cells().len().max(1) as f32;
     let fallback_width = total_width / cell_count;
     let mut x_offset = 0.0;
@@ -1246,7 +1814,8 @@ fn layout_row(row: &TableRow, total_width: f32, settings: PdfRenderSettings) -> 
 
         for paragraph in cell.paragraphs() {
             y_offset += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
-            let paragraph_lines = layout_paragraph_lines(paragraph, content_width, settings);
+            let paragraph_lines =
+                layout_paragraph_lines(paragraph, content_width, settings, font_system)?;
             if paragraph_lines.is_empty() {
                 y_offset += settings.default_line_height;
             } else {
@@ -1277,17 +1846,18 @@ fn layout_row(row: &TableRow, total_width: f32, settings: PdfRenderSettings) -> 
         x_offset += width;
     }
 
-    RowLayout {
+    Ok(RowLayout {
         cells,
         height: row_height.max(MIN_CONTENT_WIDTH),
-    }
+    })
 }
 
 fn layout_paragraph_lines(
     paragraph: &Paragraph,
     max_width: f32,
     settings: PdfRenderSettings,
-) -> Vec<LineLayout> {
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<Vec<LineLayout>> {
     let alignment = paragraph
         .alignment()
         .cloned()
@@ -1298,7 +1868,7 @@ fn layout_paragraph_lines(
     let mut current_line_height = settings.default_line_height;
 
     for run in paragraph.runs() {
-        let style = style_from_run(run, settings);
+        let style = style_from_run(run, settings, font_system.default_family());
         for token in tokenize(run.text()) {
             if token == "\n" {
                 flush_line(
@@ -1316,13 +1886,12 @@ fn layout_paragraph_lines(
                 continue;
             }
 
-            let sanitized = sanitize_text(&token);
-            if sanitized.is_empty() {
+            let shaped = font_system.shape_text(&style, &token)?;
+            if shaped.spans.is_empty() {
                 continue;
             }
-            let width = estimate_text_width(style.font, style.size, &sanitized, settings);
 
-            if current_width + width > max_width
+            if current_width + shaped.width > max_width
                 && !current_spans.is_empty()
                 && !token.trim().is_empty()
             {
@@ -1336,18 +1905,16 @@ fn layout_paragraph_lines(
                 );
             }
 
-            if sanitized.trim().is_empty() && current_spans.is_empty() {
+            if shaped.spans.iter().all(|span| span.text.trim().is_empty())
+                && current_spans.is_empty()
+            {
                 continue;
             }
 
             current_line_height =
                 current_line_height.max(settings.effective_line_height(style.size));
-            current_width += width;
-            current_spans.push(TextSpan {
-                text: sanitized,
-                style,
-                width,
-            });
+            current_width += shaped.width;
+            current_spans.extend(shaped.spans);
         }
     }
 
@@ -1360,7 +1927,7 @@ fn layout_paragraph_lines(
         settings.default_line_height,
     );
 
-    lines
+    Ok(lines)
 }
 
 fn flush_line(
@@ -1426,7 +1993,11 @@ fn tokenize(text: &str) -> Vec<String> {
     tokens
 }
 
-fn style_from_run(run: &Run, settings: PdfRenderSettings) -> TextStyle {
+fn style_from_run(
+    run: &Run,
+    settings: PdfRenderSettings,
+    default_family: &str,
+) -> RequestedTextStyle {
     let properties = run.properties();
     let font = match (properties.bold, properties.italic) {
         (true, true) => PdfFont::BoldOblique,
@@ -1435,8 +2006,16 @@ fn style_from_run(run: &Run, settings: PdfRenderSettings) -> TextStyle {
         (false, false) => PdfFont::Regular,
     };
 
-    TextStyle {
-        font,
+    RequestedTextStyle {
+        font_request: PdfFontRequest::new(
+            properties
+                .font_family
+                .as_deref()
+                .map(str::trim)
+                .filter(|family| !family.is_empty())
+                .unwrap_or(default_family),
+            font,
+        ),
         size: properties
             .font_size
             .map(|value| f32::from(value) / 2.0)
@@ -1499,37 +2078,120 @@ fn parse_hex_color(value: &str) -> Option<Rgb> {
     Some(Rgb(red, green, blue))
 }
 
-fn sanitize_text(text: &str) -> String {
+fn normalize_pdf_text(text: &str) -> String {
     text.chars()
-        .map(|ch| match ch {
-            '•' => '-',
-            '\u{00A0}' => ' ',
-            ch if (ch as u32) <= 0x00FF => ch,
-            _ => '?',
+        .filter_map(|ch| match ch {
+            '\r' => None,
+            '\u{00A0}' => Some(' '),
+            ch if ch.is_control() && ch != '\n' && ch != '\t' => None,
+            _ => Some(ch),
         })
         .collect()
 }
 
-fn estimate_text_width(font: PdfFont, size: f32, text: &str, settings: PdfRenderSettings) -> f32 {
-    let font_bias = match font {
-        PdfFont::Regular | PdfFont::Oblique => settings.text_width_bias_regular,
-        PdfFont::Bold | PdfFont::BoldOblique => settings.text_width_bias_bold,
-    };
+fn scale_font_units(value: f32, units_per_em: f32) -> f32 {
+    if units_per_em <= 0.0 {
+        value
+    } else {
+        value * (1000.0 / units_per_em)
+    }
+}
 
-    let units = text
-        .chars()
-        .map(|ch| match ch {
-            'i' | 'j' | 'l' | '!' | '\'' | ',' | '.' | ':' | ';' | '|' => 0.28,
-            'f' | 'r' | 't' | '(' | ')' | '[' | ']' => 0.34,
-            ' ' => 0.28,
-            'm' | 'w' | 'M' | 'W' | '@' | '#' | '%' => 0.88,
-            'A'..='Z' => 0.66,
-            '0'..='9' => 0.56,
-            _ => 0.54,
-        })
-        .sum::<f32>();
+fn supports_embedded_truetype(font_data: &[u8]) -> bool {
+    matches!(font_data.get(0..4), Some(b"\0\x01\0\0") | Some(b"true"))
+        && ttf_parser::fonts_in_collection(font_data).unwrap_or(1) == 1
+}
 
-    units * size * font_bias
+fn system_font_db() -> &'static FontDatabase {
+    static DB: OnceLock<FontDatabase> = OnceLock::new();
+    DB.get_or_init(|| {
+        let mut db = FontDatabase::new();
+        db.load_system_fonts();
+        db
+    })
+}
+
+fn sanitize_pdf_name_component(value: &str) -> String {
+    let mut sanitized = String::new();
+    for ch in value.chars() {
+        if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '+') {
+            sanitized.push(ch);
+        } else if !sanitized.ends_with('-') {
+            sanitized.push('-');
+        }
+    }
+    let trimmed = sanitized.trim_matches('-');
+    if trimmed.is_empty() {
+        "RusdoxFont".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn split_font_family_list(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|family| !family.is_empty())
+        .map(|family| family.trim_matches('"').trim_matches('\'').to_string())
+        .collect()
+}
+
+fn base_font_family_candidates(requested_family: &str) -> Vec<String> {
+    let mut candidates = Vec::new();
+    for family in split_font_family_list(requested_family) {
+        push_font_family_candidate(&mut candidates, &family);
+        match family.to_ascii_lowercase().as_str() {
+            "sans-serif" | "sans serif" => {
+                for fallback in PDF_SANS_FALLBACKS {
+                    push_font_family_candidate(&mut candidates, fallback);
+                }
+            }
+            "serif" => {
+                for fallback in PDF_SERIF_FALLBACKS {
+                    push_font_family_candidate(&mut candidates, fallback);
+                }
+            }
+            "monospace" => {
+                for fallback in PDF_MONO_FALLBACKS {
+                    push_font_family_candidate(&mut candidates, fallback);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    for fallback in PDF_SANS_FALLBACKS {
+        push_font_family_candidate(&mut candidates, fallback);
+    }
+
+    candidates
+}
+
+fn push_font_family_candidate(candidates: &mut Vec<String>, family: &str) {
+    let trimmed = family.trim();
+    if trimmed.is_empty() {
+        return;
+    }
+    if !candidates.iter().any(|candidate| candidate == trimmed) {
+        candidates.push(trimmed.to_string());
+    }
+}
+
+fn script_specific_fallback_families(ch: char) -> &'static [&'static str] {
+    match ch as u32 {
+        0x0590..=0x05FF => PDF_HEBREW_FALLBACKS,
+        0x0600..=0x06FF | 0x0750..=0x077F | 0x08A0..=0x08FF => PDF_ARABIC_FALLBACKS,
+        0x0900..=0x097F => PDF_DEVANAGARI_FALLBACKS,
+        0x1100..=0x11FF
+        | 0x2E80..=0xA4CF
+        | 0xAC00..=0xD7AF
+        | 0xF900..=0xFAFF
+        | 0xFE30..=0xFE4F
+        | 0xFF00..=0xFFEF
+        | 0x20000..=0x2FA1F => PDF_CJK_FALLBACKS,
+        _ => PDF_SANS_FALLBACKS,
+    }
 }
 
 struct PdfContentWriter {
@@ -1593,7 +2255,14 @@ impl PdfContentWriter {
         }
     }
 
-    fn draw_line(&mut self, x: f32, y_top: f32, line: &LineLayout, max_width: f32) {
+    fn draw_line(
+        &mut self,
+        x: f32,
+        y_top: f32,
+        line: &LineLayout,
+        max_width: f32,
+        font_system: &PdfFontSystem,
+    ) {
         if line.spans.is_empty() {
             return;
         }
@@ -1610,11 +2279,15 @@ impl PdfContentWriter {
 
         self.buffer.extend_from_slice(b"BT\n");
         for span in &line.spans {
-            let font_key = (span.style.font, span.style.size.to_bits());
+            let font_key = (span.style.font_id, span.style.size.to_bits());
             if current_font != Some(font_key) {
                 self.buffer.push(b'/');
-                self.buffer
-                    .extend_from_slice(span.style.font.resource_name().0);
+                self.buffer.extend_from_slice(
+                    font_system
+                        .face(span.style.font_id)
+                        .resource_name
+                        .as_bytes(),
+                );
                 self.buffer.push(b' ');
                 self.push_f32(span.style.size);
                 self.buffer.extend_from_slice(b" Tf\n");
@@ -1630,9 +2303,9 @@ impl PdfContentWriter {
             self.push_f32(cursor_x);
             self.buffer.push(b' ');
             self.push_f32(baseline_y);
-            self.buffer.extend_from_slice(b" Tm\n(");
-            self.push_pdf_text(&span.text);
-            self.buffer.extend_from_slice(b") Tj\n");
+            self.buffer.extend_from_slice(b" Tm\n");
+            self.push_pdf_glyphs(&span.glyphs);
+            self.buffer.extend_from_slice(b" Tj\n");
 
             cursor_x += span.width;
         }
@@ -1685,22 +2358,28 @@ impl PdfContentWriter {
         }
     }
 
-    fn push_pdf_text(&mut self, text: &str) {
-        for byte in text.bytes() {
-            match byte {
-                b'(' | b')' | b'\\' => {
-                    self.buffer.push(b'\\');
-                    self.buffer.push(byte);
-                }
-                b'\r' => {}
-                b'\n' => self.buffer.extend_from_slice(br"\n"),
-                _ => self.buffer.push(byte),
-            }
+    fn push_pdf_glyphs(&mut self, glyphs: &[u16]) {
+        self.buffer.push(b'<');
+        for &glyph in glyphs {
+            self.push_hex_u16(glyph);
         }
+        self.buffer.push(b'>');
+    }
+
+    fn push_hex_u16(&mut self, value: u16) {
+        const HEX: &[u8; 16] = b"0123456789ABCDEF";
+        self.buffer.push(HEX[((value >> 12) & 0x0F) as usize]);
+        self.buffer.push(HEX[((value >> 8) & 0x0F) as usize]);
+        self.buffer.push(HEX[((value >> 4) & 0x0F) as usize]);
+        self.buffer.push(HEX[(value & 0x0F) as usize]);
     }
 }
 
-fn render_page_content(page: &Page, settings: PdfRenderSettings) -> Vec<u8> {
+fn render_page_content(
+    page: &Page,
+    settings: PdfRenderSettings,
+    font_system: &PdfFontSystem,
+) -> Vec<u8> {
     let mut writer = PdfContentWriter::with_capacity(page.ops.len() * 96, settings);
 
     for op in &page.ops {
@@ -1710,7 +2389,7 @@ fn render_page_content(page: &Page, settings: PdfRenderSettings) -> Vec<u8> {
                 y_top,
                 line,
                 max_width,
-            } => writer.draw_line(*x, *y_top, line, *max_width),
+            } => writer.draw_line(*x, *y_top, line, *max_width, font_system),
             DrawOp::Rect {
                 x,
                 y_top,
@@ -1727,17 +2406,19 @@ fn render_page_content(page: &Page, settings: PdfRenderSettings) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
     use std::{fs, path::PathBuf};
 
     use tempfile::tempdir;
 
     use super::{
-        clamp_u32_to_u16, estimate_text_width, layout_paragraph_lines, layout_row, parse_hex_color,
-        points_to_u16, sanitize_text, style_from_run, tokenize, PdfFont, PdfRenderSettings, Rgb,
-        Studio, DEFAULT_BASELINE_FACTOR, DEFAULT_LINE_HEIGHT, DEFAULT_LINE_HEIGHT_MULTIPLIER,
-        DEFAULT_TABLE_AFTER_SPACING, DEFAULT_TABLE_GRID_STROKE_WIDTH, DEFAULT_TABLE_ROW_PADDING_X,
-        DEFAULT_TABLE_ROW_PADDING_Y, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_WIDTH_BIAS_BOLD,
-        DEFAULT_TEXT_WIDTH_BIAS_REGULAR, MIN_CONTENT_WIDTH,
+        clamp_u32_to_u16, layout_paragraph_lines, layout_row, normalize_pdf_text, parse_hex_color,
+        points_to_u16, style_from_run, tokenize, PdfFont, PdfFontRequest, PdfFontSystem,
+        PdfRenderSettings, RequestedTextStyle, Rgb, Studio, DEFAULT_BASELINE_FACTOR,
+        DEFAULT_LINE_HEIGHT, DEFAULT_LINE_HEIGHT_MULTIPLIER, DEFAULT_TABLE_AFTER_SPACING,
+        DEFAULT_TABLE_GRID_STROKE_WIDTH, DEFAULT_TABLE_ROW_PADDING_X, DEFAULT_TABLE_ROW_PADDING_Y,
+        DEFAULT_TEXT_SIZE, DEFAULT_TEXT_WIDTH_BIAS_BOLD, DEFAULT_TEXT_WIDTH_BIAS_REGULAR,
+        MIN_CONTENT_WIDTH,
     };
     use crate::config::RusdoxConfig;
     use crate::spec::{
@@ -1747,6 +2428,26 @@ mod tests {
 
     fn default_pdf_settings() -> PdfRenderSettings {
         PdfRenderSettings::from_config(&RusdoxConfig::default())
+    }
+
+    fn pdf_font_system(config: &RusdoxConfig) -> PdfFontSystem {
+        PdfFontSystem::new(config, PdfRenderSettings::from_config(config))
+    }
+
+    fn default_text_style(config: &RusdoxConfig, font: PdfFont, size: f32) -> RequestedTextStyle {
+        RequestedTextStyle {
+            font_request: PdfFontRequest::new(config.typography.font_family.clone(), font),
+            size,
+            color: Rgb(15, 23, 42),
+        }
+    }
+
+    fn utf16_hex(text: &str) -> String {
+        let mut encoded = String::new();
+        for value in text.encode_utf16() {
+            let _ = write!(&mut encoded, "{value:04X}");
+        }
+        encoded
     }
 
     fn assert_close(actual: f32, expected: f32) {
@@ -1784,10 +2485,10 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_text_normalizes_special_chars() {
-        assert_eq!(sanitize_text("•\u{00A0}ok"), "- ok");
-        assert_eq!(sanitize_text("é"), "é");
-        assert_eq!(sanitize_text("🤖"), "?");
+    fn normalize_pdf_text_preserves_unicode_and_normalizes_spaces() {
+        assert_eq!(normalize_pdf_text("•\u{00A0}ok"), "• ok");
+        assert_eq!(normalize_pdf_text("Привет 你好"), "Привет 你好");
+        assert_eq!(normalize_pdf_text("line\rbreak"), "linebreak");
     }
 
     #[test]
@@ -1797,11 +2498,25 @@ mod tests {
     }
 
     #[test]
-    fn estimate_text_width_reflects_font_bias() {
-        let regular = estimate_text_width(PdfFont::Regular, 12.0, "Hello", default_pdf_settings());
-        let bold = estimate_text_width(PdfFont::Bold, 12.0, "Hello", default_pdf_settings());
-        assert!(regular > 0.0);
-        assert!(bold > regular);
+    fn pdf_font_system_shapes_unicode_without_ascii_degradation() {
+        let config = RusdoxConfig::default();
+        let style = default_text_style(&config, PdfFont::Regular, 12.0);
+        let mut font_system = pdf_font_system(&config);
+
+        let shaped = font_system
+            .shape_text(&style, "Привет 你好")
+            .expect("shape text");
+
+        assert!(shaped.width > 0.0);
+        assert_eq!(
+            shaped
+                .spans
+                .iter()
+                .map(|span| span.text.as_str())
+                .collect::<String>(),
+            "Привет 你好"
+        );
+        assert!(shaped.spans.iter().all(|span| !span.glyphs.is_empty()));
     }
 
     #[test]
@@ -1811,8 +2526,9 @@ mod tests {
             .italic()
             .size_points(18)
             .color("AABBCC");
-        let style = style_from_run(&run, default_pdf_settings());
-        assert!(style.font == PdfFont::BoldOblique);
+        let style = style_from_run(&run, default_pdf_settings(), "Arial");
+        assert!(style.font_request.font == PdfFont::BoldOblique);
+        assert_eq!(style.font_request.family, "Arial");
         assert_eq!(style.size, 18.0);
         assert!(style.color == Rgb(170, 187, 204));
     }
@@ -1861,17 +2577,28 @@ mod tests {
     }
 
     #[test]
-    fn estimate_text_width_uses_configured_bias_values() {
-        let mut config = RusdoxConfig::default();
-        config.pdf.text_width_bias_regular = 0.5;
-        config.pdf.text_width_bias_bold = 1.5;
-        let settings = PdfRenderSettings::from_config(&config);
+    fn pdf_font_system_uses_configured_bias_values() {
+        let mut narrow_config = RusdoxConfig::default();
+        narrow_config.pdf.text_width_bias_regular = 0.5;
+        let mut wide_config = narrow_config.clone();
+        wide_config.pdf.text_width_bias_regular = 1.5;
 
-        let regular = estimate_text_width(PdfFont::Regular, 10.0, "Hello", settings);
-        let bold = estimate_text_width(PdfFont::Bold, 10.0, "Hello", settings);
+        let style_narrow = default_text_style(&narrow_config, PdfFont::Regular, 10.0);
+        let style_wide = default_text_style(&wide_config, PdfFont::Regular, 10.0);
+        let mut narrow_fonts = pdf_font_system(&narrow_config);
+        let mut wide_fonts = pdf_font_system(&wide_config);
 
-        assert!(regular > 0.0);
-        assert_close(bold / regular, 3.0);
+        let narrow = narrow_fonts
+            .shape_text(&style_narrow, "Hello")
+            .expect("shape narrow")
+            .width;
+        let wide = wide_fonts
+            .shape_text(&style_wide, "Hello")
+            .expect("shape wide")
+            .width;
+
+        assert!(narrow > 0.0);
+        assert_close(wide / narrow, 3.0);
     }
 
     #[test]
@@ -2044,7 +2771,11 @@ mod tests {
         let paragraph = Paragraph::new().add_run(Run::from_text(
             "verylongword verylongword verylongword\nnext line",
         ));
-        let lines = layout_paragraph_lines(&paragraph, 120.0, default_pdf_settings());
+        let config = RusdoxConfig::default();
+        let mut font_system = pdf_font_system(&config);
+        let lines =
+            layout_paragraph_lines(&paragraph, 120.0, default_pdf_settings(), &mut font_system)
+                .expect("layout lines");
         assert!(lines.len() >= 2);
         assert!(lines.iter().all(|line| line.width > 0.0));
     }
@@ -2055,9 +2786,11 @@ mod tests {
         config.pdf.default_line_height_pt = 12.0;
         config.pdf.line_height_multiplier = 1.6;
         let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
 
         let paragraph = Paragraph::new().add_run(Run::from_text("Scaled").size_points(20));
-        let lines = layout_paragraph_lines(&paragraph, 400.0, settings);
+        let lines = layout_paragraph_lines(&paragraph, 400.0, settings, &mut font_system)
+            .expect("layout lines");
 
         assert_eq!(lines.len(), 1);
         assert_close(lines[0].line_height, 32.0);
@@ -2074,7 +2807,10 @@ mod tests {
             .add_cell(
                 TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("right"))),
             );
-        let layout = layout_row(&row, 400.0, default_pdf_settings());
+        let config = RusdoxConfig::default();
+        let mut font_system = pdf_font_system(&config);
+        let layout =
+            layout_row(&row, 400.0, default_pdf_settings(), &mut font_system).expect("layout row");
         assert_eq!(layout.cells.len(), 2);
         assert!(layout.cells[0].width < layout.cells[1].width);
         assert!(layout.height >= 24.0);
@@ -2086,11 +2822,12 @@ mod tests {
         config.table.pdf_cell_padding_x_pt = 12.0;
         config.table.pdf_cell_padding_y_pt = 10.0;
         let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
 
         let row = TableRow::new().add_cell(
             TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("left"))),
         );
-        let layout = layout_row(&row, 240.0, settings);
+        let layout = layout_row(&row, 240.0, settings, &mut font_system).expect("layout row");
 
         assert_eq!(layout.cells.len(), 1);
         assert_close(layout.cells[0].lines[0].y_offset, 10.0);
@@ -2241,5 +2978,62 @@ mod tests {
 
         assert!(pdf_text.contains("2.5 w"));
         assert!(pdf_text.contains("1 0 0 1 34 215 Tm"));
+    }
+
+    #[test]
+    fn save_with_pdf_stats_embeds_truetype_fonts_and_unicode_maps() {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("Привет مرحبا 你好")));
+        let docx_path = temp.path().join("docx/unicode.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/unicode.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf_text.contains("/Subtype /Type0"));
+        assert!(pdf_text.contains("/FontFile2"));
+        assert!(pdf_text.contains("/ToUnicode"));
+        assert!(pdf_text.contains("Identity-H"));
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("П"))));
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("م"))));
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("你"))));
+    }
+
+    #[test]
+    fn save_with_pdf_stats_uses_font_fallback_for_multiscript_text() {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        config.typography.font_family = "Liberation Sans".to_string();
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("Latin 你好")));
+        let docx_path = temp.path().join("docx/fallback.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/fallback.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf_text.matches("/FontFile2").count() >= 2);
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("你"))));
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("好"))));
     }
 }
