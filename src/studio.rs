@@ -26,17 +26,22 @@ use crate::{
 /// Default config file expected in the current working directory.
 pub const DEFAULT_CONFIG_FILE: &str = "rusdox.toml";
 
-const PAGE_WIDTH: f32 = 612.0;
-const PAGE_HEIGHT: f32 = 792.0;
-const PAGE_MARGIN_X: f32 = 54.0;
-const PAGE_MARGIN_TOP: f32 = 54.0;
-const PAGE_MARGIN_BOTTOM: f32 = 54.0;
-const CONTENT_WIDTH: f32 = PAGE_WIDTH - (PAGE_MARGIN_X * 2.0);
+const DEFAULT_PAGE_WIDTH: f32 = 612.0;
+const DEFAULT_PAGE_HEIGHT: f32 = 792.0;
+const DEFAULT_PAGE_MARGIN_X: f32 = 54.0;
+const DEFAULT_PAGE_MARGIN_TOP: f32 = 54.0;
+const DEFAULT_PAGE_MARGIN_BOTTOM: f32 = 54.0;
 const DEFAULT_TEXT_SIZE: f32 = 11.0;
 const DEFAULT_LINE_HEIGHT: f32 = 14.0;
-const TABLE_ROW_PADDING_X: f32 = 7.0;
-const TABLE_ROW_PADDING_Y: f32 = 6.0;
-const TABLE_AFTER_SPACING: f32 = 12.0;
+const DEFAULT_LINE_HEIGHT_MULTIPLIER: f32 = 1.35;
+const DEFAULT_BASELINE_FACTOR: f32 = 0.82;
+const DEFAULT_TEXT_WIDTH_BIAS_REGULAR: f32 = 1.0;
+const DEFAULT_TEXT_WIDTH_BIAS_BOLD: f32 = 1.03;
+const DEFAULT_TABLE_ROW_PADDING_X: f32 = 7.0;
+const DEFAULT_TABLE_ROW_PADDING_Y: f32 = 6.0;
+const DEFAULT_TABLE_AFTER_SPACING: f32 = 12.0;
+const DEFAULT_TABLE_GRID_STROKE_WIDTH: f32 = 0.75;
+const MIN_CONTENT_WIDTH: f32 = 24.0;
 
 /// Timings and output sizes captured while writing a companion DOCX and PDF.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -179,7 +184,7 @@ impl Studio {
             let mut pdf_path = rendered_dir.join(stem);
             pdf_path.set_extension("pdf");
             let pdf_start = Instant::now();
-            render_pdf(document, &pdf_path)?;
+            render_pdf(document, &pdf_path, &self.config)?;
             pdf_render = pdf_start.elapsed();
             pdf_bytes = fs::metadata(&pdf_path)?.len();
             println!("{}", docx_path.display());
@@ -848,8 +853,101 @@ fn output_stem(path: &Path) -> crate::Result<&str> {
         .ok_or_else(|| crate::DocxError::parse("invalid output file name"))
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Rgb(u8, u8, u8);
+
+#[derive(Clone, Copy)]
+struct PdfRenderSettings {
+    page_width: f32,
+    page_height: f32,
+    margin_x: f32,
+    margin_top: f32,
+    margin_bottom: f32,
+    content_width: f32,
+    default_text_size: f32,
+    default_line_height: f32,
+    line_height_multiplier: f32,
+    baseline_factor: f32,
+    text_width_bias_regular: f32,
+    text_width_bias_bold: f32,
+    table_cell_padding_x: f32,
+    table_cell_padding_y: f32,
+    table_after_spacing: f32,
+    table_grid_stroke_width: f32,
+    table_grid_stroke_color: Rgb,
+    default_text_color: Rgb,
+}
+
+impl PdfRenderSettings {
+    fn from_config(config: &RusdoxConfig) -> Self {
+        let default_text_size =
+            normalize_positive(config.pdf.default_text_size_pt, DEFAULT_TEXT_SIZE);
+        let default_line_height =
+            normalize_positive(config.pdf.default_line_height_pt, DEFAULT_LINE_HEIGHT);
+        let page_width =
+            normalize_positive(config.pdf.page_width_pt, DEFAULT_PAGE_WIDTH).max(MIN_CONTENT_WIDTH);
+        let page_height = normalize_positive(config.pdf.page_height_pt, DEFAULT_PAGE_HEIGHT)
+            .max(default_line_height);
+        let margin_x = normalize_non_negative(config.pdf.margin_x_pt, DEFAULT_PAGE_MARGIN_X)
+            .min(((page_width - MIN_CONTENT_WIDTH).max(0.0)) / 2.0);
+        let margin_top = normalize_non_negative(config.pdf.margin_top_pt, DEFAULT_PAGE_MARGIN_TOP)
+            .min((page_height - default_line_height).max(0.0));
+        let margin_bottom =
+            normalize_non_negative(config.pdf.margin_bottom_pt, DEFAULT_PAGE_MARGIN_BOTTOM)
+                .min((page_height - margin_top - default_line_height).max(0.0));
+
+        Self {
+            page_width,
+            page_height,
+            margin_x,
+            margin_top,
+            margin_bottom,
+            content_width: (page_width - (margin_x * 2.0)).max(MIN_CONTENT_WIDTH),
+            default_text_size,
+            default_line_height,
+            line_height_multiplier: normalize_positive(
+                config.pdf.line_height_multiplier,
+                DEFAULT_LINE_HEIGHT_MULTIPLIER,
+            ),
+            baseline_factor: normalize_positive(
+                config.pdf.baseline_factor,
+                DEFAULT_BASELINE_FACTOR,
+            ),
+            text_width_bias_regular: normalize_positive(
+                config.pdf.text_width_bias_regular,
+                DEFAULT_TEXT_WIDTH_BIAS_REGULAR,
+            ),
+            text_width_bias_bold: normalize_positive(
+                config.pdf.text_width_bias_bold,
+                DEFAULT_TEXT_WIDTH_BIAS_BOLD,
+            ),
+            table_cell_padding_x: normalize_non_negative(
+                config.table.pdf_cell_padding_x_pt,
+                DEFAULT_TABLE_ROW_PADDING_X,
+            ),
+            table_cell_padding_y: normalize_non_negative(
+                config.table.pdf_cell_padding_y_pt,
+                DEFAULT_TABLE_ROW_PADDING_Y,
+            ),
+            table_after_spacing: normalize_non_negative(
+                config.table.pdf_after_spacing_pt,
+                DEFAULT_TABLE_AFTER_SPACING,
+            ),
+            table_grid_stroke_width: normalize_non_negative(
+                config.table.pdf_grid_stroke_width_pt,
+                DEFAULT_TABLE_GRID_STROKE_WIDTH,
+            ),
+            table_grid_stroke_color: parse_hex_color(&config.colors.table_border)
+                .unwrap_or(Rgb(203, 213, 225)),
+            default_text_color: parse_hex_color(&config.colors.ink).unwrap_or(Rgb(15, 23, 42)),
+        }
+    }
+
+    fn effective_line_height(self, size: f32) -> f32 {
+        self.default_line_height
+            .max(size * self.line_height_multiplier)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum PdfFont {
@@ -926,20 +1024,22 @@ enum DrawOp {
 struct PdfLayout {
     pages: Vec<Page>,
     cursor_y: f32,
+    settings: PdfRenderSettings,
 }
 
 impl PdfLayout {
-    fn new() -> Self {
+    fn new(settings: PdfRenderSettings) -> Self {
         Self {
             pages: vec![Page::default()],
-            cursor_y: PAGE_MARGIN_TOP,
+            cursor_y: settings.margin_top,
+            settings,
         }
     }
 
     fn current_page_mut(&mut self) -> &mut Page {
         if self.pages.is_empty() {
             self.pages.push(Page::default());
-            self.cursor_y = PAGE_MARGIN_TOP;
+            self.cursor_y = self.settings.margin_top;
         }
         let index = self.pages.len() - 1;
         &mut self.pages[index]
@@ -947,11 +1047,11 @@ impl PdfLayout {
 
     fn push_page(&mut self) {
         self.pages.push(Page::default());
-        self.cursor_y = PAGE_MARGIN_TOP;
+        self.cursor_y = self.settings.margin_top;
     }
 
     fn ensure_space(&mut self, height: f32) {
-        if self.cursor_y + height > PAGE_HEIGHT - PAGE_MARGIN_BOTTOM {
+        if self.cursor_y + height > self.settings.page_height - self.settings.margin_bottom {
             self.push_page();
         }
     }
@@ -961,8 +1061,9 @@ impl PdfLayout {
     }
 }
 
-fn render_pdf(document: &Document, pdf_path: &Path) -> crate::Result<()> {
-    let pages = layout_document(document);
+fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> crate::Result<()> {
+    let settings = PdfRenderSettings::from_config(config);
+    let pages = layout_document(document, settings);
     let catalog_id = Ref::new(1);
     let page_tree_id = Ref::new(2);
     let mut next_id = 3;
@@ -988,13 +1089,18 @@ fn render_pdf(document: &Document, pdf_path: &Path) -> crate::Result<()> {
         .count(i32::try_from(page_ids.len()).unwrap_or(i32::MAX));
 
     for ((page, page_id), content_id) in pages.iter().zip(&page_ids).zip(&content_ids) {
-        let content = render_page_content(page);
+        let content = render_page_content(page, settings);
         pdf.stream(*content_id, &content);
 
         let mut page_writer = pdf.page(*page_id);
         page_writer
             .parent(page_tree_id)
-            .media_box(Rect::new(0.0, 0.0, PAGE_WIDTH, PAGE_HEIGHT))
+            .media_box(Rect::new(
+                0.0,
+                0.0,
+                settings.page_width,
+                settings.page_height,
+            ))
             .contents(*content_id);
 
         let mut resources = page_writer.resources();
@@ -1016,13 +1122,13 @@ fn render_pdf(document: &Document, pdf_path: &Path) -> crate::Result<()> {
     Ok(())
 }
 
-fn layout_document(document: &Document) -> Vec<Page> {
-    let mut layout = PdfLayout::new();
+fn layout_document(document: &Document, settings: PdfRenderSettings) -> Vec<Page> {
+    let mut layout = PdfLayout::new(settings);
 
     for block in document.blocks() {
         match block {
             DocumentBlockRef::Paragraph(paragraph) => {
-                layout_paragraph_block(&mut layout, paragraph, PAGE_MARGIN_X, CONTENT_WIDTH)
+                layout_paragraph_block(&mut layout, paragraph)
             }
             DocumentBlockRef::Table(table) => layout_table_block(&mut layout, table),
         }
@@ -1031,27 +1137,27 @@ fn layout_document(document: &Document) -> Vec<Page> {
     layout.pages
 }
 
-fn layout_paragraph_block(layout: &mut PdfLayout, paragraph: &Paragraph, x: f32, max_width: f32) {
-    if paragraph.has_page_break_before() && layout.cursor_y > PAGE_MARGIN_TOP {
+fn layout_paragraph_block(layout: &mut PdfLayout, paragraph: &Paragraph) {
+    if paragraph.has_page_break_before() && layout.cursor_y > layout.settings.margin_top {
         layout.push_page();
     }
 
     layout.cursor_y += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
-    let lines = layout_paragraph_lines(paragraph, max_width);
+    let lines = layout_paragraph_lines(paragraph, layout.settings.content_width, layout.settings);
 
     if lines.is_empty() {
-        layout.ensure_space(DEFAULT_LINE_HEIGHT);
-        layout.cursor_y += DEFAULT_LINE_HEIGHT;
+        layout.ensure_space(layout.settings.default_line_height);
+        layout.cursor_y += layout.settings.default_line_height;
     } else {
         for line in lines {
             let line_height = line.line_height;
             layout.ensure_space(line_height);
             let y_top = layout.cursor_y;
             layout.push_op(DrawOp::TextLine {
-                x,
+                x: layout.settings.margin_x,
                 y_top,
                 line,
-                max_width,
+                max_width: layout.settings.content_width,
             });
             layout.cursor_y += line_height;
         }
@@ -1065,30 +1171,35 @@ fn layout_table_block(layout: &mut PdfLayout, table: &Table) {
         .properties()
         .width
         .map(twips_to_points)
-        .unwrap_or(CONTENT_WIDTH)
-        .min(CONTENT_WIDTH);
+        .unwrap_or(layout.settings.content_width)
+        .min(layout.settings.content_width);
 
     for row in table.rows() {
-        let row_layout = layout_row(row, total_width);
+        let row_layout = layout_row(row, total_width, layout.settings);
         layout.ensure_space(row_layout.height);
         let y_top = layout.cursor_y;
 
         for cell in row_layout.cells {
             layout.push_op(DrawOp::Rect {
-                x: PAGE_MARGIN_X + cell.x_offset,
+                x: layout.settings.margin_x + cell.x_offset,
                 y_top,
                 width: cell.width,
                 height: row_layout.height,
                 fill: cell.background,
-                stroke: Some((Rgb(203, 213, 225), 0.75)),
+                stroke: Some((
+                    layout.settings.table_grid_stroke_color,
+                    layout.settings.table_grid_stroke_width,
+                )),
             });
 
             for line in cell.lines {
                 layout.push_op(DrawOp::TextLine {
-                    x: PAGE_MARGIN_X + cell.x_offset + TABLE_ROW_PADDING_X,
+                    x: layout.settings.margin_x
+                        + cell.x_offset
+                        + layout.settings.table_cell_padding_x,
                     y_top: y_top + line.y_offset,
                     line: line.layout,
-                    max_width: cell.width - (TABLE_ROW_PADDING_X * 2.0),
+                    max_width: cell.width - (layout.settings.table_cell_padding_x * 2.0),
                 });
             }
         }
@@ -1096,7 +1207,7 @@ fn layout_table_block(layout: &mut PdfLayout, table: &Table) {
         layout.cursor_y += row_layout.height;
     }
 
-    layout.cursor_y += TABLE_AFTER_SPACING;
+    layout.cursor_y += layout.settings.table_after_spacing;
 }
 
 struct RowLayout {
@@ -1116,7 +1227,7 @@ struct CellLine {
     layout: LineLayout,
 }
 
-fn layout_row(row: &TableRow, total_width: f32) -> RowLayout {
+fn layout_row(row: &TableRow, total_width: f32, settings: PdfRenderSettings) -> RowLayout {
     let cell_count = row.cells().len().max(1) as f32;
     let fallback_width = total_width / cell_count;
     let mut x_offset = 0.0;
@@ -1129,15 +1240,15 @@ fn layout_row(row: &TableRow, total_width: f32) -> RowLayout {
             .width
             .map(twips_to_points)
             .unwrap_or(fallback_width);
-        let content_width = (width - (TABLE_ROW_PADDING_X * 2.0)).max(24.0);
+        let content_width = (width - (settings.table_cell_padding_x * 2.0)).max(MIN_CONTENT_WIDTH);
         let mut lines = Vec::new();
-        let mut y_offset = TABLE_ROW_PADDING_Y;
+        let mut y_offset = settings.table_cell_padding_y;
 
         for paragraph in cell.paragraphs() {
             y_offset += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
-            let paragraph_lines = layout_paragraph_lines(paragraph, content_width);
+            let paragraph_lines = layout_paragraph_lines(paragraph, content_width, settings);
             if paragraph_lines.is_empty() {
-                y_offset += DEFAULT_LINE_HEIGHT;
+                y_offset += settings.default_line_height;
             } else {
                 for line in paragraph_lines {
                     let line_height = line.line_height;
@@ -1151,7 +1262,7 @@ fn layout_row(row: &TableRow, total_width: f32) -> RowLayout {
             y_offset += twips_to_points(paragraph.spacing_after_value().unwrap_or(0));
         }
 
-        let height = y_offset + TABLE_ROW_PADDING_Y;
+        let height = y_offset + settings.table_cell_padding_y;
         row_height = row_height.max(height);
         cells.push(CellLayout {
             x_offset,
@@ -1168,11 +1279,15 @@ fn layout_row(row: &TableRow, total_width: f32) -> RowLayout {
 
     RowLayout {
         cells,
-        height: row_height.max(24.0),
+        height: row_height.max(MIN_CONTENT_WIDTH),
     }
 }
 
-fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayout> {
+fn layout_paragraph_lines(
+    paragraph: &Paragraph,
+    max_width: f32,
+    settings: PdfRenderSettings,
+) -> Vec<LineLayout> {
     let alignment = paragraph
         .alignment()
         .cloned()
@@ -1180,10 +1295,10 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
     let mut lines = Vec::new();
     let mut current_spans = Vec::new();
     let mut current_width = 0.0;
-    let mut current_line_height = DEFAULT_LINE_HEIGHT;
+    let mut current_line_height = settings.default_line_height;
 
     for run in paragraph.runs() {
-        let style = style_from_run(run);
+        let style = style_from_run(run, settings);
         for token in tokenize(run.text()) {
             if token == "\n" {
                 flush_line(
@@ -1192,6 +1307,7 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
                     &mut current_width,
                     &mut current_line_height,
                     alignment.clone(),
+                    settings.default_line_height,
                 );
                 continue;
             }
@@ -1204,7 +1320,7 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
             if sanitized.is_empty() {
                 continue;
             }
-            let width = estimate_text_width(style.font, style.size, &sanitized);
+            let width = estimate_text_width(style.font, style.size, &sanitized, settings);
 
             if current_width + width > max_width
                 && !current_spans.is_empty()
@@ -1216,6 +1332,7 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
                     &mut current_width,
                     &mut current_line_height,
                     alignment.clone(),
+                    settings.default_line_height,
                 );
             }
 
@@ -1223,7 +1340,8 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
                 continue;
             }
 
-            current_line_height = current_line_height.max(style.size * 1.35);
+            current_line_height =
+                current_line_height.max(settings.effective_line_height(style.size));
             current_width += width;
             current_spans.push(TextSpan {
                 text: sanitized,
@@ -1239,6 +1357,7 @@ fn layout_paragraph_lines(paragraph: &Paragraph, max_width: f32) -> Vec<LineLayo
         &mut current_width,
         &mut current_line_height,
         alignment,
+        settings.default_line_height,
     );
 
     lines
@@ -1250,10 +1369,11 @@ fn flush_line(
     current_width: &mut f32,
     current_line_height: &mut f32,
     alignment: ParagraphAlignment,
+    default_line_height: f32,
 ) {
     if current_spans.is_empty() {
         *current_width = 0.0;
-        *current_line_height = DEFAULT_LINE_HEIGHT;
+        *current_line_height = default_line_height;
         return;
     }
 
@@ -1264,7 +1384,7 @@ fn flush_line(
         alignment,
     });
     *current_width = 0.0;
-    *current_line_height = DEFAULT_LINE_HEIGHT;
+    *current_line_height = default_line_height;
 }
 
 fn tokenize(text: &str) -> Vec<String> {
@@ -1306,7 +1426,7 @@ fn tokenize(text: &str) -> Vec<String> {
     tokens
 }
 
-fn style_from_run(run: &Run) -> TextStyle {
+fn style_from_run(run: &Run, settings: PdfRenderSettings) -> TextStyle {
     let properties = run.properties();
     let font = match (properties.bold, properties.italic) {
         (true, true) => PdfFont::BoldOblique,
@@ -1320,12 +1440,12 @@ fn style_from_run(run: &Run) -> TextStyle {
         size: properties
             .font_size
             .map(|value| f32::from(value) / 2.0)
-            .unwrap_or(DEFAULT_TEXT_SIZE),
+            .unwrap_or(settings.default_text_size),
         color: properties
             .color
             .as_deref()
             .and_then(parse_hex_color)
-            .unwrap_or(Rgb(15, 23, 42)),
+            .unwrap_or(settings.default_text_color),
     }
 }
 
@@ -1348,6 +1468,22 @@ fn clamp_u32_to_u16(value: u32) -> u16 {
         u16::MAX
     } else {
         value as u16
+    }
+}
+
+fn normalize_positive(value: f32, fallback: f32) -> f32 {
+    if value.is_finite() && value > 0.0 {
+        value
+    } else {
+        fallback
+    }
+}
+
+fn normalize_non_negative(value: f32, fallback: f32) -> f32 {
+    if value.is_finite() && value >= 0.0 {
+        value
+    } else {
+        fallback
     }
 }
 
@@ -1374,10 +1510,10 @@ fn sanitize_text(text: &str) -> String {
         .collect()
 }
 
-fn estimate_text_width(font: PdfFont, size: f32, text: &str) -> f32 {
+fn estimate_text_width(font: PdfFont, size: f32, text: &str, settings: PdfRenderSettings) -> f32 {
     let font_bias = match font {
-        PdfFont::Regular | PdfFont::Oblique => 1.0,
-        PdfFont::Bold | PdfFont::BoldOblique => 1.03,
+        PdfFont::Regular | PdfFont::Oblique => settings.text_width_bias_regular,
+        PdfFont::Bold | PdfFont::BoldOblique => settings.text_width_bias_bold,
     };
 
     let units = text
@@ -1401,15 +1537,19 @@ struct PdfContentWriter {
     current_fill: Option<Rgb>,
     current_stroke: Option<Rgb>,
     current_line_width: Option<f32>,
+    page_height: f32,
+    baseline_factor: f32,
 }
 
 impl PdfContentWriter {
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, settings: PdfRenderSettings) -> Self {
         Self {
             buffer: Vec::with_capacity(capacity),
             current_fill: None,
             current_stroke: None,
             current_line_width: None,
+            page_height: settings.page_height,
+            baseline_factor: settings.baseline_factor,
         }
     }
 
@@ -1426,7 +1566,7 @@ impl PdfContentWriter {
         fill: Option<Rgb>,
         stroke: Option<(Rgb, f32)>,
     ) {
-        let y = PAGE_HEIGHT - y_top - height;
+        let y = self.page_height - y_top - height;
 
         if let Some(color) = fill {
             self.set_fill_color(color);
@@ -1463,7 +1603,7 @@ impl PdfContentWriter {
             ParagraphAlignment::Right => x + (max_width - line.width).max(0.0),
             _ => x,
         };
-        let baseline_y = PAGE_HEIGHT - y_top - (line.line_height * 0.82);
+        let baseline_y = self.page_height - y_top - (line.line_height * self.baseline_factor);
         let mut cursor_x = start_x;
         let mut current_font = None;
         let mut current_color = None;
@@ -1560,8 +1700,8 @@ impl PdfContentWriter {
     }
 }
 
-fn render_page_content(page: &Page) -> Vec<u8> {
-    let mut writer = PdfContentWriter::with_capacity(page.ops.len() * 96);
+fn render_page_content(page: &Page, settings: PdfRenderSettings) -> Vec<u8> {
+    let mut writer = PdfContentWriter::with_capacity(page.ops.len() * 96, settings);
 
     for op in &page.ops {
         match op {
@@ -1587,19 +1727,34 @@ fn render_page_content(page: &Page) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{fs, path::PathBuf};
 
     use tempfile::tempdir;
 
     use super::{
         clamp_u32_to_u16, estimate_text_width, layout_paragraph_lines, layout_row, parse_hex_color,
-        points_to_u16, sanitize_text, style_from_run, tokenize, PdfFont, Rgb, Studio,
+        points_to_u16, sanitize_text, style_from_run, tokenize, PdfFont, PdfRenderSettings, Rgb,
+        Studio, DEFAULT_BASELINE_FACTOR, DEFAULT_LINE_HEIGHT, DEFAULT_LINE_HEIGHT_MULTIPLIER,
+        DEFAULT_TABLE_AFTER_SPACING, DEFAULT_TABLE_GRID_STROKE_WIDTH, DEFAULT_TABLE_ROW_PADDING_X,
+        DEFAULT_TABLE_ROW_PADDING_Y, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_WIDTH_BIAS_BOLD,
+        DEFAULT_TEXT_WIDTH_BIAS_REGULAR, MIN_CONTENT_WIDTH,
     };
     use crate::config::RusdoxConfig;
     use crate::spec::{
         ParagraphAlignmentSpec, ParagraphSpec, RunSpec, UnderlineStyleSpec, VerticalAlignSpec,
     };
     use crate::{Document, Paragraph, ParagraphAlignment, Run, TableCell, TableRow, VerticalAlign};
+
+    fn default_pdf_settings() -> PdfRenderSettings {
+        PdfRenderSettings::from_config(&RusdoxConfig::default())
+    }
+
+    fn assert_close(actual: f32, expected: f32) {
+        assert!(
+            (actual - expected).abs() < 0.01,
+            "expected {expected:.2}, got {actual:.2}"
+        );
+    }
 
     #[test]
     fn points_to_u16_clamps_and_rounds() {
@@ -1643,8 +1798,8 @@ mod tests {
 
     #[test]
     fn estimate_text_width_reflects_font_bias() {
-        let regular = estimate_text_width(PdfFont::Regular, 12.0, "Hello");
-        let bold = estimate_text_width(PdfFont::Bold, 12.0, "Hello");
+        let regular = estimate_text_width(PdfFont::Regular, 12.0, "Hello", default_pdf_settings());
+        let bold = estimate_text_width(PdfFont::Bold, 12.0, "Hello", default_pdf_settings());
         assert!(regular > 0.0);
         assert!(bold > regular);
     }
@@ -1656,10 +1811,115 @@ mod tests {
             .italic()
             .size_points(18)
             .color("AABBCC");
-        let style = style_from_run(&run);
+        let style = style_from_run(&run, default_pdf_settings());
         assert!(style.font == PdfFont::BoldOblique);
         assert_eq!(style.size, 18.0);
         assert!(style.color == Rgb(170, 187, 204));
+    }
+
+    #[test]
+    fn pdf_render_settings_honor_config_values() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.page_width_pt = 500.0;
+        config.pdf.page_height_pt = 700.0;
+        config.pdf.margin_x_pt = 40.0;
+        config.pdf.margin_top_pt = 30.0;
+        config.pdf.margin_bottom_pt = 45.0;
+        config.pdf.default_text_size_pt = 13.0;
+        config.pdf.default_line_height_pt = 17.0;
+        config.pdf.line_height_multiplier = 1.6;
+        config.pdf.baseline_factor = 0.78;
+        config.pdf.text_width_bias_regular = 0.92;
+        config.pdf.text_width_bias_bold = 1.18;
+        config.table.pdf_cell_padding_x_pt = 9.0;
+        config.table.pdf_cell_padding_y_pt = 11.0;
+        config.table.pdf_after_spacing_pt = 15.0;
+        config.table.pdf_grid_stroke_width_pt = 1.25;
+        config.colors.table_border = "112233".to_string();
+        config.colors.ink = "445566".to_string();
+
+        let settings = PdfRenderSettings::from_config(&config);
+
+        assert_close(settings.page_width, 500.0);
+        assert_close(settings.page_height, 700.0);
+        assert_close(settings.margin_x, 40.0);
+        assert_close(settings.margin_top, 30.0);
+        assert_close(settings.margin_bottom, 45.0);
+        assert_close(settings.content_width, 420.0);
+        assert_close(settings.default_text_size, 13.0);
+        assert_close(settings.default_line_height, 17.0);
+        assert_close(settings.line_height_multiplier, 1.6);
+        assert_close(settings.baseline_factor, 0.78);
+        assert_close(settings.text_width_bias_regular, 0.92);
+        assert_close(settings.text_width_bias_bold, 1.18);
+        assert_close(settings.table_cell_padding_x, 9.0);
+        assert_close(settings.table_cell_padding_y, 11.0);
+        assert_close(settings.table_after_spacing, 15.0);
+        assert_close(settings.table_grid_stroke_width, 1.25);
+        assert_eq!(settings.table_grid_stroke_color, Rgb(17, 34, 51));
+        assert_eq!(settings.default_text_color, Rgb(68, 85, 102));
+    }
+
+    #[test]
+    fn estimate_text_width_uses_configured_bias_values() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.text_width_bias_regular = 0.5;
+        config.pdf.text_width_bias_bold = 1.5;
+        let settings = PdfRenderSettings::from_config(&config);
+
+        let regular = estimate_text_width(PdfFont::Regular, 10.0, "Hello", settings);
+        let bold = estimate_text_width(PdfFont::Bold, 10.0, "Hello", settings);
+
+        assert!(regular > 0.0);
+        assert_close(bold / regular, 3.0);
+    }
+
+    #[test]
+    fn pdf_render_settings_normalize_invalid_and_extreme_values() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.page_width_pt = 40.0;
+        config.pdf.page_height_pt = 8.0;
+        config.pdf.margin_x_pt = 30.0;
+        config.pdf.margin_top_pt = 99.0;
+        config.pdf.margin_bottom_pt = 99.0;
+        config.pdf.default_text_size_pt = f32::NAN;
+        config.pdf.default_line_height_pt = -1.0;
+        config.pdf.line_height_multiplier = 0.0;
+        config.pdf.baseline_factor = f32::INFINITY;
+        config.pdf.text_width_bias_regular = -2.0;
+        config.pdf.text_width_bias_bold = f32::NAN;
+        config.table.pdf_cell_padding_x_pt = -4.0;
+        config.table.pdf_cell_padding_y_pt = f32::NAN;
+        config.table.pdf_after_spacing_pt = -2.0;
+        config.table.pdf_grid_stroke_width_pt = f32::NAN;
+
+        let settings = PdfRenderSettings::from_config(&config);
+
+        assert_close(settings.page_width, 40.0);
+        assert_close(settings.page_height, DEFAULT_LINE_HEIGHT);
+        assert_close(settings.margin_x, 8.0);
+        assert_close(settings.margin_top, 0.0);
+        assert_close(settings.margin_bottom, 0.0);
+        assert_close(settings.content_width, MIN_CONTENT_WIDTH);
+        assert_close(settings.default_text_size, DEFAULT_TEXT_SIZE);
+        assert_close(settings.default_line_height, DEFAULT_LINE_HEIGHT);
+        assert_close(
+            settings.line_height_multiplier,
+            DEFAULT_LINE_HEIGHT_MULTIPLIER,
+        );
+        assert_close(settings.baseline_factor, DEFAULT_BASELINE_FACTOR);
+        assert_close(
+            settings.text_width_bias_regular,
+            DEFAULT_TEXT_WIDTH_BIAS_REGULAR,
+        );
+        assert_close(settings.text_width_bias_bold, DEFAULT_TEXT_WIDTH_BIAS_BOLD);
+        assert_close(settings.table_cell_padding_x, DEFAULT_TABLE_ROW_PADDING_X);
+        assert_close(settings.table_cell_padding_y, DEFAULT_TABLE_ROW_PADDING_Y);
+        assert_close(settings.table_after_spacing, DEFAULT_TABLE_AFTER_SPACING);
+        assert_close(
+            settings.table_grid_stroke_width,
+            DEFAULT_TABLE_GRID_STROKE_WIDTH,
+        );
     }
 
     #[test]
@@ -1784,9 +2044,23 @@ mod tests {
         let paragraph = Paragraph::new().add_run(Run::from_text(
             "verylongword verylongword verylongword\nnext line",
         ));
-        let lines = layout_paragraph_lines(&paragraph, 120.0);
+        let lines = layout_paragraph_lines(&paragraph, 120.0, default_pdf_settings());
         assert!(lines.len() >= 2);
         assert!(lines.iter().all(|line| line.width > 0.0));
+    }
+
+    #[test]
+    fn layout_paragraph_lines_use_configured_line_height_multiplier() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.default_line_height_pt = 12.0;
+        config.pdf.line_height_multiplier = 1.6;
+        let settings = PdfRenderSettings::from_config(&config);
+
+        let paragraph = Paragraph::new().add_run(Run::from_text("Scaled").size_points(20));
+        let lines = layout_paragraph_lines(&paragraph, 400.0, settings);
+
+        assert_eq!(lines.len(), 1);
+        assert_close(lines[0].line_height, 32.0);
     }
 
     #[test]
@@ -1800,10 +2074,30 @@ mod tests {
             .add_cell(
                 TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("right"))),
             );
-        let layout = layout_row(&row, 400.0);
+        let layout = layout_row(&row, 400.0, default_pdf_settings());
         assert_eq!(layout.cells.len(), 2);
         assert!(layout.cells[0].width < layout.cells[1].width);
         assert!(layout.height >= 24.0);
+    }
+
+    #[test]
+    fn layout_row_uses_configured_pdf_padding() {
+        let mut config = RusdoxConfig::default();
+        config.table.pdf_cell_padding_x_pt = 12.0;
+        config.table.pdf_cell_padding_y_pt = 10.0;
+        let settings = PdfRenderSettings::from_config(&config);
+
+        let row = TableRow::new().add_cell(
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("left"))),
+        );
+        let layout = layout_row(&row, 240.0, settings);
+
+        assert_eq!(layout.cells.len(), 1);
+        assert_close(layout.cells[0].lines[0].y_offset, 10.0);
+        assert_close(
+            layout.height,
+            10.0 + settings.effective_line_height(settings.default_text_size) + 10.0,
+        );
     }
 
     #[test]
@@ -1852,5 +2146,100 @@ mod tests {
         assert!(pdf_path.exists());
         assert!(stats.docx_bytes > 0);
         assert!(stats.pdf_bytes > 0);
+    }
+
+    #[test]
+    fn save_with_pdf_stats_uses_configured_page_size() {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        config.pdf.page_width_pt = 300.0;
+        config.pdf.page_height_pt = 500.0;
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("custom pdf")));
+        let docx_path = temp.path().join("docx/custom.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/custom.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf_text.contains("/MediaBox [0 0 300 500]"));
+    }
+
+    #[test]
+    fn save_with_pdf_stats_uses_configured_text_origin_and_baseline() {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        config.pdf.page_width_pt = 300.0;
+        config.pdf.page_height_pt = 500.0;
+        config.pdf.margin_x_pt = 33.0;
+        config.pdf.margin_top_pt = 17.0;
+        config.pdf.margin_bottom_pt = 12.0;
+        config.pdf.default_text_size_pt = 10.0;
+        config.pdf.default_line_height_pt = 20.0;
+        config.pdf.baseline_factor = 0.5;
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("origin")));
+        let docx_path = temp.path().join("docx/origin.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/origin.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf_text.contains("1 0 0 1 33 473 Tm"));
+    }
+
+    #[test]
+    fn save_with_pdf_stats_uses_configured_table_stroke_and_padding() {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        config.pdf.page_width_pt = 240.0;
+        config.pdf.page_height_pt = 240.0;
+        config.pdf.margin_x_pt = 21.0;
+        config.pdf.margin_top_pt = 11.0;
+        config.pdf.default_text_size_pt = 10.0;
+        config.pdf.default_line_height_pt = 20.0;
+        config.pdf.baseline_factor = 0.5;
+        config.table.pdf_cell_padding_x_pt = 13.0;
+        config.table.pdf_cell_padding_y_pt = 4.0;
+        config.table.pdf_grid_stroke_width_pt = 2.5;
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_table(crate::Table::new().add_row(crate::TableRow::new().add_cell(
+            crate::TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("cell"))),
+        )));
+        let docx_path = temp.path().join("docx/table.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/table.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        assert!(pdf_text.contains("2.5 w"));
+        assert!(pdf_text.contains("1 0 0 1 34 215 Tm"));
     }
 }
