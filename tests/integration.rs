@@ -199,6 +199,38 @@ fn rich_formatting_round_trips() -> Result<(), rusdox::DocxError> {
 }
 
 #[test]
+fn tabs_and_line_breaks_round_trip_and_emit_structured_ooxml() -> Result<(), rusdox::DocxError> {
+    let mut document = Document::new();
+    document
+        .push_paragraph(Paragraph::new().add_run(Run::from_text("Alpha\tBeta\r\nGamma\nDelta")));
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    let paragraph = reopened
+        .paragraphs()
+        .next()
+        .expect("paragraph should exist");
+    let run = paragraph.runs().next().expect("run should exist");
+
+    assert_eq!(run.text(), "Alpha\tBeta\nGamma\nDelta");
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+    let mut entry = archive.by_name("word/document.xml")?;
+    let mut xml = String::new();
+    entry.read_to_string(&mut xml)?;
+
+    assert!(xml.contains("<w:tab/>"));
+    assert!(xml.matches("<w:br/>").count() >= 2);
+    assert!(!xml.contains("Alpha\tBeta"));
+
+    Ok(())
+}
+
+#[test]
 fn custom_package_part_is_preserved_across_open_modify_save() -> Result<(), rusdox::DocxError> {
     let mut original = Document::new();
     original.push_paragraph(Paragraph::new().add_run(Run::from_text("base")));

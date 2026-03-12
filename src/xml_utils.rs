@@ -850,15 +850,103 @@ where
         writer.write_event(Event::End(BytesEnd::new("w:rPr")))?;
     }
 
-    let mut text = BytesStart::new("w:t");
-    if run.needs_space_preserve() {
-        text.push_attribute(("xml:space", "preserve"));
-    }
-    writer.write_event(Event::Start(text))?;
-    writer.write_event(Event::Text(BytesText::new(run.text())))?;
-    writer.write_event(Event::End(BytesEnd::new("w:t")))?;
+    write_run_content(writer, run)?;
     writer.write_event(Event::End(BytesEnd::new("w:r")))?;
     Ok(())
+}
+
+fn write_run_content<W>(writer: &mut Writer<W>, run: &Run) -> Result<()>
+where
+    W: Write,
+{
+    let text = run.text();
+    if !text.contains(['\t', '\n', '\r']) {
+        if text.is_empty() {
+            writer.write_event(Event::Start(BytesStart::new("w:t")))?;
+            writer.write_event(Event::End(BytesEnd::new("w:t")))?;
+        } else {
+            write_text_segment_with_preserve(writer, text, run.needs_space_preserve())?;
+        }
+        return Ok(());
+    }
+
+    let mut emitted_content = false;
+    let mut segment_start = 0usize;
+    let mut chars = text.char_indices().peekable();
+
+    while let Some((index, ch)) = chars.next() {
+        match ch {
+            '\t' | '\n' | '\r' => {
+                if segment_start < index {
+                    write_text_segment(writer, &text[segment_start..index])?;
+                }
+
+                match ch {
+                    '\t' => writer.write_event(Event::Empty(BytesStart::new("w:tab")))?,
+                    '\n' | '\r' => {
+                        writer.write_event(Event::Empty(BytesStart::new("w:br")))?;
+                        if ch == '\r' && chars.next_if(|(_, next)| *next == '\n').is_some() {
+                            // Treat CRLF as a single OOXML break.
+                        }
+                    }
+                    _ => {}
+                }
+
+                emitted_content = true;
+                segment_start = match ch {
+                    '\r' => chars
+                        .peek()
+                        .map(|(next_index, _)| *next_index)
+                        .unwrap_or(text.len()),
+                    _ => index + ch.len_utf8(),
+                };
+            }
+            _ => {}
+        }
+    }
+
+    if segment_start < text.len() {
+        write_text_segment(writer, &text[segment_start..])?;
+        emitted_content = true;
+    }
+
+    if !emitted_content {
+        writer.write_event(Event::Start(BytesStart::new("w:t")))?;
+        writer.write_event(Event::End(BytesEnd::new("w:t")))?;
+    }
+
+    Ok(())
+}
+
+fn write_text_segment<W>(writer: &mut Writer<W>, text: &str) -> Result<()>
+where
+    W: Write,
+{
+    write_text_segment_with_preserve(writer, text, text_segment_needs_space_preserve(text))
+}
+
+fn write_text_segment_with_preserve<W>(
+    writer: &mut Writer<W>,
+    text: &str,
+    preserve_space: bool,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut element = BytesStart::new("w:t");
+    if preserve_space {
+        element.push_attribute(("xml:space", "preserve"));
+    }
+    writer.write_event(Event::Start(element))?;
+    writer.write_event(Event::Text(BytesText::new(text)))?;
+    writer.write_event(Event::End(BytesEnd::new("w:t")))?;
+    Ok(())
+}
+
+fn text_segment_needs_space_preserve(text: &str) -> bool {
+    let starts_with_ws = text.chars().next().is_some_and(char::is_whitespace);
+    let ends_with_ws = text.chars().last().is_some_and(char::is_whitespace);
+    starts_with_ws || ends_with_ws
 }
 
 fn write_table<W>(writer: &mut Writer<W>, table: &Table) -> Result<()>
@@ -1079,6 +1167,23 @@ mod tests {
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
         assert!(xml.contains(r#"xml:space="preserve""#));
+    }
+
+    #[test]
+    fn writer_emits_tabs_and_breaks_as_ooxml_run_content() {
+        let paragraph = Paragraph::new().add_run(Run::from_text("A\t B\r\nC\nD"));
+        let document_xml = write_document_xml(
+            &[BodyBlock::Paragraph(paragraph)],
+            &super::SectionProperties::default(),
+        )
+        .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
+        let xml = String::from_utf8_lossy(&document_xml);
+
+        assert!(xml.contains("<w:t>A</w:t>"));
+        assert!(xml.contains("<w:tab/>"));
+        assert!(xml.contains(r#"<w:t xml:space="preserve"> B</w:t>"#));
+        assert!(xml.matches("<w:br/>").count() >= 2);
+        assert!(!xml.contains("A\t B"));
     }
 
     #[test]
