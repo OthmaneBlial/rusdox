@@ -2533,6 +2533,69 @@ mod tests {
         None
     }
 
+    fn assert_multiscript_pdf_output_with_optional_fallback(fallback_family: Option<String>) {
+        let temp = tempdir().expect("temp dir");
+        let mut config = RusdoxConfig::default();
+        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
+        config.output.emit_pdf_preview = true;
+        if let Some(family) = fallback_family.clone() {
+            config.typography.font_family = family;
+
+            let mut font_system = pdf_font_system(&config);
+            let shaped = font_system
+                .shape_text(
+                    &default_text_style(&config, PdfFont::Regular, config.typography.body_size_pt),
+                    "Latin 你好",
+                )
+                .expect("shape text");
+            let distinct_fonts = shaped
+                .spans
+                .iter()
+                .map(|span| span.style.font_id)
+                .collect::<BTreeSet<_>>();
+            let used_families = distinct_fonts
+                .iter()
+                .map(|&font_id| font_system.face(font_id).family_name.clone())
+                .collect::<Vec<_>>();
+            assert!(
+                distinct_fonts.len() >= 2,
+                "expected multiple PDF faces for '{}', got {:?}",
+                config.typography.font_family,
+                used_families
+            );
+        }
+
+        let studio = Studio::new(config);
+
+        let mut document = Document::new();
+        document.push_paragraph(Paragraph::new().add_run(Run::from_text("Latin 你好")));
+        let docx_path = temp.path().join("docx/fallback.docx");
+
+        studio
+            .save_with_pdf_stats(&document, &docx_path)
+            .expect("save should succeed");
+
+        let pdf_path = temp.path().join("pdf/fallback.pdf");
+        let pdf = fs::read(&pdf_path).expect("read pdf");
+        let pdf_text = String::from_utf8_lossy(&pdf);
+
+        let font_file_count = pdf_text.matches("/FontFile2").count();
+        if fallback_family.is_some() {
+            assert!(
+                font_file_count >= 2,
+                "expected multiple embedded fonts when fallback is available, got {font_file_count}"
+            );
+        } else {
+            assert!(
+                font_file_count >= 1,
+                "expected at least one embedded font for mixed-script PDF output"
+            );
+        }
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("你"))));
+        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("好"))));
+    }
+
     #[test]
     fn points_to_u16_clamps_and_rounds() {
         assert_eq!(points_to_u16(-1.0), 0);
@@ -3129,53 +3192,13 @@ mod tests {
 
     #[test]
     fn save_with_pdf_stats_uses_font_fallback_for_multiscript_text() {
-        let temp = tempdir().expect("temp dir");
-        let mut config = RusdoxConfig::default();
-        config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
-        config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
-        config.output.emit_pdf_preview = true;
-        config.typography.font_family = find_family_triggering_multiscript_fallback()
-            .expect("expected at least one installed font family to require CJK fallback");
-
-        let mut font_system = pdf_font_system(&config);
-        let shaped = font_system
-            .shape_text(
-                &default_text_style(&config, PdfFont::Regular, config.typography.body_size_pt),
-                "Latin 你好",
-            )
-            .expect("shape text");
-        let distinct_fonts = shaped
-            .spans
-            .iter()
-            .map(|span| span.style.font_id)
-            .collect::<BTreeSet<_>>();
-        let used_families = distinct_fonts
-            .iter()
-            .map(|&font_id| font_system.face(font_id).family_name.clone())
-            .collect::<Vec<_>>();
-        assert!(
-            distinct_fonts.len() >= 2,
-            "expected multiple PDF faces for '{}', got {:?}",
-            config.typography.font_family,
-            used_families
+        assert_multiscript_pdf_output_with_optional_fallback(
+            find_family_triggering_multiscript_fallback(),
         );
+    }
 
-        let studio = Studio::new(config);
-
-        let mut document = Document::new();
-        document.push_paragraph(Paragraph::new().add_run(Run::from_text("Latin 你好")));
-        let docx_path = temp.path().join("docx/fallback.docx");
-
-        studio
-            .save_with_pdf_stats(&document, &docx_path)
-            .expect("save should succeed");
-
-        let pdf_path = temp.path().join("pdf/fallback.pdf");
-        let pdf = fs::read(&pdf_path).expect("read pdf");
-        let pdf_text = String::from_utf8_lossy(&pdf);
-
-        assert!(pdf_text.matches("/FontFile2").count() >= 2);
-        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("你"))));
-        assert!(pdf_text.contains(&format!("<{}>", utf16_hex("好"))));
+    #[test]
+    fn save_with_pdf_stats_handles_mixed_script_text_without_needing_fallback() {
+        assert_multiscript_pdf_output_with_optional_fallback(None);
     }
 }
