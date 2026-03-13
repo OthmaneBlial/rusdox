@@ -7,6 +7,7 @@ Use Rust when you need:
 - document content generated from live data
 - loops, conditions, or reusable functions
 - integration inside a Rust service or CLI
+- direct control over document metadata and custom properties
 - lower-level formatting beyond the YAML surface
 
 ## Choose The Right Layer
@@ -90,7 +91,25 @@ This is the best Rust path when:
 - content comes from code, not a static YAML file
 - you still want the document to stay easy to reason about
 
-`DocumentSpec` also exposes `styles`, so reusable named styles can be defined once and referenced from paragraph, run, and table specs.
+`DocumentSpec` also exposes `metadata` and `styles`, so document properties and reusable named styles can be defined once and reused consistently.
+
+```rust
+use rusdox::spec::{body, section, title, DocumentSpec};
+use rusdox::{DocumentMetadata};
+
+let mut spec = DocumentSpec::new();
+spec.metadata = DocumentMetadata::new()
+    .title("Weekly Brief")
+    .author("RusDox Studio")
+    .subject("Executive update")
+    .keyword("weekly")
+    .custom_property("Audience", "Leadership");
+spec.blocks = vec![
+    title("Weekly Brief"),
+    section("Summary"),
+    body("Pipeline grew 14% week over week."),
+];
+```
 
 ## Hybrid Rust: Start With A Spec, Then Add Custom Pieces
 
@@ -195,6 +214,25 @@ Use these APIs when:
 - multiple paragraphs should share the same typography and spacing rules
 - run-level emphasis should stay stable across documents
 - table framing should be reusable instead of copied as direct borders and widths
+
+## First-Class Metadata
+
+Use `DocumentMetadata` when the generated DOCX should carry clean package properties.
+
+```rust
+use rusdox::{Document, DocumentMetadata};
+
+let metadata = DocumentMetadata::new()
+    .title("Board Report")
+    .author("Finance")
+    .subject("Q4 review")
+    .keyword("board")
+    .custom_property("Client", "Northwind Health");
+
+let document = Document::new().with_metadata(metadata);
+```
+
+Metadata works through both `DocumentSpec` and `Document`, and RusDox writes it into `docProps/core.xml` plus `docProps/custom.xml`.
 
 ## Config-Driven Builders With `Studio`
 

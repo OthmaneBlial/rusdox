@@ -21,6 +21,11 @@ blocks:
 - Controls the file name of the generated output
 - If omitted, RusDox uses the spec file stem
 
+`metadata`
+
+- Optional
+- Controls DOCX package properties such as title, author, subject, keywords, and custom properties
+
 `blocks`
 
 - Required for real documents
@@ -33,6 +38,105 @@ blocks:
 - Defines reusable named paragraph, run, and table styles
 - Supports inheritance through `based_on`
 - Paragraph styles can also set `next`
+
+`variables`
+
+- Optional
+- Defines reusable values for text interpolation and repeat blocks in YAML
+
+## Metadata
+
+Use metadata when generated documents need clean properties in Word, search tools, or downstream automation.
+
+```yaml
+metadata:
+  title: Client Rollout Plan
+  author: RusDox Studio
+  subject: Q4 regional rollout
+  keywords:
+    - rollout
+    - planning
+  custom_properties:
+    Client: Northwind Health
+    Sponsor: Maya Chen
+```
+
+Supported metadata fields:
+
+- `title`
+- `author`
+- `subject`
+- `keywords`
+- `custom_properties`
+
+`custom_properties` values are stored as string custom properties in the DOCX package.
+
+## Variables, Includes, And Repeaters
+
+Use these features when one YAML file would otherwise become repetitive.
+
+Variables use `{{name}}` placeholders:
+
+```yaml
+variables:
+  client: Northwind Health
+  quarter: Q4 2026
+
+blocks:
+  - type: title
+    text: "{{client}} Rollout Plan"
+  - type: subtitle
+    text: "{{quarter}} program snapshot"
+```
+
+Includes inline reusable block fragments relative to the current YAML file:
+
+```yaml
+blocks:
+  - type: include
+    path: fragments/summary.yaml
+    variables:
+      sponsor: Maya Chen
+```
+
+An included YAML fragment can be:
+
+- a single block mapping
+- a sequence of blocks
+- a mapping with optional `variables` plus `blocks`
+
+Repeaters expand a block template for each item in a sequence:
+
+```yaml
+variables:
+  regions:
+    - name: North America
+      owner: Maya
+    - name: EMEA
+      owner: Leon
+
+blocks:
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: "{{region.name}}"
+      - type: body
+        text: "Owner: {{region.owner}}"
+```
+
+Supported repeat fields:
+
+- `variable`: name of a sequence variable to iterate
+- `items`: inline sequence to iterate
+- `as`: loop variable name, defaults to `item`
+- `blocks`: template block list
+
+Each repeat iteration also exposes:
+
+- `repeat_index`: zero-based index
+- `repeat_number`: one-based index
 
 ## Named Styles
 
@@ -384,7 +488,8 @@ Vertical align values:
 
 ## Best Practices
 
-- Keep content in variables only if you are in Rust. In YAML, keep it in document order.
+- Use variables for repeated values, not for every sentence in the document.
+- Reach for `include` and `repeat` before moving to Rust if the workflow is still mostly static content.
 - Prefer `title`, `section`, `body`, `bullets`, `metrics`, and `table` before reaching for custom paragraphs.
 - Let config control styling instead of repeating style values everywhere.
 - Copy a close example and edit the content.
@@ -395,3 +500,4 @@ Vertical align values:
 - [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
 - [../examples/formatting_showcase.yaml](../examples/formatting_showcase.yaml)
 - [../examples/named_styles_showcase.yaml](../examples/named_styles_showcase.yaml)
+- [../examples/yaml_composition_showcase.yaml](../examples/yaml_composition_showcase.yaml)

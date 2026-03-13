@@ -9,6 +9,10 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::error::{DocxError, Result};
 use crate::layout::{HeaderFooter, PageNumbering, PageSetup};
+use crate::metadata::{
+    parse_core_properties_xml, parse_custom_properties_xml, render_core_properties_xml,
+    render_custom_properties_xml, DocumentMetadata,
+};
 use crate::paragraph::Paragraph;
 use crate::style::Stylesheet;
 use crate::table::Table;
@@ -29,6 +33,7 @@ const CONTENT_TYPES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalo
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
   <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
 </Types>
 "#;
 
@@ -37,6 +42,7 @@ const PACKAGE_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalon
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>
 </Relationships>
 "#;
 
@@ -66,6 +72,12 @@ const CORE_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?
   <dcterms:created xsi:type="dcterms:W3CDTF">2026-03-10T00:00:00Z</dcterms:created>
   <dcterms:modified xsi:type="dcterms:W3CDTF">2026-03-10T00:00:00Z</dcterms:modified>
 </cp:coreProperties>
+"#;
+
+const CUSTOM_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
+            xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+</Properties>
 "#;
 
 const STYLES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -134,6 +146,7 @@ struct RenderedVisualPart {
 pub struct Document {
     mode: DocumentMode,
     body: Vec<BodyBlock>,
+    metadata: DocumentMetadata,
     styles: Stylesheet,
     package_parts: BTreeMap<String, Vec<u8>>,
     source_path: Option<PathBuf>,
@@ -159,6 +172,7 @@ impl Document {
         Self {
             mode: DocumentMode::New,
             body: Vec::new(),
+            metadata: DocumentMetadata::default(),
             styles: Stylesheet::default(),
             package_parts: default_package_parts(),
             source_path: None,
@@ -195,6 +209,8 @@ impl Document {
         let mut document_xml = None;
         let mut numbering = None;
         let mut styles_xml = None;
+        let mut core_xml = None;
+        let mut custom_xml = None;
 
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index)?;
@@ -203,6 +219,12 @@ impl Document {
             entry.read_to_end(&mut bytes)?;
             if name == "word/document.xml" {
                 document_xml = Some(bytes);
+            } else if name == "docProps/core.xml" {
+                core_xml = Some(bytes.clone());
+                package_parts.insert(name, bytes);
+            } else if name == "docProps/custom.xml" {
+                custom_xml = Some(bytes.clone());
+                package_parts.insert(name, bytes);
             } else if name == "word/numbering.xml" {
                 numbering = Some(parse_numbering_xml(&bytes)?);
                 package_parts.insert(name, bytes);
@@ -222,6 +244,14 @@ impl Document {
         };
         let mut parsed = parse_document_xml(&document_xml, numbering.as_ref(), &package_parts)?;
         hydrate_section_from_package_parts(&mut parsed.section_properties, &package_parts)?;
+        let mut metadata = core_xml
+            .as_deref()
+            .map(parse_core_properties_xml)
+            .transpose()?
+            .unwrap_or_default();
+        if let Some(bytes) = custom_xml.as_deref() {
+            parse_custom_properties_xml(bytes, &mut metadata)?;
+        }
 
         Ok(Self {
             mode: match mode {
@@ -229,6 +259,7 @@ impl Document {
                 other => other,
             },
             body: parsed.body,
+            metadata,
             styles,
             package_parts,
             source_path: None,
@@ -300,6 +331,28 @@ impl Document {
     /// Returns page numbering settings when present.
     pub fn page_numbering(&self) -> Option<&PageNumbering> {
         self.section_properties.page_numbering()
+    }
+
+    /// Returns the current document metadata.
+    pub fn metadata(&self) -> &DocumentMetadata {
+        &self.metadata
+    }
+
+    /// Returns mutable access to the document metadata.
+    pub fn metadata_mut(&mut self) -> &mut DocumentMetadata {
+        &mut self.metadata
+    }
+
+    /// Replaces the document metadata.
+    pub fn set_metadata(&mut self, metadata: DocumentMetadata) -> &mut Self {
+        self.metadata = metadata;
+        self
+    }
+
+    /// Replaces the document metadata in builder style.
+    pub fn with_metadata(mut self, metadata: DocumentMetadata) -> Self {
+        self.metadata = metadata;
+        self
     }
 
     /// Returns the document stylesheet.
@@ -501,9 +554,24 @@ impl Document {
         let mut package_parts = self.package_parts.clone();
         let visuals = self.render_visual_parts()?;
         package_parts.insert(
+            "docProps/core.xml".to_string(),
+            render_core_properties_xml(&self.metadata)?,
+        );
+        package_parts.insert(
+            "docProps/custom.xml".to_string(),
+            render_custom_properties_xml(&self.metadata)?,
+        );
+        package_parts.insert(
             "word/styles.xml".to_string(),
             write_styles_xml(&self.styles)?,
         );
+        ensure_custom_content_type(&mut package_parts)?;
+        ensure_package_relationship(
+            &mut package_parts,
+            "rId4",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+            "docProps/custom.xml",
+        )?;
         ensure_styles_relationship(&mut package_parts)?;
         package_parts.insert(
             "word/numbering.xml".to_string(),
@@ -619,6 +687,19 @@ fn ensure_styles_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<(
     )
 }
 
+fn ensure_custom_content_type(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+    let xml = parts
+        .entry("[Content_Types].xml".to_string())
+        .or_insert_with(|| CONTENT_TYPES_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Types>",
+        r#"PartName="/docProps/custom.xml""#,
+        r#"  <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
+"#,
+    )
+}
+
 fn ensure_numbering_content_type(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
     let xml = parts
         .entry("[Content_Types].xml".to_string())
@@ -629,6 +710,26 @@ fn ensure_numbering_content_type(parts: &mut BTreeMap<String, Vec<u8>>) -> Resul
         r#"PartName="/word/numbering.xml""#,
         r#"  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
 "#,
+    )
+}
+
+fn ensure_package_relationship(
+    parts: &mut BTreeMap<String, Vec<u8>>,
+    relation_id: &str,
+    relation_type: &str,
+    target: &str,
+) -> Result<()> {
+    let xml = parts
+        .entry("_rels/.rels".to_string())
+        .or_insert_with(|| PACKAGE_RELS_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Relationships>",
+        relation_id,
+        &format!(
+            r#"  <Relationship Id="{relation_id}" Type="{relation_type}" Target="{target}"/>
+"#
+        ),
     )
 }
 
@@ -743,6 +844,10 @@ fn default_package_parts() -> BTreeMap<String, Vec<u8>> {
         CORE_XML.as_bytes().to_vec(),
     );
     parts.insert(
+        "docProps/custom.xml".to_string(),
+        CUSTOM_XML.as_bytes().to_vec(),
+    );
+    parts.insert(
         "word/_rels/document.xml.rels".to_string(),
         DOCUMENT_RELS_XML.as_bytes().to_vec(),
     );
@@ -763,7 +868,7 @@ mod tests {
     use zip::{CompressionMethod, ZipWriter};
 
     use super::{BodyBlock, Document, DocumentBlockRef, DocumentMode};
-    use crate::{Paragraph, Run, Table, TableCell, TableRow};
+    use crate::{DocumentMetadata, Paragraph, Run, Table, TableCell, TableRow};
 
     fn sample_document() -> Document {
         let mut document = Document::new();
@@ -987,5 +1092,39 @@ mod tests {
         assert!(content_types.contains(r#"PartName="/word/numbering.xml""#));
         assert!(rels.contains(r#"Target="styles.xml""#));
         assert!(rels.contains(r#"Target="numbering.xml""#));
+    }
+
+    #[test]
+    fn metadata_round_trips_through_saved_package() {
+        let mut document = sample_document();
+        document.set_metadata(
+            DocumentMetadata::new()
+                .title("Board Report")
+                .author("Finance")
+                .subject("Q2 review")
+                .keyword("board")
+                .custom_property("Client", "Acme"),
+        );
+
+        let mut buffer = Cursor::new(Vec::new());
+        document
+            .save_to_writer(&mut buffer)
+            .expect("save document with metadata");
+        buffer.set_position(0);
+
+        let reopened =
+            Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite).expect("reopen");
+        assert_eq!(reopened.metadata().title.as_deref(), Some("Board Report"));
+        assert_eq!(reopened.metadata().author.as_deref(), Some("Finance"));
+        assert_eq!(reopened.metadata().subject.as_deref(), Some("Q2 review"));
+        assert_eq!(reopened.metadata().keywords, vec!["board"]);
+        assert_eq!(
+            reopened
+                .metadata()
+                .custom_properties
+                .get("Client")
+                .map(String::as_str),
+            Some("Acme")
+        );
     }
 }

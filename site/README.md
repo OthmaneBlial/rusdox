@@ -27,6 +27,8 @@ RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Th
 - Validate specs before render so semantic issues fail early in CI and local workflows.
 - Rebuild documents automatically while editing specs or config files.
 - Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
+- Keep simple authoring in YAML longer with variables, includes, and repeaters.
+- Set document metadata such as title, author, subject, keywords, and custom properties directly from specs or Rust.
 - Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.
 
 ## Real-World Use Cases
@@ -130,6 +132,8 @@ rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
 - Human-readable YAML examples
 - Config-driven styling through `rusdox.toml`
 - Reusable named paragraph, run, and table styles with inheritance
+- YAML composition features for variables, includes, and repeaters
+- First-class document metadata in specs and the Rust API
 - First-class `validate`, `watch`, and `bench` CLI workflows
 
 ## Examples
@@ -145,6 +149,7 @@ Highlights:
 - `examples/formatting_showcase.yaml`
 - `examples/named_styles_showcase.yaml`
 - `examples/visual_assets_showcase.yaml`
+- `examples/yaml_composition_showcase.yaml`
 - `examples/stress/stress_1000_pages.yaml`
 
 More detail is in [examples/README.md](examples/README.md).

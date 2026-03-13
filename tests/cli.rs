@@ -355,6 +355,70 @@ fn run_example_spec_with_named_styles_emits_style_parts_and_pdf() {
 }
 
 #[test]
+fn run_example_spec_with_yaml_composition_emits_metadata_and_pdf() {
+    let temp = tempdir().expect("temp dir");
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let spec_path = manifest_dir.join("examples/yaml_composition_showcase.yaml");
+    let output_docx = temp.path().join("yaml-composition.docx");
+
+    let output = run_cli(
+        &[
+            spec_path.to_string_lossy().as_ref(),
+            "--output",
+            output_docx.to_string_lossy().as_ref(),
+            "--with-pdf",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let pdf_path = temp.path().join("rendered").join("yaml-composition.pdf");
+    assert!(output_docx.exists(), "expected {}", output_docx.display());
+    assert!(pdf_path.exists(), "expected {}", pdf_path.display());
+
+    let docx = fs::read(&output_docx).expect("read docx");
+    let mut archive = ZipArchive::new(Cursor::new(docx)).expect("open docx zip");
+
+    let mut core_xml = String::new();
+    archive
+        .by_name("docProps/core.xml")
+        .expect("core properties should exist")
+        .read_to_string(&mut core_xml)
+        .expect("read core xml");
+    assert!(core_xml.contains("<dc:title>Northwind Health Rollout Plan</dc:title>"));
+    assert!(core_xml.contains("<dc:subject>Q4 2026 regional rollout</dc:subject>"));
+    assert!(core_xml.contains("<cp:keywords>yaml, composition, Q4 2026</cp:keywords>"));
+
+    let mut custom_xml = String::new();
+    archive
+        .by_name("docProps/custom.xml")
+        .expect("custom properties should exist")
+        .read_to_string(&mut custom_xml)
+        .expect("read custom xml");
+    assert!(custom_xml.contains(r#"name="Client""#));
+    assert!(custom_xml.contains("Northwind Health"));
+    assert!(custom_xml.contains(r#"name="Sponsor""#));
+    assert!(custom_xml.contains("Maya Chen"));
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")
+        .expect("document part should exist")
+        .read_to_string(&mut document_xml)
+        .expect("read document xml");
+    assert!(document_xml.contains("North America"));
+    assert!(document_xml.contains("EMEA"));
+    assert!(document_xml.contains("APAC"));
+
+    let pdf = fs::read(&pdf_path).expect("read pdf");
+    assert!(pdf.starts_with(b"%PDF-"));
+}
+
+#[test]
 fn validate_reports_semantic_errors_for_invalid_spec() {
     let temp = tempdir().expect("temp dir");
     let spec_path = temp.path().join("invalid.yaml");

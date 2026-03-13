@@ -3,6 +3,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::spec_expand::expand_yaml_document_spec;
+use crate::DocumentMetadata;
 use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result, Stylesheet};
 
 /// A high-level, serializable document specification.
@@ -11,6 +13,8 @@ use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result, Styleshee
 pub struct DocumentSpec {
     /// Optional logical output name. Falls back to the spec file stem when absent.
     pub output_name: Option<String>,
+    /// Optional core and custom document metadata written into the DOCX package.
+    pub metadata: DocumentMetadata,
     /// Optional page size and margin overrides for the document section.
     pub page_setup: Option<PageSetup>,
     /// Optional default header template.
@@ -44,7 +48,7 @@ impl DocumentSpec {
             .to_ascii_lowercase();
 
         let mut spec = match extension.as_str() {
-            "yaml" | "yml" | "" => Self::from_yaml_str(&content),
+            "yaml" | "yml" | "" => Self::from_yaml_path(&content, Some(path)),
             "json" => Self::from_json_str(&content),
             "toml" => Self::from_toml_str(&content),
             other => Err(DocxError::parse(format!(
@@ -57,8 +61,7 @@ impl DocumentSpec {
 
     /// Parses a YAML document specification string.
     pub fn from_yaml_str(content: &str) -> Result<Self> {
-        serde_yaml::from_str(content)
-            .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
+        Self::from_yaml_path(content, None)
     }
 
     /// Parses a JSON document specification string.
@@ -152,6 +155,12 @@ impl DocumentSpec {
     pub fn with_asset_base_dir(mut self, base_dir: impl Into<PathBuf>) -> Self {
         self.asset_base_dir = Some(base_dir.into());
         self
+    }
+
+    fn from_yaml_path(content: &str, source_path: Option<&Path>) -> Result<Self> {
+        let expanded = expand_yaml_document_spec(content, source_path)?;
+        serde_yaml::from_value(expanded)
+            .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
     }
 }
 
@@ -395,6 +404,7 @@ where
 {
     DocumentSpec {
         output_name: None,
+        metadata: DocumentMetadata::default(),
         page_setup: None,
         header: None,
         footer: None,
@@ -616,6 +626,16 @@ const DEFAULT_YAML_TEMPLATE: &str = r#"# RusDox document spec template
 #   rusdox mydoc.yaml
 
 output_name: my-document
+# Optional core and custom metadata:
+# metadata:
+#   title: My Document
+#   author: RusDox
+#   subject: Quarterly review
+#   keywords:
+#     - planning
+#     - board
+#   custom_properties:
+#     Client: Acme Corp
 # Optional layout controls:
 # page_setup:
 #   width_twips: 12240
@@ -650,6 +670,14 @@ output_name: my-document
 #       properties:
 #         italic: true
 #         color: "AA5500"
+# Optional YAML composition helpers:
+# variables:
+#   company: Acme Corp
+#   regions:
+#     - name: North America
+#       owner: Maya
+#     - name: EMEA
+#       owner: Leon
 blocks:
   - type: title
     text: My Document
@@ -678,9 +706,9 @@ mod tests {
         ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone, UnderlineStyleSpec, VisualSpec,
     };
     use crate::{
-        Border, BorderStyle, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup,
-        ParagraphAlignment, ParagraphList, ParagraphStyle, ParagraphStyleProperties, RunStyle,
-        RunStyleProperties, Stylesheet, TableBorders, TableStyle, TableStyleProperties,
+        Border, BorderStyle, DocumentMetadata, HeaderFooter, PageNumberFormat, PageNumbering,
+        PageSetup, ParagraphAlignment, ParagraphList, ParagraphStyle, ParagraphStyleProperties,
+        RunStyle, RunStyleProperties, Stylesheet, TableBorders, TableStyle, TableStyleProperties,
     };
 
     #[test]
@@ -721,6 +749,10 @@ mod tests {
     fn spec_round_trips_through_yaml() {
         let spec = super::DocumentSpec {
             output_name: Some("hello-world".to_string()),
+            metadata: DocumentMetadata::new()
+                .title("Hello World")
+                .author("RusDox")
+                .subject("Round-trip"),
             page_setup: Some(PageSetup::new(11_880, 16_380).margins(900, 1_000, 1_100, 1_200)),
             header: Some(
                 HeaderFooter::new("Board Report").with_alignment(ParagraphAlignment::Center),
@@ -769,6 +801,7 @@ mod tests {
         let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
         let spec = super::DocumentSpec {
             output_name: Some("styled-spec".to_string()),
+            metadata: DocumentMetadata::default(),
             page_setup: None,
             header: None,
             footer: None,
@@ -880,6 +913,72 @@ blocks:
         assert_eq!(yaml_spec.output_name.as_deref(), Some("hello-world"));
         assert_eq!(yaml_spec.blocks.len(), 1);
         assert_eq!(json_spec.blocks.len(), 1);
+    }
+
+    #[test]
+    fn load_from_path_expands_yaml_variables_includes_repeaters_and_metadata() {
+        let temp = tempdir().expect("temp dir");
+        let fragment_path = temp.path().join("summary.yaml");
+        let spec_path = temp.path().join("spec.yaml");
+        fs::write(
+            &fragment_path,
+            r#"variables:
+  intro: Summary for {{client}}
+blocks:
+  - type: body
+    text: "{{intro}}"
+"#,
+        )
+        .expect("write fragment");
+        fs::write(
+            &spec_path,
+            r#"output_name: regional-plan
+metadata:
+  title: "{{client}} Regional Plan"
+  author: Strategy Team
+  subject: "{{quarter}} rollout"
+  keywords:
+    - "{{quarter}}"
+    - planning
+  custom_properties:
+    Client: "{{client}}"
+variables:
+  client: Acme
+  quarter: Q2
+  regions:
+    - name: North America
+      owner: Maya
+    - name: EMEA
+      owner: Leon
+blocks:
+  - type: title
+    text: "{{client}} Regional Plan"
+  - type: include
+    path: summary.yaml
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: "{{region.name}}"
+      - type: body
+        text: "Owner: {{region.owner}}"
+"#,
+        )
+        .expect("write spec");
+
+        let spec = super::DocumentSpec::load_from_path(&spec_path).expect("load expanded yaml");
+        assert_eq!(spec.metadata.title.as_deref(), Some("Acme Regional Plan"));
+        assert_eq!(spec.metadata.subject.as_deref(), Some("Q2 rollout"));
+        assert_eq!(spec.metadata.keywords, vec!["Q2", "planning"]);
+        assert_eq!(
+            spec.metadata
+                .custom_properties
+                .get("Client")
+                .map(String::as_str),
+            Some("Acme")
+        );
+        assert_eq!(spec.blocks.len(), 6);
     }
 
     #[test]

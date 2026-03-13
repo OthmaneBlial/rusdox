@@ -1,0 +1,13 @@
+variables:
+  intro: "{{client}} is using YAML composition blocks to keep this plan in data instead of dropping to Rust."
+blocks:
+  - type: body
+    text: "{{intro}}"
+  - type: label_values
+    items:
+      - label: Program owner
+        value: "{{sponsor}}"
+      - label: Planning quarter
+        value: "{{quarter}}"
+      - label: Client
+        value: "{{client}}"

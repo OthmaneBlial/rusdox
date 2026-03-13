@@ -144,6 +144,7 @@ impl Studio {
         if let Some(page_setup) = spec.page_setup.clone() {
             document.set_page_setup(page_setup);
         }
+        document.set_metadata(spec.metadata.clone());
         document.set_header(spec.header.clone());
         document.set_footer(spec.footer.clone());
         document.set_page_numbering(spec.page_numbering.clone());
@@ -3245,9 +3246,9 @@ mod tests {
         VerticalAlignSpec,
     };
     use crate::{
-        Document, DocumentBlockRef, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup,
-        Paragraph, ParagraphAlignment, ParagraphList, Run, Stylesheet, Table, TableCell, TableRow,
-        VerticalAlign, Visual, VisualFormat, VisualKind,
+        Document, DocumentBlockRef, DocumentMetadata, HeaderFooter, PageNumberFormat,
+        PageNumbering, PageSetup, Paragraph, ParagraphAlignment, ParagraphList, Run, Stylesheet,
+        Table, TableCell, TableRow, VerticalAlign, Visual, VisualFormat, VisualKind,
     };
 
     fn default_pdf_settings() -> PdfRenderSettings {
@@ -3680,6 +3681,9 @@ mod tests {
         let numbering = PageNumbering::new(PageNumberFormat::UpperRoman).start_at(4);
         let mut spec = DocumentSpec::new();
         spec.output_name = Some("board-report".to_string());
+        spec.metadata = DocumentMetadata::new()
+            .title("Board Report")
+            .author("Finance");
         spec.page_setup = Some(page_setup.clone());
         spec.header = Some(header.clone());
         spec.footer = Some(footer.clone());
@@ -3689,6 +3693,8 @@ mod tests {
         let document = studio.compose(&spec);
 
         assert_eq!(document.page_setup(), &page_setup);
+        assert_eq!(document.metadata().title.as_deref(), Some("Board Report"));
+        assert_eq!(document.metadata().author.as_deref(), Some("Finance"));
         assert_eq!(document.header(), Some(&header));
         assert_eq!(document.footer(), Some(&footer));
         assert_eq!(document.page_numbering(), Some(&numbering));

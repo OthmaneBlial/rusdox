@@ -8,7 +8,7 @@ use crate::config::RusdoxConfig;
 use crate::spec::{
     BlockSpec, CellSpec, DocumentSpec, ParagraphSpec, RunSpec, TableSpec, VisualSpec,
 };
-use crate::{ParagraphList, ParagraphListKind, Stylesheet, TableBorders};
+use crate::{DocumentMetadata, ParagraphList, ParagraphListKind, Stylesheet, TableBorders};
 
 const BUILTIN_PARAGRAPH_STYLE_ID: &str = "Normal";
 const BUILTIN_RUN_STYLE_ID: &str = "DefaultParagraphFont";
@@ -286,6 +286,7 @@ pub fn validate_spec(spec: &DocumentSpec) -> ValidationReport {
             report.push_error("output_name", "output name cannot be blank");
         }
     }
+    validate_metadata(&mut report, &spec.metadata);
 
     validate_stylesheet(&mut report, &mut list_registry, &spec.styles);
 
@@ -407,6 +408,48 @@ fn validate_stylesheet(
     for style in stylesheet.table_styles() {
         if let Err(error) = stylesheet.resolve_table_style(Some(style.id.as_str())) {
             report.push_error(format!("styles.table.{}", style.id), error.to_string());
+        }
+    }
+}
+
+fn validate_metadata(report: &mut ValidationReport, metadata: &DocumentMetadata) {
+    if metadata
+        .title
+        .as_deref()
+        .is_some_and(|value| value.trim().is_empty())
+    {
+        report.push_error("metadata.title", "metadata title cannot be blank");
+    }
+    if metadata
+        .author
+        .as_deref()
+        .is_some_and(|value| value.trim().is_empty())
+    {
+        report.push_error("metadata.author", "metadata author cannot be blank");
+    }
+    if metadata
+        .subject
+        .as_deref()
+        .is_some_and(|value| value.trim().is_empty())
+    {
+        report.push_error("metadata.subject", "metadata subject cannot be blank");
+    }
+
+    for (index, keyword) in metadata.keywords.iter().enumerate() {
+        if keyword.trim().is_empty() {
+            report.push_error(
+                format!("metadata.keywords[{index}]"),
+                "metadata keyword cannot be blank",
+            );
+        }
+    }
+
+    for name in metadata.custom_properties.keys() {
+        if name.trim().is_empty() {
+            report.push_error(
+                "metadata.custom_properties",
+                "custom property names cannot be blank",
+            );
         }
     }
 }
@@ -951,6 +994,8 @@ mod tests {
     fn validate_spec_reports_style_table_and_visual_errors() {
         let temp = tempdir().expect("temp dir");
         let mut spec = DocumentSpec::new().with_asset_base_dir(temp.path());
+        spec.metadata.title = Some(" ".to_string());
+        spec.metadata.keywords = vec!["".to_string()];
         spec.styles = Stylesheet::new()
             .add_paragraph_style(ParagraphStyle::new("loop").based_on("loop").paragraph(
                 ParagraphStyleProperties {
@@ -1009,6 +1054,14 @@ mod tests {
         assert!(report.issues.iter().any(|issue| {
             issue.path == "styles.paragraph.loop" && issue.severity == ValidationSeverity::Error
         }));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.path == "metadata.title"));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.path == "metadata.keywords[0]"));
         assert!(report
             .issues
             .iter()
