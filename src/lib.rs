@@ -22,6 +22,7 @@
 pub mod config;
 mod document;
 mod error;
+mod layout;
 mod paragraph;
 mod run;
 pub mod spec;
@@ -31,6 +32,7 @@ mod xml_utils;
 
 pub use document::{Document, DocumentBlockRef, DocumentMode};
 pub use error::{DocxError, Result};
+pub use layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup};
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 pub use run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 pub use table::{

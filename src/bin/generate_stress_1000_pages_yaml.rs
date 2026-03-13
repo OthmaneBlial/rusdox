@@ -51,6 +51,10 @@ fn build_spec() -> DocumentSpec {
 
     DocumentSpec {
         output_name: Some("stress-1000-pages".to_string()),
+        page_setup: None,
+        header: None,
+        footer: None,
+        page_numbering: None,
         blocks,
     }
 }

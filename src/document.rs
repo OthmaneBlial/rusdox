@@ -8,11 +8,14 @@ use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::error::{DocxError, Result};
+use crate::layout::{HeaderFooter, PageNumbering, PageSetup};
 use crate::paragraph::Paragraph;
 use crate::table::Table;
 use crate::xml_utils::{
-    parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml,
-    SectionProperties,
+    hydrate_section_from_package_parts, parse_document_xml, parse_numbering_xml,
+    render_header_footer_xml, write_document_xml, write_numbering_xml, SectionProperties,
+    DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART, DEFAULT_HEADER_REL_ID,
+    FOOTER_REL_TYPE, HEADER_REL_TYPE,
 };
 
 const CONTENT_TYPES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -187,7 +190,8 @@ impl Document {
 
         let document_xml = document_xml
             .ok_or_else(|| DocxError::parse("missing OOXML part: word/document.xml"))?;
-        let parsed = parse_document_xml(&document_xml, numbering.as_ref())?;
+        let mut parsed = parse_document_xml(&document_xml, numbering.as_ref())?;
+        hydrate_section_from_package_parts(&mut parsed.section_properties, &package_parts)?;
 
         Ok(Self {
             mode: match mode {
@@ -209,6 +213,75 @@ impl Document {
     /// Returns the original source path, if the document was opened from disk.
     pub fn source_path(&self) -> Option<&Path> {
         self.source_path.as_deref()
+    }
+
+    /// Returns the active page setup.
+    pub fn page_setup(&self) -> &PageSetup {
+        self.section_properties.page_setup()
+    }
+
+    /// Replaces the active page setup.
+    pub fn set_page_setup(&mut self, page_setup: PageSetup) -> &mut Self {
+        self.section_properties.set_page_setup(page_setup);
+        self
+    }
+
+    /// Replaces the active page setup in builder style.
+    pub fn with_page_setup(mut self, page_setup: PageSetup) -> Self {
+        self.section_properties.set_page_setup(page_setup);
+        self
+    }
+
+    /// Returns the default header template when present.
+    pub fn header(&self) -> Option<&HeaderFooter> {
+        self.section_properties.header()
+    }
+
+    /// Sets or clears the default header template.
+    pub fn set_header(&mut self, header: Option<HeaderFooter>) -> &mut Self {
+        self.section_properties.set_header(header);
+        self
+    }
+
+    /// Sets the default header template in builder style.
+    pub fn with_header(mut self, header: HeaderFooter) -> Self {
+        self.section_properties.set_header(Some(header));
+        self
+    }
+
+    /// Returns the default footer template when present.
+    pub fn footer(&self) -> Option<&HeaderFooter> {
+        self.section_properties.footer()
+    }
+
+    /// Sets or clears the default footer template.
+    pub fn set_footer(&mut self, footer: Option<HeaderFooter>) -> &mut Self {
+        self.section_properties.set_footer(footer);
+        self
+    }
+
+    /// Sets the default footer template in builder style.
+    pub fn with_footer(mut self, footer: HeaderFooter) -> Self {
+        self.section_properties.set_footer(Some(footer));
+        self
+    }
+
+    /// Returns page numbering settings when present.
+    pub fn page_numbering(&self) -> Option<&PageNumbering> {
+        self.section_properties.page_numbering()
+    }
+
+    /// Sets or clears page numbering settings.
+    pub fn set_page_numbering(&mut self, page_numbering: Option<PageNumbering>) -> &mut Self {
+        self.section_properties.set_page_numbering(page_numbering);
+        self
+    }
+
+    /// Sets page numbering settings in builder style.
+    pub fn with_page_numbering(mut self, page_numbering: PageNumbering) -> Self {
+        self.section_properties
+            .set_page_numbering(Some(page_numbering));
+        self
     }
 
     /// Adds a paragraph to the end of the document body.
@@ -346,6 +419,40 @@ impl Document {
         );
         ensure_numbering_content_type(&mut package_parts)?;
         ensure_numbering_relationship(&mut package_parts)?;
+        if let Some(header) = self.header() {
+            package_parts.insert(
+                DEFAULT_HEADER_PART.to_string(),
+                render_header_footer_xml(header, "w:hdr")?,
+            );
+            ensure_header_footer_content_type(
+                &mut package_parts,
+                DEFAULT_HEADER_PART,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
+            )?;
+            ensure_header_footer_relationship(
+                &mut package_parts,
+                DEFAULT_HEADER_REL_ID,
+                HEADER_REL_TYPE,
+                "header1.xml",
+            )?;
+        }
+        if let Some(footer) = self.footer() {
+            package_parts.insert(
+                DEFAULT_FOOTER_PART.to_string(),
+                render_header_footer_xml(footer, "w:ftr")?,
+            );
+            ensure_header_footer_content_type(
+                &mut package_parts,
+                DEFAULT_FOOTER_PART,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
+            )?;
+            ensure_header_footer_relationship(
+                &mut package_parts,
+                DEFAULT_FOOTER_REL_ID,
+                FOOTER_REL_TYPE,
+                "footer1.xml",
+            )?;
+        }
         Ok(package_parts)
     }
 }
@@ -373,6 +480,45 @@ fn ensure_numbering_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Resul
         r#"Target="numbering.xml""#,
         r#"  <Relationship Id="rIdRusDoxNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
 "#,
+    )
+}
+
+fn ensure_header_footer_content_type(
+    parts: &mut BTreeMap<String, Vec<u8>>,
+    part_name: &str,
+    content_type: &str,
+) -> Result<()> {
+    let xml = parts
+        .entry("[Content_Types].xml".to_string())
+        .or_insert_with(|| CONTENT_TYPES_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Types>",
+        part_name,
+        &format!(
+            r#"  <Override PartName="/{part_name}" ContentType="{content_type}"/>
+"#
+        ),
+    )
+}
+
+fn ensure_header_footer_relationship(
+    parts: &mut BTreeMap<String, Vec<u8>>,
+    relation_id: &str,
+    relation_type: &str,
+    target: &str,
+) -> Result<()> {
+    let xml = parts
+        .entry("word/_rels/document.xml.rels".to_string())
+        .or_insert_with(|| DOCUMENT_RELS_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Relationships>",
+        relation_id,
+        &format!(
+            r#"  <Relationship Id="{relation_id}" Type="{relation_type}" Target="{target}"/>
+"#
+        ),
     )
 }
 

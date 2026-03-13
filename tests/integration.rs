@@ -1,8 +1,9 @@
 use std::io::{Cursor, Read, Write};
 
 use rusdox::{
-    Border, BorderStyle, Document, DocumentMode, Paragraph, ParagraphAlignment, ParagraphList, Run,
-    Table, TableBorders, TableCell, TableRow, UnderlineStyle,
+    Border, BorderStyle, Document, DocumentMode, HeaderFooter, PageNumberFormat, PageNumbering,
+    PageSetup, Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableBorders, TableCell,
+    TableRow, UnderlineStyle,
 };
 use tempfile::tempdir;
 use zip::write::SimpleFileOptions;
@@ -102,6 +103,81 @@ fn save_preserves_non_document_parts() -> Result<(), rusdox::DocxError> {
     assert!(parts.iter().any(|name| name == "_rels/.rels"));
     assert!(parts.iter().any(|name| name == "word/document.xml"));
     assert!(parts.iter().any(|name| name == "word/styles.xml"));
+
+    Ok(())
+}
+
+#[test]
+fn layout_controls_round_trip_and_emit_header_footer_parts() -> Result<(), rusdox::DocxError> {
+    let page_setup = PageSetup::new(13_000, 17_000)
+        .margins(900, 950, 1_000, 1_050)
+        .header_footer_distances(500, 550)
+        .gutter(120);
+    let header = HeaderFooter::new("Quarterly Review").with_alignment(ParagraphAlignment::Center);
+    let footer =
+        HeaderFooter::new("Page {page} of {pages}").with_alignment(ParagraphAlignment::Right);
+    let numbering = PageNumbering::new(PageNumberFormat::UpperRoman).start_at(7);
+
+    let mut document = Document::new()
+        .with_page_setup(page_setup.clone())
+        .with_header(header.clone())
+        .with_footer(footer.clone())
+        .with_page_numbering(numbering.clone());
+    document.push_paragraph(Paragraph::new().add_run(Run::from_text("Body")));
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    assert_eq!(reopened.page_setup(), &page_setup);
+    assert_eq!(reopened.header(), Some(&header));
+    assert_eq!(reopened.footer(), Some(&footer));
+    assert_eq!(reopened.page_numbering(), Some(&numbering));
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+    assert!(document_xml
+        .contains(r#"w:headerReference w:type="default" r:id="rIdRusDoxHeaderDefault""#));
+    assert!(document_xml
+        .contains(r#"w:footerReference w:type="default" r:id="rIdRusDoxFooterDefault""#));
+    assert!(document_xml.contains(r#"<w:pgSz w:w="13000" w:h="17000"/>"#));
+    assert!(document_xml.contains(r#"<w:pgMar w:top="900" w:right="950" w:bottom="1000" w:left="1050" w:header="500" w:footer="550" w:gutter="120"/>"#));
+    assert!(document_xml.contains(r#"<w:pgNumType w:fmt="upperRoman" w:start="7"/>"#));
+
+    let mut header_xml = String::new();
+    archive
+        .by_name("word/header1.xml")?
+        .read_to_string(&mut header_xml)?;
+    assert!(header_xml.contains("Quarterly Review"));
+    assert!(header_xml.contains(r#"<w:jc w:val="center"/>"#));
+
+    let mut footer_xml = String::new();
+    archive
+        .by_name("word/footer1.xml")?
+        .read_to_string(&mut footer_xml)?;
+    assert!(footer_xml.contains(" PAGE "));
+    assert!(footer_xml.contains(" NUMPAGES "));
+    assert!(footer_xml.contains(r#"<w:jc w:val="right"/>"#));
+
+    let mut rels_xml = String::new();
+    archive
+        .by_name("word/_rels/document.xml.rels")?
+        .read_to_string(&mut rels_xml)?;
+    assert!(rels_xml.contains("relationships/header"));
+    assert!(rels_xml.contains("relationships/footer"));
+
+    let mut content_types = String::new();
+    archive
+        .by_name("[Content_Types].xml")?
+        .read_to_string(&mut content_types)?;
+    assert!(content_types.contains("/word/header1.xml"));
+    assert!(content_types.contains("/word/footer1.xml"));
 
     Ok(())
 }

@@ -634,6 +634,10 @@ fn default_path_with_fallback() -> PathBuf {
 fn starter_document_spec() -> DocumentSpec {
     DocumentSpec {
         output_name: Some("my-document".to_string()),
+        page_setup: None,
+        header: None,
+        footer: None,
+        page_numbering: None,
         blocks: vec![
             rusdox::spec::title("My Document"),
             rusdox::spec::subtitle("Written as data, rendered by Rust"),

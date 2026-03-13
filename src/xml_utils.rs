@@ -6,6 +6,7 @@ use quick_xml::{Reader, Writer};
 
 use crate::document::BodyBlock;
 use crate::error::{DocxError, Result};
+use crate::layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup};
 use crate::paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 use crate::run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 use crate::table::{
@@ -15,36 +16,74 @@ use crate::table::{
 
 const WORD_NS: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const REL_NS: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+pub(crate) const HEADER_REL_TYPE: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
+pub(crate) const FOOTER_REL_TYPE: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
+pub(crate) const DEFAULT_HEADER_REL_ID: &str = "rIdRusDoxHeaderDefault";
+pub(crate) const DEFAULT_FOOTER_REL_ID: &str = "rIdRusDoxFooterDefault";
+pub(crate) const DEFAULT_HEADER_PART: &str = "word/header1.xml";
+pub(crate) const DEFAULT_FOOTER_PART: &str = "word/footer1.xml";
 
 /// Internal section settings preserved for the generated document body.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct SectionProperties {
     section_type: String,
-    page_width: u32,
-    page_height: u32,
-    margin_top: u32,
-    margin_right: u32,
-    margin_bottom: u32,
-    margin_left: u32,
-    header: u32,
-    footer: u32,
-    gutter: u32,
+    page_setup: PageSetup,
+    header: Option<HeaderFooter>,
+    footer: Option<HeaderFooter>,
+    page_numbering: Option<PageNumbering>,
+    header_reference_id: Option<String>,
+    footer_reference_id: Option<String>,
 }
 
 impl Default for SectionProperties {
     fn default() -> Self {
         Self {
             section_type: "nextPage".to_string(),
-            page_width: 12_240,
-            page_height: 15_840,
-            margin_top: 1_440,
-            margin_right: 1_440,
-            margin_bottom: 1_440,
-            margin_left: 1_440,
-            header: 720,
-            footer: 720,
-            gutter: 0,
+            page_setup: PageSetup::default(),
+            header: None,
+            footer: None,
+            page_numbering: None,
+            header_reference_id: None,
+            footer_reference_id: None,
         }
+    }
+}
+
+impl SectionProperties {
+    pub(crate) fn page_setup(&self) -> &PageSetup {
+        &self.page_setup
+    }
+
+    pub(crate) fn set_page_setup(&mut self, page_setup: PageSetup) {
+        self.page_setup = page_setup;
+    }
+
+    pub(crate) fn header(&self) -> Option<&HeaderFooter> {
+        self.header.as_ref()
+    }
+
+    pub(crate) fn set_header(&mut self, header: Option<HeaderFooter>) {
+        self.header = header;
+        self.header_reference_id = None;
+    }
+
+    pub(crate) fn footer(&self) -> Option<&HeaderFooter> {
+        self.footer.as_ref()
+    }
+
+    pub(crate) fn set_footer(&mut self, footer: Option<HeaderFooter>) {
+        self.footer = footer;
+        self.footer_reference_id = None;
+    }
+
+    pub(crate) fn page_numbering(&self) -> Option<&PageNumbering> {
+        self.page_numbering.as_ref()
+    }
+
+    pub(crate) fn set_page_numbering(&mut self, page_numbering: Option<PageNumbering>) {
+        self.page_numbering = page_numbering;
     }
 }
 
@@ -1107,21 +1146,37 @@ where
                     }
                     skip_current_element(reader)?;
                 }
+                b"headerReference" => {
+                    if let Some(value) = attribute_value(&start, b"id") {
+                        section.header_reference_id = Some(value);
+                    }
+                    skip_current_element(reader)?;
+                }
+                b"footerReference" => {
+                    if let Some(value) = attribute_value(&start, b"id") {
+                        section.footer_reference_id = Some(value);
+                    }
+                    skip_current_element(reader)?;
+                }
                 b"pgSz" => {
                     if let Some(value) =
                         attribute_value(&start, b"w").and_then(|value| value.parse().ok())
                     {
-                        section.page_width = value;
+                        section.page_setup.width_twips = value;
                     }
                     if let Some(value) =
                         attribute_value(&start, b"h").and_then(|value| value.parse().ok())
                     {
-                        section.page_height = value;
+                        section.page_setup.height_twips = value;
                     }
                     skip_current_element(reader)?;
                 }
                 b"pgMar" => {
                     parse_page_margins(&mut section, &start);
+                    skip_current_element(reader)?;
+                }
+                b"pgNumType" => {
+                    section.page_numbering = Some(parse_page_numbering(&start));
                     skip_current_element(reader)?;
                 }
                 _ => skip_current_element(reader)?,
@@ -1132,19 +1187,30 @@ where
                         section.section_type = value;
                     }
                 }
+                b"headerReference" => {
+                    if let Some(value) = attribute_value(&start, b"id") {
+                        section.header_reference_id = Some(value);
+                    }
+                }
+                b"footerReference" => {
+                    if let Some(value) = attribute_value(&start, b"id") {
+                        section.footer_reference_id = Some(value);
+                    }
+                }
                 b"pgSz" => {
                     if let Some(value) =
                         attribute_value(&start, b"w").and_then(|value| value.parse().ok())
                     {
-                        section.page_width = value;
+                        section.page_setup.width_twips = value;
                     }
                     if let Some(value) =
                         attribute_value(&start, b"h").and_then(|value| value.parse().ok())
                     {
-                        section.page_height = value;
+                        section.page_setup.height_twips = value;
                     }
                 }
                 b"pgMar" => parse_page_margins(&mut section, &start),
+                b"pgNumType" => section.page_numbering = Some(parse_page_numbering(&start)),
                 _ => {}
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"sectPr" => {
@@ -1165,25 +1231,34 @@ where
 
 fn parse_page_margins(section: &mut SectionProperties, start: &BytesStart<'_>) {
     if let Some(value) = attribute_value(start, b"top").and_then(|value| value.parse().ok()) {
-        section.margin_top = value;
+        section.page_setup.margin_top_twips = value;
     }
     if let Some(value) = attribute_value(start, b"right").and_then(|value| value.parse().ok()) {
-        section.margin_right = value;
+        section.page_setup.margin_right_twips = value;
     }
     if let Some(value) = attribute_value(start, b"bottom").and_then(|value| value.parse().ok()) {
-        section.margin_bottom = value;
+        section.page_setup.margin_bottom_twips = value;
     }
     if let Some(value) = attribute_value(start, b"left").and_then(|value| value.parse().ok()) {
-        section.margin_left = value;
+        section.page_setup.margin_left_twips = value;
     }
     if let Some(value) = attribute_value(start, b"header").and_then(|value| value.parse().ok()) {
-        section.header = value;
+        section.page_setup.header_twips = value;
     }
     if let Some(value) = attribute_value(start, b"footer").and_then(|value| value.parse().ok()) {
-        section.footer = value;
+        section.page_setup.footer_twips = value;
     }
     if let Some(value) = attribute_value(start, b"gutter").and_then(|value| value.parse().ok()) {
-        section.gutter = value;
+        section.page_setup.gutter_twips = value;
+    }
+}
+
+fn parse_page_numbering(start: &BytesStart<'_>) -> PageNumbering {
+    PageNumbering {
+        start_at: attribute_value(start, b"start").and_then(|value| value.parse().ok()),
+        format: attribute_value(start, b"fmt")
+            .map(|value| PageNumberFormat::from_xml(&value))
+            .unwrap_or(PageNumberFormat::Decimal),
     }
 }
 
@@ -1522,25 +1597,52 @@ where
 {
     writer.write_event(Event::Start(BytesStart::new("w:sectPr")))?;
 
+    if section_properties.header.is_some() {
+        let mut header = BytesStart::new("w:headerReference");
+        header.push_attribute(("w:type", "default"));
+        header.push_attribute(("r:id", DEFAULT_HEADER_REL_ID));
+        writer.write_event(Event::Empty(header))?;
+    } else if let Some(reference_id) = section_properties.header_reference_id.as_deref() {
+        let mut header = BytesStart::new("w:headerReference");
+        header.push_attribute(("w:type", "default"));
+        header.push_attribute(("r:id", reference_id));
+        writer.write_event(Event::Empty(header))?;
+    }
+
+    if section_properties.footer.is_some() {
+        let mut footer = BytesStart::new("w:footerReference");
+        footer.push_attribute(("w:type", "default"));
+        footer.push_attribute(("r:id", DEFAULT_FOOTER_REL_ID));
+        writer.write_event(Event::Empty(footer))?;
+    } else if let Some(reference_id) = section_properties.footer_reference_id.as_deref() {
+        let mut footer = BytesStart::new("w:footerReference");
+        footer.push_attribute(("w:type", "default"));
+        footer.push_attribute(("r:id", reference_id));
+        writer.write_event(Event::Empty(footer))?;
+    }
+
     let mut section_type = BytesStart::new("w:type");
     section_type.push_attribute(("w:val", section_properties.section_type.as_str()));
     writer.write_event(Event::Empty(section_type))?;
 
     let mut page_size = BytesStart::new("w:pgSz");
-    let page_width = section_properties.page_width.to_string();
-    let page_height = section_properties.page_height.to_string();
+    let page_width = section_properties.page_setup.width_twips.to_string();
+    let page_height = section_properties.page_setup.height_twips.to_string();
     page_size.push_attribute(("w:w", page_width.as_str()));
     page_size.push_attribute(("w:h", page_height.as_str()));
     writer.write_event(Event::Empty(page_size))?;
 
     let mut page_margins = BytesStart::new("w:pgMar");
-    let top = section_properties.margin_top.to_string();
-    let right = section_properties.margin_right.to_string();
-    let bottom = section_properties.margin_bottom.to_string();
-    let left = section_properties.margin_left.to_string();
-    let header = section_properties.header.to_string();
-    let footer = section_properties.footer.to_string();
-    let gutter = section_properties.gutter.to_string();
+    let top = section_properties.page_setup.margin_top_twips.to_string();
+    let right = section_properties.page_setup.margin_right_twips.to_string();
+    let bottom = section_properties
+        .page_setup
+        .margin_bottom_twips
+        .to_string();
+    let left = section_properties.page_setup.margin_left_twips.to_string();
+    let header = section_properties.page_setup.header_twips.to_string();
+    let footer = section_properties.page_setup.footer_twips.to_string();
+    let gutter = section_properties.page_setup.gutter_twips.to_string();
     page_margins.push_attribute(("w:top", top.as_str()));
     page_margins.push_attribute(("w:right", right.as_str()));
     page_margins.push_attribute(("w:bottom", bottom.as_str()));
@@ -1550,7 +1652,416 @@ where
     page_margins.push_attribute(("w:gutter", gutter.as_str()));
     writer.write_event(Event::Empty(page_margins))?;
 
+    if let Some(page_numbering) = &section_properties.page_numbering {
+        let mut start = BytesStart::new("w:pgNumType");
+        start.push_attribute(("w:fmt", page_numbering.format.as_xml_value()));
+        let start_at = page_numbering.start_at.map(|value| value.to_string());
+        if let Some(start_at) = start_at.as_deref() {
+            start.push_attribute(("w:start", start_at));
+        }
+        writer.write_event(Event::Empty(start))?;
+    }
+
     writer.write_event(Event::End(BytesEnd::new("w:sectPr")))?;
+    Ok(())
+}
+
+pub(crate) fn hydrate_section_from_package_parts(
+    section_properties: &mut SectionProperties,
+    package_parts: &BTreeMap<String, Vec<u8>>,
+) -> Result<()> {
+    let Some(relationships_xml) = package_parts.get("word/_rels/document.xml.rels") else {
+        return Ok(());
+    };
+    let relationships = parse_relationship_targets(relationships_xml)?;
+
+    if let Some(reference_id) = section_properties.header_reference_id.as_deref() {
+        if let Some(target) = relationships.get(reference_id) {
+            let part_name = word_part_name_from_target(target);
+            if let Some(xml) = package_parts.get(&part_name) {
+                if let Ok(header) = parse_header_footer_xml(xml, b"hdr") {
+                    section_properties.header = Some(header);
+                }
+            }
+        }
+    }
+
+    if let Some(reference_id) = section_properties.footer_reference_id.as_deref() {
+        if let Some(target) = relationships.get(reference_id) {
+            let part_name = word_part_name_from_target(target);
+            if let Some(xml) = package_parts.get(&part_name) {
+                if let Ok(footer) = parse_header_footer_xml(xml, b"ftr") {
+                    section_properties.footer = Some(footer);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) fn render_header_footer_xml(
+    header_footer: &HeaderFooter,
+    root_tag: &str,
+) -> Result<Vec<u8>> {
+    let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
+    writer.write_event(Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
+
+    let mut root = BytesStart::new(root_tag);
+    root.push_attribute(("xmlns:w", WORD_NS));
+    writer.write_event(Event::Start(root))?;
+    write_header_footer_paragraph(&mut writer, header_footer)?;
+    writer.write_event(Event::End(BytesEnd::new(root_tag)))?;
+    Ok(writer.into_inner())
+}
+
+fn parse_relationship_targets(xml: &[u8]) -> Result<BTreeMap<String, String>> {
+    let mut reader = Reader::from_reader(Cursor::new(xml));
+    reader.config_mut().trim_text(false);
+
+    let mut relationships = BTreeMap::new();
+    let mut buffer = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == b"Relationship" => {
+                let Some(id) = attribute_value(&start, b"Id") else {
+                    buffer.clear();
+                    continue;
+                };
+                let Some(target) = attribute_value(&start, b"Target") else {
+                    buffer.clear();
+                    continue;
+                };
+                relationships.insert(id, target);
+                skip_current_element(&mut reader)?;
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"Relationship" => {
+                let Some(id) = attribute_value(&start, b"Id") else {
+                    buffer.clear();
+                    continue;
+                };
+                let Some(target) = attribute_value(&start, b"Target") else {
+                    buffer.clear();
+                    continue;
+                };
+                relationships.insert(id, target);
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(relationships)
+}
+
+fn word_part_name_from_target(target: &str) -> String {
+    if target.starts_with("word/") {
+        target.to_string()
+    } else if target.starts_with("/word/") {
+        target.trim_start_matches('/').to_string()
+    } else {
+        format!("word/{target}")
+    }
+}
+
+fn parse_header_footer_xml(xml: &[u8], root_local_name: &[u8]) -> Result<HeaderFooter> {
+    let mut reader = Reader::from_reader(Cursor::new(xml));
+    reader.config_mut().trim_text(false);
+
+    let mut text = String::new();
+    let mut alignment = ParagraphAlignment::Left;
+    let mut saw_paragraph = false;
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == root_local_name => {}
+            Event::Start(start) if local_name(start.name().as_ref()) == b"p" => {
+                let (paragraph_alignment, paragraph_text) =
+                    parse_header_footer_paragraph(&mut reader)?;
+                if !saw_paragraph {
+                    alignment = paragraph_alignment;
+                }
+                if !paragraph_text.is_empty() {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(&paragraph_text);
+                }
+                saw_paragraph = true;
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"p" => {
+                saw_paragraph = true;
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(HeaderFooter::new(text).with_alignment(alignment))
+}
+
+#[derive(Default)]
+struct HeaderFooterFieldState {
+    skip_text_until_field_end: bool,
+}
+
+fn parse_header_footer_paragraph<R>(reader: &mut Reader<R>) -> Result<(ParagraphAlignment, String)>
+where
+    R: BufRead,
+{
+    let mut alignment = ParagraphAlignment::Left;
+    let mut text = String::new();
+    let mut field_state = HeaderFooterFieldState::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"pPr" => {
+                    let properties = parse_paragraph_properties(reader, None)?;
+                    alignment = properties.alignment.unwrap_or(ParagraphAlignment::Left);
+                }
+                b"r" => text.push_str(&parse_header_footer_run(reader, &mut field_state)?),
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => {
+                if local_name(start.name().as_ref()) == b"r" {
+                    // Ignore empty runs.
+                }
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"p" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML header/footer: unexpected end of file in w:p",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok((alignment, text))
+}
+
+fn parse_header_footer_run<R>(
+    reader: &mut Reader<R>,
+    field_state: &mut HeaderFooterFieldState,
+) -> Result<String>
+where
+    R: BufRead,
+{
+    let mut text = String::new();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"rPr" => skip_current_element(reader)?,
+                b"t" => {
+                    if !field_state.skip_text_until_field_end {
+                        text.push_str(&parse_text_element(reader)?);
+                    } else {
+                        skip_current_element(reader)?;
+                    }
+                }
+                b"instrText" => {
+                    if let Some(token) = parse_instruction_placeholder(reader)? {
+                        field_state.skip_text_until_field_end = true;
+                        text.push_str(token);
+                    }
+                }
+                b"fldChar" => {
+                    apply_field_char_state(field_state, &start);
+                    skip_current_element(reader)?;
+                }
+                b"tab" => {
+                    if !field_state.skip_text_until_field_end {
+                        text.push('\t');
+                    }
+                    skip_current_element(reader)?;
+                }
+                b"br" => {
+                    if !field_state.skip_text_until_field_end {
+                        text.push('\n');
+                    }
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"fldChar" => apply_field_char_state(field_state, &start),
+                b"tab" if !field_state.skip_text_until_field_end => text.push('\t'),
+                b"br" if !field_state.skip_text_until_field_end => text.push('\n'),
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"r" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML header/footer: unexpected end of file in w:r",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(text)
+}
+
+fn parse_instruction_placeholder<R>(reader: &mut Reader<R>) -> Result<Option<&'static str>>
+where
+    R: BufRead,
+{
+    let mut instruction = String::new();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Text(value) => {
+                let raw = String::from_utf8_lossy(value.as_ref());
+                instruction.push_str(&quick_xml::escape::unescape(&raw)?);
+            }
+            Event::CData(value) => {
+                instruction.push_str(&String::from_utf8_lossy(value.as_ref()));
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"instrText" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML header/footer: unexpected end of file in w:instrText",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    let uppercase = instruction.to_ascii_uppercase();
+    if uppercase.contains("NUMPAGES") {
+        Ok(Some("{pages}"))
+    } else if uppercase.contains("PAGE") {
+        Ok(Some("{page}"))
+    } else {
+        Ok(None)
+    }
+}
+
+fn apply_field_char_state(field_state: &mut HeaderFooterFieldState, start: &BytesStart<'_>) {
+    match attribute_value(start, b"fldCharType").as_deref() {
+        Some("begin") => field_state.skip_text_until_field_end = false,
+        Some("separate") => field_state.skip_text_until_field_end = true,
+        Some("end") => field_state.skip_text_until_field_end = false,
+        _ => {}
+    }
+}
+
+fn write_header_footer_paragraph<W>(
+    writer: &mut Writer<W>,
+    header_footer: &HeaderFooter,
+) -> Result<()>
+where
+    W: Write,
+{
+    writer.write_event(Event::Start(BytesStart::new("w:p")))?;
+
+    if header_footer.alignment != ParagraphAlignment::Left {
+        writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+        let mut alignment = BytesStart::new("w:jc");
+        alignment.push_attribute(("w:val", header_footer.alignment.as_xml_value()));
+        writer.write_event(Event::Empty(alignment))?;
+        writer.write_event(Event::End(BytesEnd::new("w:pPr")))?;
+    }
+
+    write_header_footer_template_runs(writer, &header_footer.text)?;
+    writer.write_event(Event::End(BytesEnd::new("w:p")))?;
+    Ok(())
+}
+
+fn write_header_footer_template_runs<W>(writer: &mut Writer<W>, template: &str) -> Result<()>
+where
+    W: Write,
+{
+    if template.is_empty() {
+        write_plain_header_footer_run(writer, "")?;
+        return Ok(());
+    }
+
+    let mut cursor = 0usize;
+    while cursor < template.len() {
+        let remaining = &template[cursor..];
+        if remaining.starts_with("{pages}") {
+            write_field_runs(writer, "NUMPAGES", "1")?;
+            cursor += "{pages}".len();
+            continue;
+        }
+        if remaining.starts_with("{page}") {
+            write_field_runs(writer, "PAGE", "1")?;
+            cursor += "{page}".len();
+            continue;
+        }
+
+        let next_page = remaining.find("{page}");
+        let next_pages = remaining.find("{pages}");
+        let next_token = match (next_page, next_pages) {
+            (Some(page), Some(pages)) => page.min(pages),
+            (Some(page), None) => page,
+            (None, Some(pages)) => pages,
+            (None, None) => remaining.len(),
+        };
+        write_plain_header_footer_run(writer, &remaining[..next_token])?;
+        cursor += next_token;
+    }
+
+    Ok(())
+}
+
+fn write_plain_header_footer_run<W>(writer: &mut Writer<W>, text: &str) -> Result<()>
+where
+    W: Write,
+{
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    write_run_content(writer, &Run::from_text(text))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+    Ok(())
+}
+
+fn write_field_runs<W>(writer: &mut Writer<W>, instruction: &str, fallback_text: &str) -> Result<()>
+where
+    W: Write,
+{
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    let mut begin = BytesStart::new("w:fldChar");
+    begin.push_attribute(("w:fldCharType", "begin"));
+    writer.write_event(Event::Empty(begin))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    let mut instr_text = BytesStart::new("w:instrText");
+    instr_text.push_attribute(("xml:space", "preserve"));
+    writer.write_event(Event::Start(instr_text))?;
+    writer.write_event(Event::Text(BytesText::new(&format!(" {instruction} "))))?;
+    writer.write_event(Event::End(BytesEnd::new("w:instrText")))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    let mut separate = BytesStart::new("w:fldChar");
+    separate.push_attribute(("w:fldCharType", "separate"));
+    writer.write_event(Event::Empty(separate))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+
+    write_plain_header_footer_run(writer, fallback_text)?;
+
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    let mut end = BytesStart::new("w:fldChar");
+    end.push_attribute(("w:fldCharType", "end"));
+    writer.write_event(Event::Empty(end))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
     Ok(())
 }
 
@@ -1603,7 +2114,9 @@ fn local_name(name: &[u8]) -> &[u8] {
 mod tests {
     use super::{parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml};
     use crate::document::BodyBlock;
-    use crate::{Paragraph, ParagraphList, Run, Table, TableCell, TableRow};
+    use crate::{
+        HeaderFooter, Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow,
+    };
 
     #[test]
     fn writer_emits_space_preserve_for_boundary_whitespace() {
@@ -1682,6 +2195,23 @@ mod tests {
         assert!(xml.contains(r#"<w:rFonts w:ascii="Arial""#));
         assert!(xml.contains(r#"<w:sz w:val="36""#));
         assert!(xml.contains(r#"<w:shd w:val="clear" w:color="auto" w:fill="E2E8F0""#));
+    }
+
+    #[test]
+    fn header_footer_templates_emit_fields_and_round_trip_placeholders() {
+        let footer =
+            HeaderFooter::new("Page {page} of {pages}").with_alignment(ParagraphAlignment::Right);
+        let footer_xml = super::render_header_footer_xml(&footer, "w:ftr")
+            .unwrap_or_else(|error| panic!("render footer: {error}"));
+        let xml = String::from_utf8_lossy(&footer_xml);
+
+        assert!(xml.contains(r#"<w:jc w:val="right"/>"#));
+        assert!(xml.contains(" PAGE "));
+        assert!(xml.contains(" NUMPAGES "));
+
+        let parsed = super::parse_header_footer_xml(&footer_xml, b"ftr")
+            .unwrap_or_else(|error| panic!("parse footer: {error}"));
+        assert_eq!(parsed, footer);
     }
 
     #[test]

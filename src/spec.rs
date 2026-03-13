@@ -3,7 +3,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{DocxError, Result};
+use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result};
 
 /// A high-level, serializable document specification.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -11,6 +11,14 @@ use crate::{DocxError, Result};
 pub struct DocumentSpec {
     /// Optional logical output name. Falls back to the spec file stem when absent.
     pub output_name: Option<String>,
+    /// Optional page size and margin overrides for the document section.
+    pub page_setup: Option<PageSetup>,
+    /// Optional default header template.
+    pub header: Option<HeaderFooter>,
+    /// Optional default footer template.
+    pub footer: Option<HeaderFooter>,
+    /// Optional page numbering format and restart control.
+    pub page_numbering: Option<PageNumbering>,
     pub blocks: Vec<BlockSpec>,
 }
 
@@ -293,6 +301,10 @@ where
 {
     DocumentSpec {
         output_name: None,
+        page_setup: None,
+        header: None,
+        footer: None,
+        page_numbering: None,
         blocks: blocks.into_iter().collect(),
     }
 }
@@ -483,6 +495,23 @@ const DEFAULT_YAML_TEMPLATE: &str = r#"# RusDox document spec template
 #   rusdox mydoc.yaml
 
 output_name: my-document
+# Optional layout controls:
+# page_setup:
+#   width_twips: 12240
+#   height_twips: 15840
+#   margin_top_twips: 1440
+#   margin_right_twips: 1440
+#   margin_bottom_twips: 1440
+#   margin_left_twips: 1440
+# header:
+#   text: "Quarterly review"
+#   alignment: center
+# footer:
+#   text: "Page {page} of {pages}"
+#   alignment: right
+# page_numbering:
+#   start_at: 1
+#   format: decimal
 blocks:
   - type: title
     text: My Document
@@ -510,6 +539,7 @@ mod tests {
         section, status, table, title, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone,
         UnderlineStyleSpec,
     };
+    use crate::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, ParagraphAlignment};
 
     #[test]
     fn spec_round_trips_through_json() {
@@ -538,6 +568,15 @@ mod tests {
     fn spec_round_trips_through_yaml() {
         let spec = super::DocumentSpec {
             output_name: Some("hello-world".to_string()),
+            page_setup: Some(PageSetup::new(11_880, 16_380).margins(900, 1_000, 1_100, 1_200)),
+            header: Some(
+                HeaderFooter::new("Board Report").with_alignment(ParagraphAlignment::Center),
+            ),
+            footer: Some(
+                HeaderFooter::new("Page {page} of {pages}")
+                    .with_alignment(ParagraphAlignment::Right),
+            ),
+            page_numbering: Some(PageNumbering::new(PageNumberFormat::UpperRoman).start_at(3)),
             blocks: vec![
                 title("Hello"),
                 paragraph(ParagraphSpec {

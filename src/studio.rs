@@ -133,6 +133,12 @@ impl Studio {
     /// Renders a high-level document specification into a [`Document`].
     pub fn compose(&self, spec: &DocumentSpec) -> Document {
         let mut document = Document::new();
+        if let Some(page_setup) = spec.page_setup.clone() {
+            document.set_page_setup(page_setup);
+        }
+        document.set_header(spec.header.clone());
+        document.set_footer(spec.footer.clone());
+        document.set_page_numbering(spec.page_numbering.clone());
         self.append_spec(&mut document, spec);
         document
     }
@@ -2455,11 +2461,12 @@ mod tests {
     };
     use crate::config::RusdoxConfig;
     use crate::spec::{
-        ParagraphAlignmentSpec, ParagraphSpec, RunSpec, UnderlineStyleSpec, VerticalAlignSpec,
+        DocumentSpec, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, UnderlineStyleSpec,
+        VerticalAlignSpec,
     };
     use crate::{
-        Document, Paragraph, ParagraphAlignment, ParagraphList, Run, TableCell, TableRow,
-        VerticalAlign,
+        Document, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, Paragraph,
+        ParagraphAlignment, ParagraphList, Run, TableCell, TableRow, VerticalAlign,
     };
 
     fn default_pdf_settings() -> PdfRenderSettings {
@@ -2798,6 +2805,34 @@ mod tests {
                 .font_size,
             Some(points_to_u16(13.0).saturating_mul(2))
         );
+    }
+
+    #[test]
+    fn compose_applies_document_layout_controls() {
+        let studio = Studio::new(RusdoxConfig::default());
+        let page_setup = PageSetup::new(13_000, 17_000)
+            .margins(900, 950, 1_000, 1_050)
+            .header_footer_distances(500, 550)
+            .gutter(120);
+        let header = HeaderFooter::new("Board Report").with_alignment(ParagraphAlignment::Center);
+        let footer =
+            HeaderFooter::new("Page {page} of {pages}").with_alignment(ParagraphAlignment::Right);
+        let numbering = PageNumbering::new(PageNumberFormat::UpperRoman).start_at(4);
+        let spec = DocumentSpec {
+            output_name: Some("board-report".to_string()),
+            page_setup: Some(page_setup.clone()),
+            header: Some(header.clone()),
+            footer: Some(footer.clone()),
+            page_numbering: Some(numbering.clone()),
+            blocks: vec![crate::spec::title("Board Report")],
+        };
+
+        let document = studio.compose(&spec);
+
+        assert_eq!(document.page_setup(), &page_setup);
+        assert_eq!(document.header(), Some(&header));
+        assert_eq!(document.footer(), Some(&footer));
+        assert_eq!(document.page_numbering(), Some(&numbering));
     }
 
     #[test]

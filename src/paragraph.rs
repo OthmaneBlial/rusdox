@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::run::Run;
 
 const MAX_LIST_LEVEL: u8 = 8;
@@ -5,7 +7,8 @@ const DEFAULT_BULLET_LIST_ID: u32 = 1;
 const DEFAULT_NUMBERED_LIST_ID: u32 = 2;
 
 /// Paragraph alignment options.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ParagraphAlignment {
     /// Left aligned text.
     Left,
