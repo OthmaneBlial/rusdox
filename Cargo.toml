@@ -28,7 +28,7 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 tempfile = "3.15"
 thiserror = "2.0"
-toml = "0.9"
+toml = "1.0"
 ttf-parser = "0.25"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 
