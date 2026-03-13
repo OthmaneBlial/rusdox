@@ -30,7 +30,7 @@ tempfile = "3.15"
 thiserror = "2.0"
 toml = "0.9"
 ttf-parser = "0.25"
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "8.2", default-features = false, features = ["deflate"] }
 
 [profile.dev]
 opt-level = 2
