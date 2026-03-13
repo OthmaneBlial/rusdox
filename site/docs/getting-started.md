@@ -95,6 +95,30 @@ If a folder contains YAML specs, RusDox can render all of them:
 rusdox examples
 ```
 
+## 7. Validate before you render in CI
+
+```bash
+rusdox validate mydoc.yaml
+```
+
+That catches semantic issues such as invalid colors, table shape mismatches, missing assets, or unknown named styles before output is written.
+
+## 8. Watch while you edit
+
+```bash
+rusdox watch mydoc.yaml
+```
+
+RusDox rebuilds when the spec or active config changes.
+
+## 9. Measure the pipeline
+
+```bash
+rusdox bench mydoc.yaml --iterations 5 --warmup 1
+```
+
+This reports parse, validation, compose, DOCX, PDF, and total timings from the CLI.
+
 ## What Happens Behind The Scenes
 
 When you run `rusdox mydoc.yaml`, RusDox:

@@ -1,13 +1,20 @@
 use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use dialoguer::{Confirm, Input, Select};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
 use rusdox::spec::DocumentSpec;
-use rusdox::studio::{Studio, DEFAULT_CONFIG_FILE};
-use rusdox::{DocxError, Result};
+use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
+use rusdox::{
+    validate_config, validate_spec, DocxError, Result, ValidationIssue, ValidationReport,
+    ValidationSeverity,
+};
+use serde::Serialize;
 use tempfile::tempdir;
 
 #[derive(Debug, Parser)]
@@ -50,6 +57,12 @@ enum Commands {
     InitDoc(InitDocArgs),
     /// Create a starter script compatible with `rusdox mydoc.rs`.
     InitScript(InitScriptArgs),
+    /// Validate a document spec or spec directory without rendering output.
+    Validate(ValidateArgs),
+    /// Rebuild a document spec automatically when the spec or config changes.
+    Watch(WatchArgs),
+    /// Measure parse, validate, compose, DOCX, and PDF timings for a spec or spec directory.
+    Bench(BenchArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -94,6 +107,12 @@ impl DocumentFormat {
             Self::Toml => "toml",
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum ReportFormat {
+    Text,
+    Json,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -162,6 +181,148 @@ struct InitScriptArgs {
     force: bool,
 }
 
+#[derive(Debug, Args)]
+struct ValidateArgs {
+    /// Spec file or directory to validate.
+    input: PathBuf,
+    /// Optional config path used for config-aware validation.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Output report format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
+#[derive(Debug, Args)]
+struct WatchArgs {
+    /// Spec file or directory to watch.
+    input: PathBuf,
+    /// Optional explicit output DOCX path for a single watched spec file.
+    #[arg(long)]
+    output: Option<PathBuf>,
+    /// Optional config path used while rebuilding.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Force DOCX-only generation (disable PDF output).
+    #[arg(long)]
+    docx_only: bool,
+    /// Force PDF generation (overrides config if disabled).
+    #[arg(long, conflicts_with = "docx_only")]
+    with_pdf: bool,
+    /// Poll interval in milliseconds.
+    #[arg(long, default_value_t = 750)]
+    poll_interval_ms: u64,
+    /// Stop after this many build attempts, including the initial build.
+    #[arg(long)]
+    max_builds: Option<u32>,
+}
+
+#[derive(Debug, Args)]
+struct BenchArgs {
+    /// Spec file or directory to benchmark.
+    input: PathBuf,
+    /// Optional config path used while benchmarking.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Force DOCX-only generation (disable PDF output).
+    #[arg(long)]
+    docx_only: bool,
+    /// Force PDF generation (overrides config if disabled).
+    #[arg(long, conflicts_with = "docx_only")]
+    with_pdf: bool,
+    /// Number of measured iterations.
+    #[arg(long, default_value_t = 3)]
+    iterations: u32,
+    /// Number of warmup iterations to discard before measuring.
+    #[arg(long, default_value_t = 0)]
+    warmup: u32,
+    /// Output report format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+    /// Keep benchmark artifacts in the configured output folders instead of using a temporary workspace.
+    #[arg(long)]
+    keep_output: bool,
+}
+
+#[derive(Debug)]
+struct SpecInspection {
+    spec: DocumentSpec,
+    parse_duration: Duration,
+    validation_duration: Duration,
+    report: ValidationReport,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct BuildSummary {
+    documents: usize,
+    parse_duration: Duration,
+    validation_duration: Duration,
+    compose_duration: Duration,
+    output_stats: OutputStats,
+    total_duration: Duration,
+    warning_count: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct BenchSample {
+    parse_duration: Duration,
+    validation_duration: Duration,
+    compose_duration: Duration,
+    docx_duration: Duration,
+    pdf_duration: Duration,
+    total_duration: Duration,
+    docx_bytes: u64,
+    pdf_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ValidationFileResult {
+    path: String,
+    parse_ms: f64,
+    validate_ms: f64,
+    issues: Vec<ValidationIssue>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ValidationCommandResult {
+    target: String,
+    specs: usize,
+    errors: usize,
+    warnings: usize,
+    config_issues: Vec<ValidationIssue>,
+    files: Vec<ValidationFileResult>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct NumericSummary {
+    avg: f64,
+    min: f64,
+    max: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct BenchCommandResult {
+    target: String,
+    specs: usize,
+    iterations: u32,
+    warmup: u32,
+    emit_pdf: bool,
+    keep_output: bool,
+    parse_ms: NumericSummary,
+    validate_ms: NumericSummary,
+    compose_ms: NumericSummary,
+    docx_ms: NumericSummary,
+    pdf_ms: NumericSummary,
+    total_ms: NumericSummary,
+    docx_bytes: NumericSummary,
+    pdf_bytes: NumericSummary,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct WatchSnapshot {
+    states: Vec<(PathBuf, u64)>,
+}
+
 fn main() {
     if let Err(error) = run() {
         eprintln!("error: {error}");
@@ -176,6 +337,9 @@ fn run() -> Result<()> {
             Commands::Config { command } => run_config_command(command),
             Commands::InitDoc(args) => init_doc(args),
             Commands::InitScript(args) => init_script(args),
+            Commands::Validate(args) => run_validate(args),
+            Commands::Watch(args) => run_watch(args),
+            Commands::Bench(args) => run_bench(args),
         };
     }
 
@@ -293,6 +457,670 @@ fn show_config(args: ShowArgs) -> Result<()> {
     Ok(())
 }
 
+fn run_validate(args: ValidateArgs) -> Result<()> {
+    let config = load_runtime_config(args.config.as_deref())?;
+    let config_report = validate_config(&config);
+    let spec_paths = collect_spec_inputs(&args.input)?;
+    let mut files = Vec::with_capacity(spec_paths.len());
+
+    for spec_path in &spec_paths {
+        let inspection = inspect_spec(spec_path)?;
+        files.push(ValidationFileResult {
+            path: spec_path.display().to_string(),
+            parse_ms: duration_ms(inspection.parse_duration),
+            validate_ms: duration_ms(inspection.validation_duration),
+            issues: inspection.report.issues,
+        });
+    }
+
+    let errors = config_report.error_count()
+        + files
+            .iter()
+            .map(|file| {
+                file.issues
+                    .iter()
+                    .filter(|issue| issue.severity == ValidationSeverity::Error)
+                    .count()
+            })
+            .sum::<usize>();
+    let warnings = config_report.warning_count()
+        + files
+            .iter()
+            .map(|file| {
+                file.issues
+                    .iter()
+                    .filter(|issue| issue.severity == ValidationSeverity::Warning)
+                    .count()
+            })
+            .sum::<usize>();
+
+    let result = ValidationCommandResult {
+        target: args.input.display().to_string(),
+        specs: spec_paths.len(),
+        errors,
+        warnings,
+        config_issues: config_report.issues,
+        files,
+    };
+
+    match args.format {
+        ReportFormat::Text => {
+            if result.errors > 0 {
+                return Err(DocxError::Parse(format_validation_result_text(&result)));
+            }
+            println!("{}", format_validation_result_text(&result));
+        }
+        ReportFormat::Json => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&result).map_err(|error| {
+                    DocxError::Parse(format!("failed to serialize validation report: {error}"))
+                })?
+            );
+            if result.errors > 0 {
+                return Err(DocxError::Parse("validation failed".to_string()));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn run_watch(args: WatchArgs) -> Result<()> {
+    if args.input.is_dir() && args.output.is_some() {
+        return Err(DocxError::Parse(
+            "--output is only supported for a single watched spec file".to_string(),
+        ));
+    }
+
+    let poll_interval = Duration::from_millis(args.poll_interval_ms.max(50));
+    let mut snapshot = capture_watch_snapshot(&args.input, args.config.as_deref())?;
+    let mut build_attempts = 0_u32;
+    let mut pending_reason = "initial build".to_string();
+
+    loop {
+        build_attempts += 1;
+        println!("watch build {build_attempts}: {pending_reason}");
+
+        let config = runtime_config(args.config.as_deref(), args.docx_only, args.with_pdf)?;
+        match build_spec_input(&args.input, args.output.as_deref(), &config, true, true) {
+            Ok(summary) => {
+                println!(
+                    "watch build {build_attempts} succeeded in {} across {} spec(s) (warnings: {})",
+                    format_duration(summary.total_duration),
+                    summary.documents,
+                    summary.warning_count
+                );
+            }
+            Err(error) => {
+                eprintln!("watch build {build_attempts} failed: {error}");
+            }
+        }
+
+        if args
+            .max_builds
+            .is_some_and(|limit| build_attempts >= limit.max(1))
+        {
+            break;
+        }
+
+        loop {
+            thread::sleep(poll_interval);
+            let next_snapshot = capture_watch_snapshot(&args.input, args.config.as_deref())?;
+            if next_snapshot != snapshot {
+                let changed = changed_paths(&snapshot, &next_snapshot);
+                pending_reason = if changed.is_empty() {
+                    "change detected".to_string()
+                } else {
+                    format!(
+                        "change detected in {}",
+                        changed
+                            .iter()
+                            .map(|path| path.display().to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                };
+                snapshot = next_snapshot;
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn run_bench(args: BenchArgs) -> Result<()> {
+    if args.iterations == 0 {
+        return Err(DocxError::Parse(
+            "--iterations must be greater than zero".to_string(),
+        ));
+    }
+
+    let spec_paths = collect_spec_inputs(&args.input)?;
+    let mut config = runtime_config(args.config.as_deref(), args.docx_only, args.with_pdf)?;
+    let temp = if args.keep_output {
+        None
+    } else {
+        let temp = tempdir()?;
+        config.output.docx_dir = temp.path().join("generated").to_string_lossy().to_string();
+        config.output.pdf_dir = temp.path().join("rendered").to_string_lossy().to_string();
+        Some(temp)
+    };
+
+    let config_report = validate_config(&config);
+    handle_validation_issues(
+        "config",
+        &config_report,
+        true,
+        "benchmark target has validation errors",
+    )?;
+
+    for _ in 0..args.warmup {
+        let _ = bench_once(&spec_paths, &config, false)?;
+    }
+
+    let mut samples = Vec::with_capacity(args.iterations as usize);
+    for iteration in 0..args.iterations {
+        let sample = bench_once(&spec_paths, &config, iteration == 0)?;
+        samples.push(sample);
+    }
+
+    drop(temp);
+
+    let result = BenchCommandResult {
+        target: args.input.display().to_string(),
+        specs: spec_paths.len(),
+        iterations: args.iterations,
+        warmup: args.warmup,
+        emit_pdf: config.output.emit_pdf_preview,
+        keep_output: args.keep_output,
+        parse_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.parse_duration)),
+        ),
+        validate_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.validation_duration)),
+        ),
+        compose_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.compose_duration)),
+        ),
+        docx_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.docx_duration)),
+        ),
+        pdf_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.pdf_duration)),
+        ),
+        total_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.total_duration)),
+        ),
+        docx_bytes: summarize_f64(samples.iter().map(|sample| sample.docx_bytes as f64)),
+        pdf_bytes: summarize_f64(samples.iter().map(|sample| sample.pdf_bytes as f64)),
+    };
+
+    match args.format {
+        ReportFormat::Text => println!("{}", format_bench_result_text(&result)),
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&result).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize benchmark report: {error}"))
+            })?
+        ),
+    }
+
+    Ok(())
+}
+
+fn inspect_spec(spec_path: &Path) -> Result<SpecInspection> {
+    let parse_start = Instant::now();
+    let spec = DocumentSpec::load_from_path(spec_path)?;
+    let parse_duration = parse_start.elapsed();
+
+    let validate_start = Instant::now();
+    let report = validate_spec(&spec);
+    let validation_duration = validate_start.elapsed();
+
+    Ok(SpecInspection {
+        spec,
+        parse_duration,
+        validation_duration,
+        report,
+    })
+}
+
+fn build_spec_input(
+    input: &Path,
+    output: Option<&Path>,
+    config: &RusdoxConfig,
+    announce_outputs: bool,
+    print_warnings: bool,
+) -> Result<BuildSummary> {
+    handle_validation_issues(
+        "config",
+        &validate_config(config),
+        print_warnings,
+        "rendering aborted because the active config has validation errors",
+    )?;
+
+    if input.is_dir() {
+        if output.is_some() {
+            return Err(DocxError::Parse(
+                "--output is only supported for a single file input".to_string(),
+            ));
+        }
+
+        let started = Instant::now();
+        let spec_paths = collect_spec_inputs(input)?;
+        let mut parse_duration = Duration::ZERO;
+        let mut validation_duration = Duration::ZERO;
+        let mut compose_duration = Duration::ZERO;
+        let mut output_stats = OutputStats {
+            docx_write: Duration::ZERO,
+            pdf_render: Duration::ZERO,
+            docx_bytes: 0,
+            pdf_bytes: 0,
+        };
+        let mut warning_count = 0usize;
+
+        for spec_path in &spec_paths {
+            let summary =
+                build_spec_file(spec_path, None, config, announce_outputs, print_warnings)?;
+            parse_duration += summary.parse_duration;
+            validation_duration += summary.validation_duration;
+            compose_duration += summary.compose_duration;
+            output_stats.docx_write += summary.output_stats.docx_write;
+            output_stats.pdf_render += summary.output_stats.pdf_render;
+            output_stats.docx_bytes += summary.output_stats.docx_bytes;
+            output_stats.pdf_bytes += summary.output_stats.pdf_bytes;
+            warning_count += summary.warning_count;
+        }
+
+        Ok(BuildSummary {
+            documents: spec_paths.len(),
+            parse_duration,
+            validation_duration,
+            compose_duration,
+            output_stats,
+            total_duration: started.elapsed(),
+            warning_count,
+        })
+    } else {
+        build_spec_file(input, output, config, announce_outputs, print_warnings)
+    }
+}
+
+fn build_spec_file(
+    spec_path: &Path,
+    output: Option<&Path>,
+    config: &RusdoxConfig,
+    announce_outputs: bool,
+    print_warnings: bool,
+) -> Result<BuildSummary> {
+    if !is_spec_path(spec_path) {
+        return Err(DocxError::Parse(format!(
+            "unsupported input type: {} (expected .yaml, .yml, .json, or .toml)",
+            spec_path.display()
+        )));
+    }
+
+    let started = Instant::now();
+    let inspection = inspect_spec(spec_path)?;
+    handle_validation_issues(
+        &spec_path.display().to_string(),
+        &inspection.report,
+        print_warnings,
+        "rendering aborted because the spec has validation errors",
+    )?;
+
+    let studio = Studio::new(config.clone());
+    let compose_start = Instant::now();
+    let document = studio.compose(&inspection.spec);
+    let compose_duration = compose_start.elapsed();
+
+    let output_stats = if let Some(output_path) = output {
+        let output_path = to_absolute_path(output_path)?;
+        if let Some(parent) = output_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        if announce_outputs {
+            studio.save_with_pdf_stats(&document, &output_path)?
+        } else {
+            studio.save_with_pdf_stats_quiet(&document, &output_path)?
+        }
+    } else {
+        let output_name = inspection
+            .spec
+            .output_name
+            .clone()
+            .unwrap_or_else(|| default_output_name_for_spec(spec_path));
+        if announce_outputs {
+            studio.save_named(&document, &output_name)?
+        } else {
+            studio.save_named_quiet(&document, &output_name)?
+        }
+    };
+
+    Ok(BuildSummary {
+        documents: 1,
+        parse_duration: inspection.parse_duration,
+        validation_duration: inspection.validation_duration,
+        compose_duration,
+        output_stats,
+        total_duration: started.elapsed(),
+        warning_count: inspection.report.warning_count(),
+    })
+}
+
+fn bench_once(
+    spec_paths: &[PathBuf],
+    config: &RusdoxConfig,
+    print_warnings: bool,
+) -> Result<BenchSample> {
+    let started = Instant::now();
+    let mut parse_duration = Duration::ZERO;
+    let mut validation_duration = Duration::ZERO;
+    let mut compose_duration = Duration::ZERO;
+    let mut docx_duration = Duration::ZERO;
+    let mut pdf_duration = Duration::ZERO;
+    let mut docx_bytes = 0_u64;
+    let mut pdf_bytes = 0_u64;
+
+    for spec_path in spec_paths {
+        let summary = build_spec_file(spec_path, None, config, false, print_warnings)?;
+        parse_duration += summary.parse_duration;
+        validation_duration += summary.validation_duration;
+        compose_duration += summary.compose_duration;
+        docx_duration += summary.output_stats.docx_write;
+        pdf_duration += summary.output_stats.pdf_render;
+        docx_bytes += summary.output_stats.docx_bytes;
+        pdf_bytes += summary.output_stats.pdf_bytes;
+    }
+
+    Ok(BenchSample {
+        parse_duration,
+        validation_duration,
+        compose_duration,
+        docx_duration,
+        pdf_duration,
+        total_duration: started.elapsed(),
+        docx_bytes,
+        pdf_bytes,
+    })
+}
+
+fn collect_spec_inputs(input: &Path) -> Result<Vec<PathBuf>> {
+    if !input.exists() {
+        return Err(DocxError::Parse(format!(
+            "input not found: {}",
+            input.display()
+        )));
+    }
+
+    if input.is_dir() {
+        let mut entries = fs::read_dir(input)?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| path.is_file() && is_spec_path(path))
+            .collect::<Vec<_>>();
+        entries.sort();
+        if entries.is_empty() {
+            return Err(DocxError::Parse(format!(
+                "no document spec files found in {}",
+                input.display()
+            )));
+        }
+        Ok(entries)
+    } else if is_spec_path(input) {
+        Ok(vec![input.to_path_buf()])
+    } else {
+        Err(DocxError::Parse(format!(
+            "unsupported input type: {} (expected .yaml, .yml, .json, .toml, or a directory)",
+            input.display()
+        )))
+    }
+}
+
+fn handle_validation_issues(
+    label: &str,
+    report: &ValidationReport,
+    print_warnings: bool,
+    error_prefix: &str,
+) -> Result<()> {
+    if report.has_warnings() && print_warnings {
+        eprintln!("{}", format_issue_list(label, report, true));
+    }
+    if report.has_errors() {
+        return Err(DocxError::Parse(format!(
+            "{error_prefix}\n{}",
+            format_issue_list(label, report, false)
+        )));
+    }
+    Ok(())
+}
+
+fn capture_watch_snapshot(input: &Path, config_path: Option<&Path>) -> Result<WatchSnapshot> {
+    let mut watched_paths = collect_spec_inputs(input)?;
+    if let Some(config_path) = config_path {
+        watched_paths.push(config_path.to_path_buf());
+    } else {
+        watched_paths.push(PathBuf::from(DEFAULT_CONFIG_FILE));
+        if let Some(user_path) = default_user_config_path() {
+            watched_paths.push(user_path);
+        }
+    }
+    watched_paths.sort();
+    watched_paths.dedup();
+
+    let mut states = Vec::with_capacity(watched_paths.len());
+    for path in watched_paths {
+        states.push((path.clone(), hash_path_state(&path)?));
+    }
+    Ok(WatchSnapshot { states })
+}
+
+fn hash_path_state(path: &Path) -> Result<u64> {
+    let mut hasher = DefaultHasher::new();
+    path.hash(&mut hasher);
+    if path.exists() {
+        let bytes = fs::read(path)?;
+        1_u8.hash(&mut hasher);
+        bytes.hash(&mut hasher);
+    } else {
+        0_u8.hash(&mut hasher);
+    }
+    Ok(hasher.finish())
+}
+
+fn changed_paths(previous: &WatchSnapshot, next: &WatchSnapshot) -> Vec<PathBuf> {
+    let previous = previous
+        .states
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let next = next
+        .states
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut changed = Vec::new();
+
+    for path in previous.keys().chain(next.keys()) {
+        if previous.get(path) != next.get(path) && !changed.iter().any(|item| item == path) {
+            changed.push(path.clone());
+        }
+    }
+
+    changed
+}
+
+fn format_validation_result_text(result: &ValidationCommandResult) -> String {
+    let mut lines = vec![format!(
+        "validated {} spec(s) under {}: {} error(s), {} warning(s)",
+        result.specs, result.target, result.errors, result.warnings
+    )];
+
+    if !result.config_issues.is_empty() {
+        lines.push("config:".to_string());
+        for issue in &result.config_issues {
+            lines.push(format_issue_line(issue));
+        }
+    }
+
+    for file in &result.files {
+        lines.push(format!("{}:", file.path));
+        if file.issues.is_empty() {
+            lines.push("  [ok] no semantic issues".to_string());
+        } else {
+            for issue in &file.issues {
+                lines.push(format_issue_line(issue));
+            }
+        }
+    }
+
+    lines.join("\n")
+}
+
+fn format_issue_list(label: &str, report: &ValidationReport, warnings_only: bool) -> String {
+    let mut lines = vec![format!("{label}:")];
+    let issues = report
+        .issues
+        .iter()
+        .filter(|issue| !warnings_only || issue.severity == ValidationSeverity::Warning)
+        .collect::<Vec<_>>();
+    for issue in issues {
+        lines.push(format_issue_line(issue));
+    }
+    lines.join("\n")
+}
+
+fn format_issue_line(issue: &ValidationIssue) -> String {
+    let severity = match issue.severity {
+        ValidationSeverity::Error => "error",
+        ValidationSeverity::Warning => "warning",
+    };
+    format!("  [{severity}] {}: {}", issue.path, issue.message)
+}
+
+fn summarize_f64(values: impl Iterator<Item = f64>) -> NumericSummary {
+    let collected = values.collect::<Vec<_>>();
+    let count = collected.len().max(1) as f64;
+    let sum = collected.iter().sum::<f64>();
+    let min = collected
+        .iter()
+        .copied()
+        .fold(f64::INFINITY, f64::min)
+        .min(sum);
+    let max = collected
+        .iter()
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max)
+        .max(sum);
+    NumericSummary {
+        avg: sum / count,
+        min: if collected.is_empty() { 0.0 } else { min },
+        max: if collected.is_empty() { 0.0 } else { max },
+    }
+}
+
+fn format_bench_result_text(result: &BenchCommandResult) -> String {
+    [
+        format!("benchmark target: {}", result.target),
+        format!("specs: {}", result.specs),
+        format!("iterations: {}", result.iterations),
+        format!("warmup: {}", result.warmup),
+        format!("pdf enabled: {}", result.emit_pdf),
+        format!("keep output: {}", result.keep_output),
+        format!(
+            "parse: {} avg, {} min, {} max",
+            format_ms(result.parse_ms.avg),
+            format_ms(result.parse_ms.min),
+            format_ms(result.parse_ms.max)
+        ),
+        format!(
+            "validate: {} avg, {} min, {} max",
+            format_ms(result.validate_ms.avg),
+            format_ms(result.validate_ms.min),
+            format_ms(result.validate_ms.max)
+        ),
+        format!(
+            "compose: {} avg, {} min, {} max",
+            format_ms(result.compose_ms.avg),
+            format_ms(result.compose_ms.min),
+            format_ms(result.compose_ms.max)
+        ),
+        format!(
+            "docx write: {} avg, {} min, {} max",
+            format_ms(result.docx_ms.avg),
+            format_ms(result.docx_ms.min),
+            format_ms(result.docx_ms.max)
+        ),
+        format!(
+            "pdf render: {} avg, {} min, {} max",
+            format_ms(result.pdf_ms.avg),
+            format_ms(result.pdf_ms.min),
+            format_ms(result.pdf_ms.max)
+        ),
+        format!(
+            "total: {} avg, {} min, {} max",
+            format_ms(result.total_ms.avg),
+            format_ms(result.total_ms.min),
+            format_ms(result.total_ms.max)
+        ),
+        format!(
+            "docx bytes: {} avg, {} min, {} max",
+            format_bytes(result.docx_bytes.avg.round() as u64),
+            format_bytes(result.docx_bytes.min.round() as u64),
+            format_bytes(result.docx_bytes.max.round() as u64)
+        ),
+        format!(
+            "pdf bytes: {} avg, {} min, {} max",
+            format_bytes(result.pdf_bytes.avg.round() as u64),
+            format_bytes(result.pdf_bytes.min.round() as u64),
+            format_bytes(result.pdf_bytes.max.round() as u64)
+        ),
+    ]
+    .join("\n")
+}
+
+fn duration_ms(duration: Duration) -> f64 {
+    duration.as_secs_f64() * 1000.0
+}
+
+fn format_duration(duration: Duration) -> String {
+    format_ms(duration_ms(duration))
+}
+
+fn format_ms(value: f64) -> String {
+    format!("{value:.2} ms")
+}
+
+fn format_bytes(bytes: u64) -> String {
+    let kib = 1024.0;
+    let mib = kib * 1024.0;
+    let gib = mib * 1024.0;
+    let value = bytes as f64;
+
+    if value >= gib {
+        format!("{:.2} GiB", value / gib)
+    } else if value >= mib {
+        format!("{:.2} MiB", value / mib)
+    } else if value >= kib {
+        format!("{:.2} KiB", value / kib)
+    } else {
+        format!("{bytes} B")
+    }
+}
+
 fn run_input(
     input: PathBuf,
     output: Option<PathBuf>,
@@ -342,24 +1170,9 @@ fn run_spec_file(
     docx_only: bool,
     with_pdf: bool,
 ) -> Result<()> {
-    let spec = DocumentSpec::load_from_path(&spec_path)?;
     let config = runtime_config(config_path.as_deref(), docx_only, with_pdf)?;
-    let studio = Studio::new(config);
-
-    if let Some(output_path) = output {
-        let output_path = to_absolute_path(&output_path)?;
-        if let Some(parent) = output_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let document = studio.compose(&spec);
-        studio.save_with_pdf(&document, output_path)
-    } else {
-        let output_name = spec
-            .output_name
-            .clone()
-            .unwrap_or_else(|| default_output_name_for_spec(&spec_path));
-        studio.save_spec_named(&spec, &output_name).map(|_| ())
-    }
+    let _summary = build_spec_input(&spec_path, output.as_deref(), &config, true, true)?;
+    Ok(())
 }
 
 fn run_spec_dir(
@@ -368,31 +1181,8 @@ fn run_spec_dir(
     docx_only: bool,
     with_pdf: bool,
 ) -> Result<()> {
-    let mut entries = fs::read_dir(&dir)?
-        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-        .filter(|path| path.is_file() && is_spec_path(path))
-        .collect::<Vec<_>>();
-    entries.sort();
-
-    if entries.is_empty() {
-        return Err(DocxError::Parse(format!(
-            "no document spec files found in {}",
-            dir.display()
-        )));
-    }
-
     let config = runtime_config(config_path.as_deref(), docx_only, with_pdf)?;
-    let studio = Studio::new(config);
-
-    for spec_path in entries {
-        let spec = DocumentSpec::load_from_path(&spec_path)?;
-        let output_name = spec
-            .output_name
-            .clone()
-            .unwrap_or_else(|| default_output_name_for_spec(&spec_path));
-        studio.save_spec_named(&spec, &output_name)?;
-    }
-
+    let _summary = build_spec_input(&dir, None, &config, true, true)?;
     Ok(())
 }
 
@@ -441,8 +1231,7 @@ fn run_script(
     config.output.docx_dir = output_dir.clone();
     config.output.pdf_dir = output_dir;
 
-    let temp = tempdir()?;
-    let runner_dir = temp.path();
+    let runner_dir = cached_script_runner_dir(&script_path);
     let manifest_path = runner_dir.join("Cargo.toml");
     let src_dir = runner_dir.join("src");
     fs::create_dir_all(&src_dir)?;
@@ -464,6 +1253,7 @@ fn run_script(
     command.arg("--quiet");
     command.arg("--manifest-path");
     command.arg(&manifest_path);
+    command.current_dir(&runner_dir);
 
     let status = command.status()?;
     if !status.success() {
@@ -478,6 +1268,12 @@ fn default_output_for_script(script_path: &Path) -> PathBuf {
     let mut path = script_path.to_path_buf();
     path.set_extension("docx");
     path
+}
+
+fn cached_script_runner_dir(script_path: &Path) -> PathBuf {
+    let mut hasher = DefaultHasher::new();
+    script_path.hash(&mut hasher);
+    std::env::temp_dir().join(format!("rusdox-script-runner-{:016x}", hasher.finish()))
 }
 
 fn default_output_name_for_spec(spec_path: &Path) -> String {

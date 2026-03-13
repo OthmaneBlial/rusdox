@@ -18,6 +18,7 @@ If you want the simplest path:
 
 - Start with [Getting Started](getting-started.md)
 - Use YAML files
+- Run `rusdox validate mydoc.yaml` before big renders or CI
 - Use `rusdox config wizard --level basic`
 
 If you want more control:
@@ -40,6 +41,7 @@ If you are a developer and want full power:
 - how DOCX and PDF generation works
 - how to style documents with config and named styles
 - how to render one file or a whole folder
+- how to validate, watch, and benchmark from the CLI
 - how to use the Rust layer for advanced cases
 - how to present the repository well on GitHub
 

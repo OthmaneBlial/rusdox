@@ -24,6 +24,9 @@ RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Th
 - Generate a 1000-page DOCX and PDF pair in under a second in release mode.
 - Create large files without Word, LibreOffice, or an external office runtime.
 - Keep authoring readable with YAML while the heavy lifting stays in Rust.
+- Validate specs before render so semantic issues fail early in CI and local workflows.
+- Rebuild documents automatically while editing specs or config files.
+- Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
 - Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.
 
 ## Real-World Use Cases
@@ -99,6 +102,25 @@ Render a whole folder of YAML docs:
 rusdox examples
 ```
 
+Validate before rendering:
+
+```bash
+rusdox validate mydoc.yaml
+rusdox validate examples --format json
+```
+
+Watch a spec while editing:
+
+```bash
+rusdox watch mydoc.yaml
+```
+
+Benchmark a render path:
+
+```bash
+rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
+```
+
 ## What Makes It Different
 
 - Pure Rust `.docx` generation
@@ -108,6 +130,7 @@ rusdox examples
 - Human-readable YAML examples
 - Config-driven styling through `rusdox.toml`
 - Reusable named paragraph, run, and table styles with inheritance
+- First-class `validate`, `watch`, and `bench` CLI workflows
 
 ## Examples
 

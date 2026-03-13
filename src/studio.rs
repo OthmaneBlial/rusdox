@@ -132,6 +132,12 @@ impl Studio {
         self.save_with_pdf_stats(document, docx_path)
     }
 
+    /// Saves a document using the configured output directories and file stem without printing paths.
+    pub fn save_named_quiet(&self, document: &Document, name: &str) -> crate::Result<OutputStats> {
+        let docx_path = self.docx_output_path(name);
+        self.save_with_pdf_stats_quiet(document, docx_path)
+    }
+
     /// Renders a high-level document specification into a [`Document`].
     pub fn compose(&self, spec: &DocumentSpec) -> Document {
         let mut document = Document::new();
@@ -175,11 +181,39 @@ impl Studio {
         Ok(())
     }
 
+    /// Writes DOCX and optional PDF output without printing artifact paths.
+    pub fn save_with_pdf_quiet(
+        &self,
+        document: &Document,
+        docx_path: impl AsRef<Path>,
+    ) -> crate::Result<()> {
+        let _stats = self.save_with_pdf_stats_quiet(document, docx_path)?;
+        Ok(())
+    }
+
     /// Writes DOCX and optional PDF output and returns timing stats.
     pub fn save_with_pdf_stats(
         &self,
         document: &Document,
         docx_path: impl AsRef<Path>,
+    ) -> crate::Result<OutputStats> {
+        self.save_with_pdf_stats_impl(document, docx_path, true)
+    }
+
+    /// Writes DOCX and optional PDF output and returns timing stats without printing artifact paths.
+    pub fn save_with_pdf_stats_quiet(
+        &self,
+        document: &Document,
+        docx_path: impl AsRef<Path>,
+    ) -> crate::Result<OutputStats> {
+        self.save_with_pdf_stats_impl(document, docx_path, false)
+    }
+
+    fn save_with_pdf_stats_impl(
+        &self,
+        document: &Document,
+        docx_path: impl AsRef<Path>,
+        announce_outputs: bool,
     ) -> crate::Result<OutputStats> {
         let docx_path = docx_path.as_ref();
         if let Some(parent) = docx_path.parent() {
@@ -205,9 +239,11 @@ impl Studio {
             render_pdf(document, &pdf_path, &self.config)?;
             pdf_render = pdf_start.elapsed();
             pdf_bytes = fs::metadata(&pdf_path)?.len();
-            println!("{}", docx_path.display());
-            println!("{}", pdf_path.display());
-        } else {
+            if announce_outputs {
+                println!("{}", docx_path.display());
+                println!("{}", pdf_path.display());
+            }
+        } else if announce_outputs {
             println!("{}", docx_path.display());
         }
 
@@ -339,6 +375,12 @@ impl Studio {
         document
             .paragraphs()
             .filter_map(|paragraph| paragraph.list().map(|list| list.id()))
+            .chain(
+                document
+                    .styles()
+                    .paragraph_styles()
+                    .filter_map(|style| style.paragraph.list.map(|list| list.id())),
+            )
             .max()
             .unwrap_or(0)
             + 1

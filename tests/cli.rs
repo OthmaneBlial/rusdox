@@ -1,7 +1,9 @@
 use std::fs;
 use std::io::{Cursor, Read};
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
 
 use tempfile::tempdir;
 use zip::ZipArchive;
@@ -16,6 +18,16 @@ fn run_cli(args: &[&str], cwd: &Path) -> std::process::Output {
         .current_dir(cwd)
         .output()
         .expect("failed to run rusdox binary")
+}
+
+fn spawn_cli(args: &[&str], cwd: &Path) -> std::process::Child {
+    Command::new(rusdox_bin())
+        .args(args)
+        .current_dir(cwd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("failed to spawn rusdox binary")
 }
 
 fn script_source() -> &'static str {
@@ -340,4 +352,335 @@ fn run_example_spec_with_named_styles_emits_style_parts_and_pdf() {
         pdf.len() > 2_000,
         "expected rendered pdf to contain real content"
     );
+}
+
+#[test]
+fn validate_reports_semantic_errors_for_invalid_spec() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("invalid.yaml");
+    fs::write(
+        &spec_path,
+        r##"output_name: invalid
+styles:
+  run:
+    - id: accent
+      properties:
+        color: "#AA5500"
+blocks:
+  - type: paragraph
+    spec:
+      runs:
+        - text: Broken
+          color: XYZ123
+  - type: table
+    spec:
+      columns:
+        - label: Only
+          width: 1200
+      rows:
+        - cells:
+            - kind: text
+              text: A
+            - kind: text
+              text: B
+"##,
+    )
+    .expect("write invalid spec");
+
+    let output = run_cli(
+        &["validate", spec_path.to_string_lossy().as_ref()],
+        temp.path(),
+    );
+    assert!(
+        !output.status.success(),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("invalid color '#AA5500'"));
+    assert!(stderr.contains("invalid color 'XYZ123'"));
+    assert!(stderr.contains("row has 2 cells but the table only defines 1 columns"));
+}
+
+#[test]
+fn validate_json_reports_success_for_valid_spec() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let output = run_cli(
+        &[
+            "validate",
+            spec_path.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("valid validation json");
+    assert_eq!(json["errors"], 0);
+    assert_eq!(json["warnings"], 0);
+    assert_eq!(json["specs"], 1);
+}
+
+#[test]
+fn validate_reports_config_errors_in_json_mode() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    let config_path = temp.path().join("rusdox.toml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+    fs::write(
+        &config_path,
+        r##"
+[colors]
+accent = "#12GG45"
+"##,
+    )
+    .expect("write invalid config");
+
+    let output = run_cli(
+        &[
+            "validate",
+            spec_path.to_string_lossy().as_ref(),
+            "--config",
+            config_path.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        !output.status.success(),
+        "stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("valid validation json");
+    assert_eq!(json["specs"], 1);
+    assert!(json["errors"].as_u64().unwrap_or_default() >= 1);
+    assert!(json["config_issues"]
+        .as_array()
+        .expect("config_issues array")
+        .iter()
+        .any(|issue| issue["message"]
+            == "invalid color '#12GG45', expected six hex digits without '#'"));
+}
+
+#[test]
+fn render_rejects_semantic_validation_errors_before_writing_output() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("bad.yaml");
+    fs::write(
+        &spec_path,
+        r#"output_name: bad
+blocks:
+  - type: image
+    path: missing.png
+"#,
+    )
+    .expect("write invalid spec");
+
+    let output = run_cli(&[spec_path.to_string_lossy().as_ref()], temp.path());
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("rendering aborted because the spec has validation errors"));
+    assert!(stderr.contains("visual asset does not exist"));
+    assert!(!temp.path().join("generated").join("bad.docx").exists());
+}
+
+#[test]
+fn bench_outputs_json_summary_without_leaving_artifacts_by_default() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let output = run_cli(
+        &[
+            "bench",
+            spec_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--iterations",
+            "2",
+            "--warmup",
+            "1",
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("valid benchmark json");
+    assert_eq!(json["specs"], 1);
+    assert_eq!(json["iterations"], 2);
+    assert_eq!(json["warmup"], 1);
+    assert_eq!(json["emit_pdf"], false);
+    assert!(json["parse_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
+    assert!(json["validate_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
+    assert!(json["compose_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
+    assert!(json["docx_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
+    assert_eq!(json["pdf_ms"]["avg"].as_f64().unwrap_or_default(), 0.0);
+    assert!(!temp.path().join("generated").exists());
+    assert!(!temp.path().join("rendered").exists());
+}
+
+#[test]
+fn bench_keep_output_writes_artifacts_when_requested() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let output = run_cli(
+        &[
+            "bench",
+            spec_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--iterations",
+            "1",
+            "--keep-output",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("benchmark target:"));
+    assert!(temp.path().join("generated").join("mydoc.docx").exists());
+    assert!(!temp.path().join("rendered").join("mydoc.pdf").exists());
+}
+
+#[test]
+fn watch_rebuilds_after_spec_changes() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let child = spawn_cli(
+        &[
+            "watch",
+            spec_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--poll-interval-ms",
+            "100",
+            "--max-builds",
+            "2",
+        ],
+        temp.path(),
+    );
+
+    let docx_path = temp.path().join("generated").join("mydoc.docx");
+    for _ in 0..50 {
+        if docx_path.exists() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    assert!(docx_path.exists(), "expected {}", docx_path.display());
+
+    fs::write(
+        &spec_path,
+        r#"output_name: mydoc
+blocks:
+  - type: title
+    text: Hello from YAML
+  - type: body
+    text: Updated watch content.
+"#,
+    )
+    .expect("update spec");
+
+    let output = child.wait_with_output().expect("watch should exit");
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("watch build 1"));
+    assert!(stdout.contains("watch build 2"));
+    assert!(stdout.contains("change detected"));
+    assert!(stdout.contains("succeeded"));
+    assert!(docx_path.exists(), "expected {}", docx_path.display());
+}
+
+#[test]
+fn watch_rebuilds_after_config_changes() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    let config_path = temp.path().join("rusdox.toml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+    fs::write(
+        &config_path,
+        r#"
+[typography]
+body_size_pt = 11
+"#,
+    )
+    .expect("write config");
+
+    let child = spawn_cli(
+        &[
+            "watch",
+            spec_path.to_string_lossy().as_ref(),
+            "--config",
+            config_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--poll-interval-ms",
+            "100",
+            "--max-builds",
+            "2",
+        ],
+        temp.path(),
+    );
+
+    let docx_path = temp.path().join("generated").join("mydoc.docx");
+    for _ in 0..50 {
+        if docx_path.exists() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(100));
+    }
+    assert!(docx_path.exists(), "expected {}", docx_path.display());
+
+    fs::write(
+        &config_path,
+        r#"
+[typography]
+body_size_pt = 13
+"#,
+    )
+    .expect("update config");
+
+    let output = child.wait_with_output().expect("watch should exit");
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("watch build 1"));
+    assert!(stdout.contains("watch build 2"));
+    assert!(stdout.contains(config_path.to_string_lossy().as_ref()));
+    assert!(stdout.contains("succeeded"));
 }
