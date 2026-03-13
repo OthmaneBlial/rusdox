@@ -4,7 +4,7 @@ use std::io::{BufReader, BufWriter, Read, Seek, Write};
 use std::path::{Path, PathBuf};
 
 use tempfile::NamedTempFile;
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::error::{DocxError, Result};
@@ -322,7 +322,7 @@ impl Document {
         }
 
         let mut archive = ZipWriter::new(writer);
-        let options = FileOptions::default().compression_method(CompressionMethod::Deflated);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
         let package_parts = self.render_package_parts()?;
 
         archive.start_file("word/document.xml", options)?;
@@ -432,7 +432,7 @@ mod tests {
     use std::io::{Cursor, Write};
 
     use tempfile::tempdir;
-    use zip::write::FileOptions;
+    use zip::write::SimpleFileOptions;
     use zip::{CompressionMethod, ZipWriter};
 
     use super::{BodyBlock, Document, DocumentBlockRef, DocumentMode};
@@ -565,7 +565,8 @@ mod tests {
         let mut archive_buffer = Cursor::new(Vec::new());
         {
             let mut zip = ZipWriter::new(&mut archive_buffer);
-            let options = FileOptions::default().compression_method(CompressionMethod::Deflated);
+            let options =
+                SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
             zip.start_file("word/styles.xml", options)
                 .expect("start styles");
             zip.write_all(b"<w:styles/>").expect("write styles");

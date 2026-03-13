@@ -31,7 +31,7 @@ jobs:
             archive: zip
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
@@ -60,7 +60,7 @@ jobs:
           Compress-Archive -Path "dist/${{ matrix.bin }}" -DestinationPath "rusdox-${{ matrix.target }}.zip" -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rusdox-${{ matrix.target }}
           path: rusdox-${{ matrix.target }}.${{ matrix.archive }}
@@ -74,7 +74,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: rusdox-*
           merge-multiple: true
