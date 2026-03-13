@@ -37,5 +37,5 @@ pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListK
 pub use run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 pub use table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
-    TableRow,
+    TableRow, TableRowProperties,
 };

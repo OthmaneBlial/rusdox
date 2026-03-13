@@ -706,9 +706,13 @@ impl Studio {
                 total_width
             })
             .borders(self.grid_borders())
-            .add_row(spec.columns.iter().fold(TableRow::new(), |row, column| {
-                row.add_cell(self.header_cell(&column.label, column.width))
-            }));
+            .add_row(
+                spec.columns
+                    .iter()
+                    .fold(TableRow::new().repeat_as_header(), |row, column| {
+                        row.add_cell(self.header_cell(&column.label, column.width))
+                    }),
+            );
 
         for row_spec in &spec.rows {
             let mut row = TableRow::new();
@@ -1773,49 +1777,34 @@ fn layout_table_block(
         .map(twips_to_points)
         .unwrap_or(layout.settings.content_width)
         .min(layout.settings.content_width);
+    let column_widths = resolve_table_column_widths(table, total_width);
+    let row_layouts = table
+        .rows()
+        .map(|row| layout_row(row, &column_widths, layout.settings, font_system))
+        .collect::<crate::Result<Vec<_>>>()?;
+    let repeated_headers = row_layouts
+        .iter()
+        .take_while(|row| row.repeat_as_header)
+        .cloned()
+        .collect::<Vec<_>>();
 
-    for row in table.rows() {
-        let row_layout = layout_row(row, total_width, layout.settings, font_system)?;
-        layout.ensure_space(row_layout.height);
-        let y_top = layout.cursor_y;
-
-        for cell in row_layout.cells {
-            layout.push_op(DrawOp::Rect {
-                x: layout.settings.margin_x + cell.x_offset,
-                y_top,
-                width: cell.width,
-                height: row_layout.height,
-                fill: cell.background,
-                stroke: Some((
-                    layout.settings.table_grid_stroke_color,
-                    layout.settings.table_grid_stroke_width,
-                )),
-            });
-
-            for line in cell.lines {
-                layout.push_op(DrawOp::TextLine {
-                    x: layout.settings.margin_x
-                        + cell.x_offset
-                        + layout.settings.table_cell_padding_x,
-                    y_top: y_top + line.y_offset,
-                    line: line.layout,
-                    max_width: cell.width - (layout.settings.table_cell_padding_x * 2.0),
-                });
-            }
-        }
-
-        layout.cursor_y += row_layout.height;
+    for row_layout in row_layouts {
+        place_table_row(layout, row_layout, &repeated_headers);
     }
 
     layout.cursor_y += layout.settings.table_after_spacing;
     Ok(())
 }
 
+#[derive(Clone)]
 struct RowLayout {
     cells: Vec<CellLayout>,
     height: f32,
+    allow_split_across_pages: bool,
+    repeat_as_header: bool,
 }
 
+#[derive(Clone)]
 struct CellLayout {
     x_offset: f32,
     width: f32,
@@ -1823,38 +1812,42 @@ struct CellLayout {
     lines: Vec<CellLine>,
 }
 
+#[derive(Clone)]
 struct CellLine {
     y_offset: f32,
     layout: LineLayout,
 }
 
+struct ResolvedTableCell<'a> {
+    cell: &'a TableCell,
+    x_offset: f32,
+    width: f32,
+}
+
 fn layout_row(
     row: &TableRow,
-    total_width: f32,
+    column_widths: &[f32],
     settings: PdfRenderSettings,
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<RowLayout> {
-    let cell_count = row.cells().len().max(1) as f32;
-    let fallback_width = total_width / cell_count;
-    let mut x_offset = 0.0;
     let mut cells = Vec::new();
     let mut row_height: f32 = 0.0;
 
-    for cell in row.cells() {
-        let width = cell
-            .properties()
-            .width
-            .map(twips_to_points)
-            .unwrap_or(fallback_width);
+    for resolved_cell in resolve_row_cells(row, column_widths) {
+        let width = resolved_cell.width;
         let content_width = (width - (settings.table_cell_padding_x * 2.0)).max(MIN_CONTENT_WIDTH);
         let mut lines = Vec::new();
         let mut y_offset = settings.table_cell_padding_y;
 
-        for paragraph in cell.paragraphs() {
+        for paragraph in resolved_cell.cell.paragraphs() {
             y_offset += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
             let paragraph_lines =
                 layout_paragraph_lines(paragraph, content_width, settings, font_system)?;
             if paragraph_lines.is_empty() {
+                lines.push(CellLine {
+                    y_offset,
+                    layout: blank_line_layout(paragraph, settings),
+                });
                 y_offset += settings.default_line_height;
             } else {
                 for line in paragraph_lines {
@@ -1869,25 +1862,305 @@ fn layout_row(
             y_offset += twips_to_points(paragraph.spacing_after_value().unwrap_or(0));
         }
 
-        let height = y_offset + settings.table_cell_padding_y;
+        let height = cell_height(&lines, settings);
         row_height = row_height.max(height);
         cells.push(CellLayout {
-            x_offset,
+            x_offset: resolved_cell.x_offset,
             width,
-            background: cell
+            background: resolved_cell
+                .cell
                 .properties()
                 .background_color
                 .as_deref()
                 .and_then(parse_hex_color),
             lines,
         });
-        x_offset += width;
     }
 
     Ok(RowLayout {
         cells,
         height: row_height.max(MIN_CONTENT_WIDTH),
+        allow_split_across_pages: row.properties().allow_split_across_pages,
+        repeat_as_header: row.properties().repeat_as_header,
     })
+}
+
+fn blank_line_layout(paragraph: &Paragraph, settings: PdfRenderSettings) -> LineLayout {
+    LineLayout {
+        spans: Vec::new(),
+        width: 0.0,
+        line_height: settings.default_line_height,
+        alignment: paragraph
+            .alignment()
+            .cloned()
+            .unwrap_or(ParagraphAlignment::Left),
+    }
+}
+
+fn resolve_table_column_widths(table: &Table, total_width: f32) -> Vec<f32> {
+    let column_count = table
+        .rows()
+        .map(|row| {
+            row.cells()
+                .map(|cell| cell.properties().grid_span.unwrap_or(1).max(1) as usize)
+                .sum::<usize>()
+        })
+        .max()
+        .unwrap_or(1)
+        .max(1);
+    let mut column_widths = vec![0.0_f32; column_count];
+
+    for row in table.rows() {
+        let mut column_index = 0usize;
+        for cell in row.cells() {
+            let remaining_columns = column_count.saturating_sub(column_index);
+            if remaining_columns == 0 {
+                break;
+            }
+            let span = normalized_grid_span(cell.properties().grid_span, remaining_columns);
+            if let Some(width) = cell.properties().width.map(twips_to_points) {
+                let per_column = width / span as f32;
+                for column_width in &mut column_widths[column_index..column_index + span] {
+                    *column_width = (*column_width).max(per_column);
+                }
+            }
+            column_index += span;
+        }
+    }
+
+    let mut assigned_width = column_widths.iter().sum::<f32>();
+    let zero_columns = column_widths.iter().filter(|&&width| width <= 0.0).count();
+    if zero_columns > 0 {
+        let fallback = if total_width > assigned_width {
+            (total_width - assigned_width) / zero_columns as f32
+        } else {
+            total_width / column_count as f32
+        };
+        for column_width in &mut column_widths {
+            if *column_width <= 0.0 {
+                *column_width = fallback;
+            }
+        }
+        assigned_width = column_widths.iter().sum::<f32>();
+    }
+
+    if assigned_width <= 0.0 {
+        return vec![total_width / column_count as f32; column_count];
+    }
+
+    let scale = total_width / assigned_width;
+    for column_width in &mut column_widths {
+        *column_width *= scale;
+    }
+
+    column_widths
+}
+
+fn resolve_row_cells<'a>(row: &'a TableRow, column_widths: &[f32]) -> Vec<ResolvedTableCell<'a>> {
+    let mut column_index = 0usize;
+    let mut x_offset = 0.0;
+    let mut cells = Vec::new();
+
+    for cell in row.cells() {
+        let remaining_columns = column_widths.len().saturating_sub(column_index);
+        if remaining_columns == 0 {
+            break;
+        }
+        let span = normalized_grid_span(cell.properties().grid_span, remaining_columns);
+        let width = column_widths[column_index..column_index + span]
+            .iter()
+            .sum::<f32>();
+        cells.push(ResolvedTableCell {
+            cell,
+            x_offset,
+            width,
+        });
+        column_index += span;
+        x_offset += width;
+    }
+
+    cells
+}
+
+fn normalized_grid_span(grid_span: Option<u32>, remaining_columns: usize) -> usize {
+    grid_span.unwrap_or(1).max(1).min(remaining_columns as u32) as usize
+}
+
+fn place_table_row(layout: &mut PdfLayout, mut row: RowLayout, repeated_headers: &[RowLayout]) {
+    let mut page_is_fresh_for_row = layout.cursor_y <= layout.settings.margin_top + 0.01;
+
+    loop {
+        let available_height = page_remaining_height(layout);
+        if row.height <= available_height {
+            render_row_layout(layout, &row);
+            break;
+        }
+
+        if row.allow_split_across_pages {
+            if let Some((current_page, remaining)) =
+                split_row_layout(&row, available_height, layout.settings)
+            {
+                render_row_layout(layout, &current_page);
+                start_new_table_page(layout, repeated_headers);
+                row = remaining;
+                page_is_fresh_for_row = true;
+                continue;
+            }
+        }
+
+        if !page_is_fresh_for_row {
+            start_new_table_page(layout, repeated_headers);
+            page_is_fresh_for_row = true;
+            continue;
+        }
+
+        render_row_layout(layout, &row);
+        break;
+    }
+}
+
+fn start_new_table_page(layout: &mut PdfLayout, repeated_headers: &[RowLayout]) {
+    layout.push_page();
+    for header in repeated_headers {
+        render_row_layout(layout, header);
+    }
+}
+
+fn render_row_layout(layout: &mut PdfLayout, row: &RowLayout) {
+    let y_top = layout.cursor_y;
+
+    for cell in &row.cells {
+        layout.push_op(DrawOp::Rect {
+            x: layout.settings.margin_x + cell.x_offset,
+            y_top,
+            width: cell.width,
+            height: row.height,
+            fill: cell.background,
+            stroke: Some((
+                layout.settings.table_grid_stroke_color,
+                layout.settings.table_grid_stroke_width,
+            )),
+        });
+
+        for line in &cell.lines {
+            layout.push_op(DrawOp::TextLine {
+                x: layout.settings.margin_x + cell.x_offset + layout.settings.table_cell_padding_x,
+                y_top: y_top + line.y_offset,
+                line: line.layout.clone(),
+                max_width: cell.width - (layout.settings.table_cell_padding_x * 2.0),
+            });
+        }
+    }
+
+    layout.cursor_y += row.height;
+}
+
+fn page_remaining_height(layout: &PdfLayout) -> f32 {
+    (layout.settings.page_height - layout.settings.margin_bottom - layout.cursor_y).max(0.0)
+}
+
+fn split_row_layout(
+    row: &RowLayout,
+    available_height: f32,
+    settings: PdfRenderSettings,
+) -> Option<(RowLayout, RowLayout)> {
+    if available_height <= (settings.table_cell_padding_y * 2.0) {
+        return None;
+    }
+
+    let mut current_cells = Vec::with_capacity(row.cells.len());
+    let mut remaining_cells = Vec::with_capacity(row.cells.len());
+    let mut current_height = settings.table_cell_padding_y * 2.0;
+    let mut remaining_height = settings.table_cell_padding_y * 2.0;
+    let mut has_current_lines = false;
+    let mut has_remaining_lines = false;
+
+    for cell in &row.cells {
+        let fitting_lines = cell
+            .lines
+            .iter()
+            .take_while(|line| {
+                line.y_offset + line.layout.line_height + settings.table_cell_padding_y
+                    <= available_height + 0.01
+            })
+            .count();
+        if fitting_lines > 0 {
+            has_current_lines = true;
+        }
+        if fitting_lines < cell.lines.len() {
+            has_remaining_lines = true;
+        }
+
+        let current_lines = cell.lines[..fitting_lines].to_vec();
+        let remaining_lines =
+            normalize_continued_cell_lines(&cell.lines[fitting_lines..], settings);
+        current_height = current_height.max(cell_height(&current_lines, settings));
+        remaining_height = remaining_height.max(cell_height(&remaining_lines, settings));
+        current_cells.push(CellLayout {
+            x_offset: cell.x_offset,
+            width: cell.width,
+            background: cell.background,
+            lines: current_lines,
+        });
+        remaining_cells.push(CellLayout {
+            x_offset: cell.x_offset,
+            width: cell.width,
+            background: cell.background,
+            lines: remaining_lines,
+        });
+    }
+
+    if !has_current_lines || !has_remaining_lines {
+        return None;
+    }
+
+    Some((
+        RowLayout {
+            cells: current_cells,
+            height: current_height.max(MIN_CONTENT_WIDTH),
+            allow_split_across_pages: row.allow_split_across_pages,
+            repeat_as_header: row.repeat_as_header,
+        },
+        RowLayout {
+            cells: remaining_cells,
+            height: remaining_height.max(MIN_CONTENT_WIDTH),
+            allow_split_across_pages: row.allow_split_across_pages,
+            repeat_as_header: false,
+        },
+    ))
+}
+
+fn normalize_continued_cell_lines(
+    lines: &[CellLine],
+    settings: PdfRenderSettings,
+) -> Vec<CellLine> {
+    if lines.is_empty() {
+        return Vec::new();
+    }
+
+    let mut normalized = Vec::with_capacity(lines.len());
+    let mut y_offset = settings.table_cell_padding_y;
+    normalized.push(CellLine {
+        y_offset,
+        layout: lines[0].layout.clone(),
+    });
+
+    for pair in lines.windows(2) {
+        y_offset += pair[1].y_offset - pair[0].y_offset;
+        normalized.push(CellLine {
+            y_offset,
+            layout: pair[1].layout.clone(),
+        });
+    }
+
+    normalized
+}
+
+fn cell_height(lines: &[CellLine], settings: PdfRenderSettings) -> f32 {
+    lines
+        .last()
+        .map(|line| line.y_offset + line.layout.line_height + settings.table_cell_padding_y)
+        .unwrap_or(settings.table_cell_padding_y * 2.0)
 }
 
 fn layout_paragraph_lines(
@@ -2451,10 +2724,11 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        clamp_u32_to_u16, layout_paragraph_lines, layout_row, normalize_pdf_text, parse_hex_color,
-        points_to_u16, style_from_run, tokenize, PdfFont, PdfFontRequest, PdfFontSystem,
-        PdfRenderSettings, RequestedTextStyle, Rgb, Studio, DEFAULT_BASELINE_FACTOR,
-        DEFAULT_LINE_HEIGHT, DEFAULT_LINE_HEIGHT_MULTIPLIER, DEFAULT_TABLE_AFTER_SPACING,
+        clamp_u32_to_u16, layout_document, layout_paragraph_lines, layout_row, normalize_pdf_text,
+        parse_hex_color, points_to_u16, resolve_table_column_widths, style_from_run, tokenize,
+        twips_to_points, DrawOp, Page, PdfFont, PdfFontRequest, PdfFontSystem, PdfRenderSettings,
+        RequestedTextStyle, Rgb, Studio, DEFAULT_BASELINE_FACTOR, DEFAULT_LINE_HEIGHT,
+        DEFAULT_LINE_HEIGHT_MULTIPLIER, DEFAULT_TABLE_AFTER_SPACING,
         DEFAULT_TABLE_GRID_STROKE_WIDTH, DEFAULT_TABLE_ROW_PADDING_X, DEFAULT_TABLE_ROW_PADDING_Y,
         DEFAULT_TEXT_SIZE, DEFAULT_TEXT_WIDTH_BIAS_BOLD, DEFAULT_TEXT_WIDTH_BIAS_REGULAR,
         MIN_CONTENT_WIDTH,
@@ -2466,7 +2740,7 @@ mod tests {
     };
     use crate::{
         Document, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, Paragraph,
-        ParagraphAlignment, ParagraphList, Run, TableCell, TableRow, VerticalAlign,
+        ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow, VerticalAlign,
     };
 
     fn default_pdf_settings() -> PdfRenderSettings {
@@ -2498,6 +2772,21 @@ mod tests {
             (actual - expected).abs() < 0.01,
             "expected {expected:.2}, got {actual:.2}"
         );
+    }
+
+    fn page_line_texts(page: &Page) -> Vec<String> {
+        page.ops
+            .iter()
+            .filter_map(|op| match op {
+                DrawOp::TextLine { line, .. } => Some(
+                    line.spans
+                        .iter()
+                        .map(|span| span.text.as_str())
+                        .collect::<String>(),
+                ),
+                DrawOp::Rect { .. } => None,
+            })
+            .collect()
     }
 
     fn find_family_triggering_multiscript_fallback() -> Option<String> {
@@ -2989,8 +3278,13 @@ mod tests {
             );
         let config = RusdoxConfig::default();
         let mut font_system = pdf_font_system(&config);
-        let layout =
-            layout_row(&row, 400.0, default_pdf_settings(), &mut font_system).expect("layout row");
+        let layout = layout_row(
+            &row,
+            &[100.0, 300.0],
+            default_pdf_settings(),
+            &mut font_system,
+        )
+        .expect("layout row");
         assert_eq!(layout.cells.len(), 2);
         assert!(layout.cells[0].width < layout.cells[1].width);
         assert!(layout.height >= 24.0);
@@ -3007,13 +3301,141 @@ mod tests {
         let row = TableRow::new().add_cell(
             TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("left"))),
         );
-        let layout = layout_row(&row, 240.0, settings, &mut font_system).expect("layout row");
+        let layout = layout_row(&row, &[240.0], settings, &mut font_system).expect("layout row");
 
         assert_eq!(layout.cells.len(), 1);
         assert_close(layout.cells[0].lines[0].y_offset, 10.0);
         assert_close(
             layout.height,
             10.0 + settings.effective_line_height(settings.default_text_size) + 10.0,
+        );
+    }
+
+    #[test]
+    fn layout_row_resolves_grid_spans_against_table_grid() {
+        let config = RusdoxConfig::default();
+        let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
+        let table = Table::new()
+            .width(6_000)
+            .add_row(
+                TableRow::new()
+                    .add_cell(
+                        TableCell::new()
+                            .width(2_000)
+                            .add_paragraph(Paragraph::new().add_run(Run::from_text("L"))),
+                    )
+                    .add_cell(
+                        TableCell::new()
+                            .width(4_000)
+                            .add_paragraph(Paragraph::new().add_run(Run::from_text("R"))),
+                    ),
+            )
+            .add_row(
+                TableRow::new().add_cell(
+                    TableCell::new()
+                        .grid_span(2)
+                        .add_paragraph(Paragraph::new().add_run(Run::from_text("Wide"))),
+                ),
+            );
+
+        let column_widths = resolve_table_column_widths(&table, twips_to_points(6_000));
+        let layout = layout_row(
+            table.rows().nth(1).expect("second row"),
+            &column_widths,
+            settings,
+            &mut font_system,
+        )
+        .expect("layout row");
+
+        assert_eq!(column_widths.len(), 2);
+        assert_close(column_widths[0], 100.0);
+        assert_close(column_widths[1], 200.0);
+        assert_eq!(layout.cells.len(), 1);
+        assert_close(layout.cells[0].width, 300.0);
+    }
+
+    #[test]
+    fn layout_document_repeats_table_headers_across_pages() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.page_width_pt = 240.0;
+        config.pdf.page_height_pt = 60.0;
+        config.pdf.margin_x_pt = 12.0;
+        config.pdf.margin_top_pt = 5.0;
+        config.pdf.margin_bottom_pt = 5.0;
+        config.pdf.default_text_size_pt = 10.0;
+        config.pdf.default_line_height_pt = 12.0;
+        config.table.pdf_cell_padding_x_pt = 4.0;
+        config.table.pdf_cell_padding_y_pt = 4.0;
+        let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
+        let mut document = Document::new();
+        document.push_table(
+            Table::new()
+                .add_row(
+                    TableRow::new().repeat_as_header().add_cell(
+                        TableCell::new()
+                            .add_paragraph(Paragraph::new().add_run(Run::from_text("Header"))),
+                    ),
+                )
+                .add_row(
+                    TableRow::new().add_cell(
+                        TableCell::new()
+                            .add_paragraph(Paragraph::new().add_run(Run::from_text("Alpha"))),
+                    ),
+                )
+                .add_row(
+                    TableRow::new().add_cell(
+                        TableCell::new()
+                            .add_paragraph(Paragraph::new().add_run(Run::from_text("Beta"))),
+                    ),
+                ),
+        );
+
+        let pages = layout_document(&document, settings, &mut font_system).expect("layout");
+        let page_texts = pages.iter().map(page_line_texts).collect::<Vec<_>>();
+
+        assert_eq!(pages.len(), 2);
+        assert_eq!(
+            page_texts[0],
+            vec!["Header".to_string(), "Alpha".to_string()]
+        );
+        assert_eq!(
+            page_texts[1],
+            vec!["Header".to_string(), "Beta".to_string()]
+        );
+    }
+
+    #[test]
+    fn layout_document_splits_tall_table_rows_across_pages() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.page_width_pt = 220.0;
+        config.pdf.page_height_pt = 38.0;
+        config.pdf.margin_x_pt = 12.0;
+        config.pdf.margin_top_pt = 4.0;
+        config.pdf.margin_bottom_pt = 4.0;
+        config.pdf.default_text_size_pt = 10.0;
+        config.pdf.default_line_height_pt = 12.0;
+        config.table.pdf_cell_padding_x_pt = 4.0;
+        config.table.pdf_cell_padding_y_pt = 4.0;
+        let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
+        let mut document = Document::new();
+        document.push_table(Table::new().add_row(TableRow::new().add_cell(
+            TableCell::new().add_paragraph(
+                Paragraph::new().add_run(Run::from_text("Alpha\nBeta\nGamma\nDelta")),
+            ),
+        )));
+
+        let pages = layout_document(&document, settings, &mut font_system).expect("layout");
+        let page_texts = pages.iter().map(page_line_texts).collect::<Vec<_>>();
+
+        assert!(pages.len() >= 2);
+        assert_eq!(page_texts[0], vec!["Alpha".to_string()]);
+        assert_eq!(page_texts[1], vec!["Beta".to_string()]);
+        assert!(
+            page_texts.iter().flatten().any(|line| line == "Delta"),
+            "expected the split row to continue rendering later lines"
         );
     }
 

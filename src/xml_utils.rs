@@ -11,7 +11,7 @@ use crate::paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphLi
 use crate::run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
 use crate::table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
-    TableRow,
+    TableRow, TableRowProperties,
 };
 
 const WORD_NS: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -956,14 +956,21 @@ where
     R: BufRead,
 {
     let mut cells = Vec::new();
+    let mut properties = TableRowProperties::default();
     let mut buffer = Vec::new();
 
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"trPr" => properties = parse_table_row_properties(reader)?,
                 b"tc" => cells.push(parse_table_cell(reader, numbering)?),
                 _ => skip_current_element(reader)?,
             },
+            Event::Empty(start) => {
+                if local_name(start.name().as_ref()) == b"trPr" {
+                    properties = TableRowProperties::default();
+                }
+            }
             Event::End(end) if local_name(end.name().as_ref()) == b"tr" => {
                 break;
             }
@@ -977,7 +984,48 @@ where
         buffer.clear();
     }
 
-    Ok(TableRow::from_parts(cells))
+    Ok(TableRow::from_parts(cells, properties))
+}
+
+fn parse_table_row_properties<R>(reader: &mut Reader<R>) -> Result<TableRowProperties>
+where
+    R: BufRead,
+{
+    let mut properties = TableRowProperties::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"tblHeader" => {
+                    properties.repeat_as_header = true;
+                    skip_current_element(reader)?;
+                }
+                b"cantSplit" => {
+                    properties.allow_split_across_pages = false;
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"tblHeader" => properties.repeat_as_header = true,
+                b"cantSplit" => properties.allow_split_across_pages = false,
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"trPr" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:trPr",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(properties)
 }
 
 fn parse_table_cell<R>(
@@ -1493,6 +1541,16 @@ where
     }
     for row in table.rows() {
         writer.write_event(Event::Start(BytesStart::new("w:tr")))?;
+        if row.properties().has_serialized_content() {
+            writer.write_event(Event::Start(BytesStart::new("w:trPr")))?;
+            if row.properties().repeat_as_header {
+                writer.write_event(Event::Empty(BytesStart::new("w:tblHeader")))?;
+            }
+            if !row.properties().allow_split_across_pages {
+                writer.write_event(Event::Empty(BytesStart::new("w:cantSplit")))?;
+            }
+            writer.write_event(Event::End(BytesEnd::new("w:trPr")))?;
+        }
         for cell in row.cells() {
             write_table_cell(writer, cell)?;
         }

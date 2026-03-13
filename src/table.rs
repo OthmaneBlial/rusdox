@@ -253,9 +253,34 @@ impl TableCell {
 }
 
 /// A row in a table.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TableRowProperties {
+    /// Whether the row should repeat as a header on subsequent pages.
+    pub repeat_as_header: bool,
+    /// Whether the row may split across pages.
+    pub allow_split_across_pages: bool,
+}
+
+impl Default for TableRowProperties {
+    fn default() -> Self {
+        Self {
+            repeat_as_header: false,
+            allow_split_across_pages: true,
+        }
+    }
+}
+
+impl TableRowProperties {
+    pub(crate) fn has_serialized_content(&self) -> bool {
+        self.repeat_as_header || !self.allow_split_across_pages
+    }
+}
+
+/// A row in a table.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TableRow {
     cells: Vec<TableCell>,
+    properties: TableRowProperties,
 }
 
 impl TableRow {
@@ -276,6 +301,18 @@ impl TableRow {
         self
     }
 
+    /// Marks the row as a repeating header row.
+    pub fn repeat_as_header(mut self) -> Self {
+        self.properties.repeat_as_header = true;
+        self
+    }
+
+    /// Controls whether the row may split across pages.
+    pub fn allow_split_across_pages(mut self, allow: bool) -> Self {
+        self.properties.allow_split_across_pages = allow;
+        self
+    }
+
     /// Returns immutable access to row cells.
     pub fn cells(&self) -> std::slice::Iter<'_, TableCell> {
         self.cells.iter()
@@ -286,8 +323,18 @@ impl TableRow {
         self.cells.iter_mut()
     }
 
-    pub(crate) fn from_parts(cells: Vec<TableCell>) -> Self {
-        Self { cells }
+    /// Returns the row properties.
+    pub fn properties(&self) -> &TableRowProperties {
+        &self.properties
+    }
+
+    /// Returns mutable access to row properties.
+    pub fn properties_mut(&mut self) -> &mut TableRowProperties {
+        &mut self.properties
+    }
+
+    pub(crate) fn from_parts(cells: Vec<TableCell>, properties: TableRowProperties) -> Self {
+        Self { cells, properties }
     }
 }
 
@@ -378,7 +425,7 @@ impl Table {
 mod tests {
     use super::{
         Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
-        TableRow,
+        TableRow, TableRowProperties,
     };
     use crate::{Paragraph, Run};
 
@@ -464,6 +511,8 @@ mod tests {
     #[test]
     fn table_row_builder_and_cells_mut_allow_changes() {
         let mut row = TableRow::new()
+            .repeat_as_header()
+            .allow_split_across_pages(false)
             .add_cell(TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("L"))))
             .add_cell(
                 TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("R"))),
@@ -484,6 +533,8 @@ mod tests {
             texts,
             vec!["L".to_string(), "R\n2".to_string(), "X".to_string()]
         );
+        assert!(row.properties().repeat_as_header);
+        assert!(!row.properties().allow_split_across_pages);
     }
 
     #[test]
@@ -529,9 +580,14 @@ mod tests {
         );
         assert_eq!(cell.properties(), &cell_properties);
 
-        let row = TableRow::from_parts(vec![cell.clone()]);
+        let row_properties = TableRowProperties {
+            repeat_as_header: true,
+            allow_split_across_pages: false,
+        };
+        let row = TableRow::from_parts(vec![cell.clone()], row_properties.clone());
         assert_eq!(row.cells().count(), 1);
         assert_eq!(row.cells().next(), Some(&cell));
+        assert_eq!(row.properties(), &row_properties);
 
         let table_properties = TableProperties {
             width: Some(7777),

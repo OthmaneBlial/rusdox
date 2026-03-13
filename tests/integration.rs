@@ -275,6 +275,46 @@ fn rich_formatting_round_trips() -> Result<(), rusdox::DocxError> {
 }
 
 #[test]
+fn table_row_pagination_properties_round_trip_and_emit_ooxml() -> Result<(), rusdox::DocxError> {
+    let mut document = Document::new();
+    document.push_table(
+        Table::new()
+            .add_row(TableRow::new().repeat_as_header().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("Header"))),
+            ))
+            .add_row(TableRow::new().allow_split_across_pages(false).add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("Body"))),
+            )),
+    );
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    let table = reopened.tables().next().expect("table should exist");
+    let rows = table.rows().collect::<Vec<_>>();
+
+    assert_eq!(rows.len(), 2);
+    assert!(rows[0].properties().repeat_as_header);
+    assert!(rows[0].properties().allow_split_across_pages);
+    assert!(!rows[1].properties().repeat_as_header);
+    assert!(!rows[1].properties().allow_split_across_pages);
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+
+    assert!(document_xml.contains("<w:tblHeader/>"));
+    assert!(document_xml.contains("<w:cantSplit/>"));
+
+    Ok(())
+}
+
+#[test]
 fn tabs_and_line_breaks_round_trip_and_emit_structured_ooxml() -> Result<(), rusdox::DocxError> {
     let mut document = Document::new();
     document
