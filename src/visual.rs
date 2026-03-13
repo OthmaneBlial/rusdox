@@ -10,7 +10,7 @@ use resvg::usvg;
 use crate::error::{DocxError, Result};
 use crate::paragraph::ParagraphAlignment;
 
-const SVG_FALLBACK_DPI: u32 = 144;
+const VISUAL_RASTER_DPI: u32 = 192;
 const TWIPS_PER_PIXEL_AT_96_DPI: u32 = 15;
 
 /// The semantic role of a visual asset in the document.
@@ -339,8 +339,8 @@ impl Visual {
                 let raster = rasterize_svg(
                     &loaded.bytes,
                     loaded.resources_dir.as_deref(),
-                    twips_to_pixels_at_dpi(display_width_twips, SVG_FALLBACK_DPI),
-                    twips_to_pixels_at_dpi(display_height_twips, SVG_FALLBACK_DPI),
+                    twips_to_pixels_at_dpi(display_width_twips, VISUAL_RASTER_DPI),
+                    twips_to_pixels_at_dpi(display_height_twips, VISUAL_RASTER_DPI),
                 )?;
                 Ok((VisualFormat::Png, encode_png(&raster)?))
             }
@@ -353,8 +353,8 @@ impl Visual {
         display_height_twips: u32,
     ) -> Result<RasterizedVisual> {
         let loaded = load_visual_source(&self.source)?;
-        let target_width = twips_to_pixels_at_dpi(display_width_twips, SVG_FALLBACK_DPI);
-        let target_height = twips_to_pixels_at_dpi(display_height_twips, SVG_FALLBACK_DPI);
+        let target_width = twips_to_pixels_at_dpi(display_width_twips, VISUAL_RASTER_DPI);
+        let target_height = twips_to_pixels_at_dpi(display_height_twips, VISUAL_RASTER_DPI);
 
         match loaded.format {
             VisualFormat::Svg => rasterize_svg(
@@ -621,8 +621,8 @@ mod tests {
     #[test]
     fn pixel_twip_conversions_match_expected_document_units() {
         assert_eq!(pixels_to_twips(96), 1_440);
-        assert_eq!(twips_to_pixels_at_dpi(1_440, 144), 144);
-        assert_eq!(twips_to_pixels_at_dpi(2_880, 144), 288);
+        assert_eq!(twips_to_pixels_at_dpi(1_440, 192), 192);
+        assert_eq!(twips_to_pixels_at_dpi(2_880, 192), 384);
     }
 
     #[test]
@@ -633,9 +633,9 @@ mod tests {
         assert_eq!(intrinsic, (120, 40));
 
         let raster = visual.pdf_raster(2_400, 800).expect("svg raster");
-        assert_eq!(raster.width_px, 240);
-        assert_eq!(raster.height_px, 80);
-        assert_eq!(raster.rgba.len(), 240 * 80 * 4);
+        assert_eq!(raster.width_px, 320);
+        assert_eq!(raster.height_px, 107);
+        assert_eq!(raster.rgba.len(), 320 * 107 * 4);
     }
 
     #[test]

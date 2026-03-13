@@ -149,6 +149,7 @@ pub struct Paragraph {
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
+    keep_next: bool,
     page_break_before: bool,
 }
 
@@ -250,6 +251,12 @@ impl Paragraph {
         self
     }
 
+    /// Keeps the paragraph on the same page as the following block when possible.
+    pub fn keep_next(mut self) -> Self {
+        self.keep_next = true;
+        self
+    }
+
     /// Returns spacing before the paragraph, if present.
     pub fn spacing_before_value(&self) -> Option<u32> {
         self.spacing_before
@@ -265,12 +272,18 @@ impl Paragraph {
         self.page_break_before
     }
 
+    /// Returns whether the paragraph should stay with the following block.
+    pub fn has_keep_next(&self) -> bool {
+        self.keep_next
+    }
+
     pub(crate) fn from_parts(
         runs: Vec<Run>,
         list: Option<ParagraphList>,
         alignment: Option<ParagraphAlignment>,
         spacing_before: Option<u32>,
         spacing_after: Option<u32>,
+        keep_next: bool,
         page_break_before: bool,
     ) -> Self {
         Self {
@@ -279,6 +292,7 @@ impl Paragraph {
             alignment,
             spacing_before,
             spacing_after,
+            keep_next,
             page_break_before,
         }
     }
@@ -288,6 +302,7 @@ impl Paragraph {
             || self.alignment.is_some()
             || self.spacing_before.is_some()
             || self.spacing_after.is_some()
+            || self.keep_next
             || self.page_break_before
     }
 }
@@ -354,6 +369,7 @@ mod tests {
             .with_alignment(ParagraphAlignment::Center)
             .spacing_before(120)
             .spacing_after(240)
+            .keep_next()
             .page_break_before()
             .add_run(Run::from_text("x"));
 
@@ -364,6 +380,7 @@ mod tests {
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Center));
         assert_eq!(paragraph.spacing_before_value(), Some(120));
         assert_eq!(paragraph.spacing_after_value(), Some(240));
+        assert!(paragraph.has_keep_next());
         assert!(paragraph.has_page_break_before());
     }
 
@@ -385,6 +402,7 @@ mod tests {
             .has_properties());
         assert!(Paragraph::new().spacing_before(100).has_properties());
         assert!(Paragraph::new().spacing_after(100).has_properties());
+        assert!(Paragraph::new().keep_next().has_properties());
         assert!(Paragraph::new().page_break_before().has_properties());
     }
 
@@ -398,6 +416,7 @@ mod tests {
             Some(160),
             Some(180),
             true,
+            true,
         );
 
         assert_eq!(paragraph.text(), "onetwo");
@@ -408,6 +427,7 @@ mod tests {
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Justified));
         assert_eq!(paragraph.spacing_before_value(), Some(160));
         assert_eq!(paragraph.spacing_after_value(), Some(180));
+        assert!(paragraph.has_keep_next());
         assert!(paragraph.has_page_break_before());
     }
 

@@ -148,8 +148,13 @@ impl Studio {
     /// Appends a high-level document specification to an existing [`Document`].
     pub fn append_spec(&self, document: &mut Document, spec: &DocumentSpec) {
         let asset_base_dir = spec.asset_base_dir().map(Path::to_path_buf);
-        for block in &spec.blocks {
-            self.push_spec_block(document, block, asset_base_dir.as_deref());
+        for (index, block) in spec.blocks.iter().enumerate() {
+            self.push_spec_block(
+                document,
+                block,
+                spec.blocks.get(index + 1),
+                asset_base_dir.as_deref(),
+            );
         }
     }
 
@@ -543,38 +548,79 @@ impl Studio {
         &self,
         document: &mut Document,
         block: &BlockSpec,
+        next_block: Option<&BlockSpec>,
         asset_base_dir: Option<&Path>,
     ) {
         match block {
             BlockSpec::CoverTitle { text } => {
-                document.push_paragraph(self.cover_title(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.cover_title(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Title { text } => {
-                document.push_paragraph(self.title(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.title(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Subtitle { text } => {
-                document.push_paragraph(self.subtitle(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.subtitle(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Hero { text } => {
-                document.push_paragraph(self.hero(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.hero(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::CenteredNote { text } => {
-                document.push_paragraph(self.centered_note(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.centered_note(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::PageHeading { text } => {
-                document.push_paragraph(self.page_heading(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.page_heading(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Section { text } => {
-                document.push_paragraph(self.section(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.section(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Body { text } => {
-                document.push_paragraph(self.body(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.body(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Tagline { text } => {
-                document.push_paragraph(self.tagline(text));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.tagline(text),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Paragraph { spec } => {
-                document.push_paragraph(self.paragraph_from_spec(spec));
+                document.push_paragraph(self.decorate_spec_paragraph(
+                    self.paragraph_from_spec(spec),
+                    block,
+                    next_block,
+                ));
             }
             BlockSpec::Bullets { items } => {
                 let list_id = Self::next_list_id(document);
@@ -642,6 +688,19 @@ impl Studio {
             BlockSpec::Spacer => {
                 document.push_paragraph(self.spacer());
             }
+        }
+    }
+
+    fn decorate_spec_paragraph(
+        &self,
+        paragraph: Paragraph,
+        block: &BlockSpec,
+        next_block: Option<&BlockSpec>,
+    ) -> Paragraph {
+        if should_keep_next(block, next_block) {
+            paragraph.keep_next()
+        } else {
+            paragraph
         }
     }
 
@@ -826,6 +885,34 @@ impl Studio {
             Tone::Risk => &self.config.colors.red,
             Tone::Neutral | Tone::Warning => &self.config.colors.ink,
         }
+    }
+}
+
+fn should_keep_next(block: &BlockSpec, next_block: Option<&BlockSpec>) -> bool {
+    let Some(next_block) = next_block else {
+        return false;
+    };
+
+    if matches!(next_block, BlockSpec::Spacer) {
+        return false;
+    }
+
+    match block {
+        BlockSpec::CoverTitle { .. }
+        | BlockSpec::Title { .. }
+        | BlockSpec::Subtitle { .. }
+        | BlockSpec::Hero { .. }
+        | BlockSpec::PageHeading { .. }
+        | BlockSpec::Section { .. }
+        | BlockSpec::Tagline { .. } => true,
+        BlockSpec::Body { .. } | BlockSpec::Paragraph { .. } => matches!(
+            next_block,
+            BlockSpec::Image { .. }
+                | BlockSpec::Logo { .. }
+                | BlockSpec::Signature { .. }
+                | BlockSpec::Chart { .. }
+        ),
+        _ => false,
     }
 }
 
@@ -1859,8 +1946,10 @@ fn layout_document(
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<PdfDocumentLayout> {
     let mut layout = PdfLayout::new(settings);
+    let blocks = document.blocks().collect::<Vec<_>>();
 
-    for block in document.blocks() {
+    for (index, block) in blocks.iter().copied().enumerate() {
+        maybe_push_page_for_keep_next_group(&mut layout, &blocks, index, font_system)?;
         match block {
             DocumentBlockRef::Paragraph(paragraph) => {
                 layout_paragraph_block(&mut layout, paragraph, font_system)?
@@ -1874,6 +1963,99 @@ fn layout_document(
         pages: layout.pages,
         images: layout.images,
     })
+}
+
+fn maybe_push_page_for_keep_next_group(
+    layout: &mut PdfLayout,
+    blocks: &[DocumentBlockRef<'_>],
+    start_index: usize,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<()> {
+    let DocumentBlockRef::Paragraph(paragraph) = blocks[start_index] else {
+        return Ok(());
+    };
+    if !paragraph.has_keep_next() {
+        return Ok(());
+    }
+
+    let usable_height =
+        layout.settings.page_height - layout.settings.margin_top - layout.settings.margin_bottom;
+    let mut group_height = 0.0;
+    let mut index = start_index;
+
+    loop {
+        let Some(block_height) =
+            estimated_keep_next_block_height(layout, blocks[index], font_system)?
+        else {
+            return Ok(());
+        };
+        group_height += block_height;
+
+        match blocks[index] {
+            DocumentBlockRef::Paragraph(paragraph) if paragraph.has_keep_next() => {
+                index += 1;
+                if index >= blocks.len() {
+                    break;
+                }
+            }
+            _ => break,
+        }
+    }
+
+    if group_height > usable_height || layout.cursor_y <= layout.settings.margin_top {
+        return Ok(());
+    }
+
+    let start_y = if paragraph.has_page_break_before() {
+        layout.settings.margin_top
+    } else {
+        layout.cursor_y
+    };
+    let remaining_height = layout.settings.page_height - layout.settings.margin_bottom - start_y;
+    if group_height > remaining_height {
+        layout.push_page();
+    }
+
+    Ok(())
+}
+
+fn estimated_keep_next_block_height(
+    layout: &PdfLayout,
+    block: DocumentBlockRef<'_>,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<Option<f32>> {
+    match block {
+        DocumentBlockRef::Paragraph(paragraph) => {
+            let lines = layout_paragraph_lines(
+                paragraph,
+                layout.settings.content_width,
+                layout.settings,
+                font_system,
+            )?;
+            let content_height = if lines.is_empty() {
+                layout.settings.default_line_height
+            } else {
+                lines.iter().map(|line| line.line_height).sum()
+            };
+            Ok(Some(
+                twips_to_points(paragraph.spacing_before_value().unwrap_or(0))
+                    + content_height
+                    + twips_to_points(paragraph.spacing_after_value().unwrap_or(0)),
+            ))
+        }
+        DocumentBlockRef::Visual(visual) => {
+            let content_width_twips = points_to_twips(layout.settings.content_width);
+            let content_height_twips = points_to_twips(
+                layout.settings.page_height
+                    - layout.settings.margin_top
+                    - layout.settings.margin_bottom,
+            );
+            let (_, height_twips) =
+                visual.resolved_dimensions_twips(content_width_twips, content_height_twips)?;
+            Ok(Some(twips_to_points(height_twips)))
+        }
+        DocumentBlockRef::Table(_) => Ok(None),
+    }
 }
 
 fn layout_paragraph_block(
@@ -2989,8 +3171,9 @@ mod tests {
         VerticalAlignSpec,
     };
     use crate::{
-        Document, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, Paragraph,
-        ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow, VerticalAlign,
+        Document, DocumentBlockRef, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup,
+        Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow,
+        VerticalAlign, Visual, VisualFormat, VisualKind,
     };
 
     fn default_pdf_settings() -> PdfRenderSettings {
@@ -3438,6 +3621,41 @@ mod tests {
     }
 
     #[test]
+    fn compose_marks_visual_intro_paragraphs_keep_next() {
+        let studio = Studio::new(RusdoxConfig::default());
+        let mut spec = DocumentSpec::new();
+        spec.blocks = vec![
+            crate::spec::title("Visual Assets"),
+            crate::spec::subtitle("Rendered by RusDox"),
+            crate::spec::logo("mark.svg"),
+            crate::spec::section("Benchmark"),
+            crate::spec::body("Narrative before the chart."),
+            crate::spec::chart("chart.svg"),
+        ];
+
+        let document = studio.compose(&spec);
+        let blocks = document.blocks().collect::<Vec<_>>();
+
+        let DocumentBlockRef::Paragraph(title) = blocks[0] else {
+            panic!("expected title paragraph");
+        };
+        let DocumentBlockRef::Paragraph(subtitle) = blocks[1] else {
+            panic!("expected subtitle paragraph");
+        };
+        let DocumentBlockRef::Paragraph(section) = blocks[3] else {
+            panic!("expected section paragraph");
+        };
+        let DocumentBlockRef::Paragraph(body) = blocks[4] else {
+            panic!("expected body paragraph");
+        };
+
+        assert!(title.has_keep_next());
+        assert!(subtitle.has_keep_next());
+        assert!(section.has_keep_next());
+        assert!(body.has_keep_next());
+    }
+
+    #[test]
     fn paragraph_spec_uses_config_as_base_and_applies_overrides() {
         let mut config = RusdoxConfig::default();
         config.typography.font_family = "IBM Plex Sans".to_string();
@@ -3483,6 +3701,52 @@ mod tests {
             runs[1].properties().vertical_align,
             Some(VerticalAlign::Superscript)
         );
+    }
+
+    #[test]
+    fn layout_document_keeps_visual_intro_group_together() {
+        let mut config = RusdoxConfig::default();
+        config.pdf.page_height_pt = 110.0;
+        config.pdf.margin_top_pt = 10.0;
+        config.pdf.margin_bottom_pt = 10.0;
+        config.pdf.margin_x_pt = 10.0;
+        let settings = PdfRenderSettings::from_config(&config);
+        let mut font_system = pdf_font_system(&config);
+
+        let mut document = Document::new();
+        document.push_paragraph(
+            Paragraph::new().add_run(Run::from_text("Line 1\nLine 2\nLine 3\nLine 4")),
+        );
+        document.push_paragraph(
+            Paragraph::new()
+                .keep_next()
+                .add_run(Run::from_text("Benchmark Chart")),
+        );
+        document.push_visual(
+            Visual::from_bytes(
+                br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
+  <rect width="120" height="40" fill="#E2E8F0"/>
+</svg>"##
+                    .to_vec(),
+                VisualFormat::Svg,
+            )
+            .with_kind(VisualKind::Chart)
+            .width_twips(1_200),
+        );
+
+        let layout = layout_document(&document, settings, &mut font_system).expect("layout");
+
+        assert_eq!(layout.pages.len(), 2);
+        assert!(!page_line_texts(&layout.pages[0])
+            .join("\n")
+            .contains("Benchmark Chart"));
+        assert!(page_line_texts(&layout.pages[1])
+            .join("\n")
+            .contains("Benchmark Chart"));
+        assert!(layout.pages[1]
+            .ops
+            .iter()
+            .any(|op| matches!(op, DrawOp::Image { .. })));
     }
 
     #[test]

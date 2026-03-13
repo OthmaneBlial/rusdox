@@ -7,7 +7,8 @@ blocks:
   - type: logo
     path: ../assets/rusdox-mark.svg
     alt_text: RusDox logo
-    max_width_twips: 2200
+    alignment: center
+    max_width_twips: 1800
   - type: section
     text: Context
   - type: body
@@ -15,15 +16,15 @@ blocks:
   - type: image
     path: ../assets/template-gallery.png
     alt_text: RusDox template gallery montage
-    max_width_twips: 7200
+    max_width_twips: 5600
   - type: section
     text: Benchmark Chart
   - type: body
-    text: SVG chart files now flow through the same document pipeline and render into both DOCX and PDF outputs.
+    text: SVG chart assets now render cleanly in both DOCX and PDF outputs.
   - type: chart
     path: ../assets/benchmark-stress-1000-pages.svg
     alt_text: RusDox 1000-page benchmark chart
-    max_width_twips: 7200
+    max_width_twips: 4800
   - type: section
     text: Sign-Off
   - type: body
@@ -31,4 +32,4 @@ blocks:
   - type: signature
     path: ../assets/signature-demo.svg
     alt_text: Automated approval signature
-    max_width_twips: 2800
+    max_width_twips: 2200

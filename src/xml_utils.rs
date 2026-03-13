@@ -642,6 +642,7 @@ where
     let mut alignment = None;
     let mut spacing_before = None;
     let mut spacing_after = None;
+    let mut keep_next = false;
     let mut page_break_before = false;
     let mut buffer = Vec::new();
 
@@ -663,6 +664,7 @@ where
                     alignment = properties.alignment;
                     spacing_before = properties.spacing_before;
                     spacing_after = properties.spacing_after;
+                    keep_next = properties.keep_next;
                     page_break_before = properties.page_break_before;
                 }
                 _ => skip_current_element(reader)?,
@@ -692,6 +694,7 @@ where
             alignment,
             spacing_before,
             spacing_after,
+            keep_next,
             page_break_before,
         ),
         if drawings.len() == 1 {
@@ -708,6 +711,7 @@ struct ParsedParagraphProperties {
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
+    keep_next: bool,
     page_break_before: bool,
 }
 
@@ -740,6 +744,10 @@ where
                         .and_then(|value| value.parse::<u32>().ok());
                     skip_current_element(reader)?;
                 }
+                b"keepNext" => {
+                    properties.keep_next = truthy_attribute(&start, b"val").unwrap_or(true);
+                    skip_current_element(reader)?;
+                }
                 b"pageBreakBefore" => {
                     properties.page_break_before = truthy_attribute(&start, b"val").unwrap_or(true);
                     skip_current_element(reader)?;
@@ -760,6 +768,9 @@ where
                         .and_then(|value| value.parse::<u32>().ok());
                     properties.spacing_after = attribute_value(&start, b"after")
                         .and_then(|value| value.parse::<u32>().ok());
+                }
+                b"keepNext" => {
+                    properties.keep_next = truthy_attribute(&start, b"val").unwrap_or(true);
                 }
                 b"pageBreakBefore" => {
                     properties.page_break_before = truthy_attribute(&start, b"val").unwrap_or(true);
@@ -1665,6 +1676,9 @@ where
                 start.push_attribute(("w:after", spacing_after));
             }
             writer.write_event(Event::Empty(start))?;
+        }
+        if paragraph.has_keep_next() {
+            writer.write_event(Event::Empty(BytesStart::new("w:keepNext")))?;
         }
         if paragraph.has_page_break_before() {
             writer.write_event(Event::Empty(BytesStart::new("w:pageBreakBefore")))?;
@@ -2647,6 +2661,7 @@ mod tests {
         let paragraph = Paragraph::new()
             .spacing_before(120)
             .spacing_after(240)
+            .keep_next()
             .page_break_before()
             .add_run(
                 Run::from_text("Styled")
@@ -2672,6 +2687,7 @@ mod tests {
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
         assert!(xml.contains(r#"<w:spacing w:before="120" w:after="240""#));
+        assert!(xml.contains("<w:keepNext/>"));
         assert!(xml.contains("<w:pageBreakBefore/>"));
         assert!(xml.contains(r#"<w:rFonts w:ascii="Arial""#));
         assert!(xml.contains(r#"<w:sz w:val="36""#));
@@ -2766,5 +2782,25 @@ mod tests {
             Some(&ParagraphList::numbered_with_id(4).with_level(1))
         );
         assert_eq!(paragraph.text(), "Alpha");
+    }
+
+    #[test]
+    fn parser_restores_keep_next_from_document_xml() {
+        let body = [BodyBlock::Paragraph(
+            Paragraph::new()
+                .keep_next()
+                .add_run(Run::from_text("Keep me with next")),
+        )];
+        let document_xml = write_document_xml(&body, &super::SectionProperties::default(), &[])
+            .unwrap_or_else(|error| panic!("write document: {error}"));
+        let parsed = parse_document_xml(&document_xml, None, &BTreeMap::new())
+            .unwrap_or_else(|error| panic!("parse document: {error}"));
+
+        let paragraph = match parsed.body.first() {
+            Some(BodyBlock::Paragraph(paragraph)) => paragraph,
+            other => panic!("expected paragraph body block, got {other:?}"),
+        };
+
+        assert!(paragraph.has_keep_next());
     }
 }
