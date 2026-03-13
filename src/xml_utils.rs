@@ -10,6 +10,10 @@ use crate::error::{DocxError, Result};
 use crate::layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup};
 use crate::paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 use crate::run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
+use crate::style::{
+    ParagraphStyle, ParagraphStyleProperties, RunStyle, RunStyleProperties, Stylesheet, TableStyle,
+    TableStyleProperties,
+};
 use crate::table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
     TableRow, TableRowProperties,
@@ -132,6 +136,12 @@ struct ParsedDrawing {
 struct ParsedRun {
     run: Option<Run>,
     drawing: Option<ParsedDrawing>,
+}
+
+#[derive(Default)]
+struct ParsedRunProperties {
+    style_id: Option<String>,
+    properties: RunProperties,
 }
 
 pub(crate) fn parse_document_xml(
@@ -259,8 +269,8 @@ pub(crate) fn parse_numbering_xml(xml: &[u8]) -> Result<NumberingDefinitions> {
     Ok(numbering)
 }
 
-pub(crate) fn write_numbering_xml(body: &[BodyBlock]) -> Result<Vec<u8>> {
-    let numbering = collect_numbering_instances(body)?;
+pub(crate) fn write_numbering_xml(body: &[BodyBlock], styles: &Stylesheet) -> Result<Vec<u8>> {
+    let numbering = collect_numbering_instances(body, styles)?;
     let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
     writer.write_event(Event::Decl(BytesDecl::new(
         "1.0",
@@ -418,7 +428,10 @@ where
     Ok(abstract_id)
 }
 
-fn collect_numbering_instances(body: &[BodyBlock]) -> Result<BTreeMap<u32, ParagraphListKind>> {
+fn collect_numbering_instances(
+    body: &[BodyBlock],
+    styles: &Stylesheet,
+) -> Result<BTreeMap<u32, ParagraphListKind>> {
     let mut numbering = BTreeMap::new();
 
     for block in body {
@@ -436,6 +449,19 @@ fn collect_numbering_instances(body: &[BodyBlock]) -> Result<BTreeMap<u32, Parag
                 }
             }
             BodyBlock::Visual(_) => {}
+        }
+    }
+
+    for style in styles.paragraph_styles() {
+        if let Some(list) = style.paragraph.list {
+            if let Some(existing) = numbering.insert(list.id(), list.kind()) {
+                if existing != list.kind() {
+                    return Err(DocxError::parse(format!(
+                        "conflicting paragraph list kinds for list id {}",
+                        list.id()
+                    )));
+                }
+            }
         }
     }
 
@@ -639,6 +665,7 @@ where
     let mut runs = Vec::new();
     let mut drawings = Vec::new();
     let mut list = None;
+    let mut style_id = None;
     let mut alignment = None;
     let mut spacing_before = None;
     let mut spacing_after = None;
@@ -661,6 +688,7 @@ where
                 b"pPr" => {
                     let properties = parse_paragraph_properties(reader, numbering)?;
                     list = properties.list;
+                    style_id = properties.style_id;
                     alignment = properties.alignment;
                     spacing_before = properties.spacing_before;
                     spacing_after = properties.spacing_after;
@@ -690,6 +718,7 @@ where
     Ok((
         Paragraph::from_parts(
             runs,
+            style_id,
             list,
             alignment,
             spacing_before,
@@ -708,6 +737,7 @@ where
 #[derive(Default)]
 struct ParsedParagraphProperties {
     list: Option<ParagraphList>,
+    style_id: Option<String>,
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
@@ -730,6 +760,10 @@ where
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"numPr" => {
                     properties.list = parse_numbering_properties(reader, numbering)?;
+                }
+                b"pStyle" => {
+                    properties.style_id = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
                 }
                 b"jc" => {
                     if let Some(value) = attribute_value(&start, b"val") {
@@ -757,6 +791,9 @@ where
             Event::Empty(start) => match local_name(start.name().as_ref()) {
                 b"numPr" => {
                     properties.list = None;
+                }
+                b"pStyle" => {
+                    properties.style_id = attribute_value(&start, b"val");
                 }
                 b"jc" => {
                     if let Some(value) = attribute_value(&start, b"val") {
@@ -855,7 +892,7 @@ where
     R: BufRead,
 {
     let mut text = String::new();
-    let mut properties = RunProperties::default();
+    let mut properties = ParsedRunProperties::default();
     let mut drawing = None;
     let mut buffer = Vec::new();
 
@@ -894,7 +931,11 @@ where
     }
 
     Ok(ParsedRun {
-        run: Some(Run::from_parts(text, properties)),
+        run: Some(Run::from_parts(
+            text,
+            properties.style_id,
+            properties.properties,
+        )),
         drawing,
     })
 }
@@ -991,11 +1032,11 @@ where
     Ok(())
 }
 
-fn parse_run_properties<R>(reader: &mut Reader<R>) -> Result<RunProperties>
+fn parse_run_properties<R>(reader: &mut Reader<R>) -> Result<ParsedRunProperties>
 where
     R: BufRead,
 {
-    let mut properties = RunProperties::default();
+    let mut properties = ParsedRunProperties::default();
     let mut buffer = Vec::new();
 
     loop {
@@ -1021,32 +1062,37 @@ where
     Ok(properties)
 }
 
-fn apply_run_property(properties: &mut RunProperties, start: &BytesStart<'_>) {
+fn apply_run_property(properties: &mut ParsedRunProperties, start: &BytesStart<'_>) {
     match local_name(start.name().as_ref()) {
-        b"b" => properties.bold = truthy_attribute(start, b"val").unwrap_or(true),
-        b"i" => properties.italic = truthy_attribute(start, b"val").unwrap_or(true),
+        b"rStyle" => properties.style_id = attribute_value(start, b"val"),
+        b"b" => properties.properties.bold = truthy_attribute(start, b"val").unwrap_or(true),
+        b"i" => properties.properties.italic = truthy_attribute(start, b"val").unwrap_or(true),
         b"u" => {
             let style = attribute_value(start, b"val")
                 .map(|value| UnderlineStyle::from_xml(&value))
                 .unwrap_or(UnderlineStyle::Single);
-            properties.underline = Some(style);
+            properties.properties.underline = Some(style);
         }
-        b"strike" => properties.strikethrough = truthy_attribute(start, b"val").unwrap_or(true),
-        b"smallCaps" => properties.small_caps = truthy_attribute(start, b"val").unwrap_or(true),
-        b"shadow" => properties.shadow = truthy_attribute(start, b"val").unwrap_or(true),
-        b"color" => properties.color = attribute_value(start, b"val"),
+        b"strike" => {
+            properties.properties.strikethrough = truthy_attribute(start, b"val").unwrap_or(true)
+        }
+        b"smallCaps" => {
+            properties.properties.small_caps = truthy_attribute(start, b"val").unwrap_or(true)
+        }
+        b"shadow" => properties.properties.shadow = truthy_attribute(start, b"val").unwrap_or(true),
+        b"color" => properties.properties.color = attribute_value(start, b"val"),
         b"sz" => {
-            properties.font_size =
+            properties.properties.font_size =
                 attribute_value(start, b"val").and_then(|value| value.parse::<u16>().ok());
         }
         b"rFonts" => {
-            properties.font_family = attribute_value(start, b"ascii")
+            properties.properties.font_family = attribute_value(start, b"ascii")
                 .or_else(|| attribute_value(start, b"hAnsi"))
                 .or_else(|| attribute_value(start, b"cs"));
         }
         b"vertAlign" => {
             if let Some(value) = attribute_value(start, b"val") {
-                properties.vertical_align = Some(VerticalAlign::from_xml(&value));
+                properties.properties.vertical_align = Some(VerticalAlign::from_xml(&value));
             }
         }
         _ => {}
@@ -1240,6 +1286,10 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"tblStyle" => {
+                    properties.style_id = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
                 b"tblW" => {
                     properties.width =
                         attribute_value(&start, b"w").and_then(|value| value.parse::<u32>().ok());
@@ -1249,6 +1299,9 @@ where
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"tblStyle" => {
+                    properties.style_id = attribute_value(&start, b"val");
+                }
                 b"tblW" => {
                     properties.width =
                         attribute_value(&start, b"w").and_then(|value| value.parse::<u32>().ok());
@@ -1634,6 +1687,696 @@ fn parse_page_numbering(start: &BytesStart<'_>) -> PageNumbering {
     }
 }
 
+pub(crate) fn parse_styles_xml(
+    xml: &[u8],
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<Stylesheet> {
+    let mut reader = Reader::from_reader(Cursor::new(xml));
+    reader.config_mut().trim_text(false);
+    let mut stylesheet = Stylesheet::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == b"style" => {
+                parse_style_element(&mut reader, &start, false, numbering, &mut stylesheet)?;
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"style" => {
+                parse_style_element(&mut reader, &start, true, numbering, &mut stylesheet)?;
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(stylesheet)
+}
+
+pub(crate) fn write_styles_xml(stylesheet: &Stylesheet) -> Result<Vec<u8>> {
+    let mut writer = Writer::new(Vec::new());
+    writer.write_event(Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
+
+    let mut styles = BytesStart::new("w:styles");
+    styles.push_attribute(("xmlns:w", WORD_NS));
+    writer.write_event(Event::Start(styles))?;
+
+    let normal_style = stylesheet
+        .paragraph_style("Normal")
+        .cloned()
+        .unwrap_or_else(|| ParagraphStyle::new("Normal").name("Normal"));
+    write_paragraph_style_definition(&mut writer, &normal_style, true)?;
+
+    let default_run_style = stylesheet
+        .run_style("DefaultParagraphFont")
+        .cloned()
+        .unwrap_or_else(|| RunStyle::new("DefaultParagraphFont").name("Default Paragraph Font"));
+    write_run_style_definition(&mut writer, &default_run_style, true)?;
+
+    let default_table_style = stylesheet
+        .table_style("TableNormal")
+        .cloned()
+        .unwrap_or_else(|| TableStyle::new("TableNormal").name("Table Normal"));
+    write_table_style_definition(&mut writer, &default_table_style, true)?;
+
+    for style in stylesheet.paragraph_styles() {
+        if style.id == "Normal" {
+            continue;
+        }
+        write_paragraph_style_definition(&mut writer, style, false)?;
+    }
+    for style in stylesheet.run_styles() {
+        if style.id == "DefaultParagraphFont" {
+            continue;
+        }
+        write_run_style_definition(&mut writer, style, false)?;
+    }
+    for style in stylesheet.table_styles() {
+        if style.id == "TableNormal" {
+            continue;
+        }
+        write_table_style_definition(&mut writer, style, false)?;
+    }
+
+    writer.write_event(Event::End(BytesEnd::new("w:styles")))?;
+    Ok(writer.into_inner())
+}
+
+fn parse_style_element<R>(
+    reader: &mut Reader<R>,
+    start: &BytesStart<'_>,
+    is_empty: bool,
+    numbering: Option<&NumberingDefinitions>,
+    stylesheet: &mut Stylesheet,
+) -> Result<()>
+where
+    R: BufRead,
+{
+    let Some(style_type) = attribute_value(start, b"type") else {
+        if !is_empty {
+            skip_current_element(reader)?;
+        }
+        return Ok(());
+    };
+    let Some(style_id) = attribute_value(start, b"styleId") else {
+        if !is_empty {
+            skip_current_element(reader)?;
+        }
+        return Ok(());
+    };
+
+    match style_type.as_str() {
+        "paragraph" => {
+            stylesheet.define_paragraph_style(parse_paragraph_style_definition(
+                reader, &style_id, is_empty, numbering,
+            )?);
+        }
+        "character" => {
+            stylesheet.define_run_style(parse_run_style_definition(reader, &style_id, is_empty)?);
+        }
+        "table" => {
+            stylesheet
+                .define_table_style(parse_table_style_definition(reader, &style_id, is_empty)?);
+        }
+        _ => {
+            if !is_empty {
+                skip_current_element(reader)?;
+            }
+        }
+    };
+    Ok(())
+}
+
+fn parse_paragraph_style_definition<R>(
+    reader: &mut Reader<R>,
+    style_id: &str,
+    is_empty: bool,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<ParagraphStyle>
+where
+    R: BufRead,
+{
+    let mut style = ParagraphStyle::new(style_id.to_string());
+    if is_empty {
+        return Ok(style);
+    }
+
+    let mut buffer = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"name" => {
+                    style.name = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"basedOn" => {
+                    style.based_on = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"next" => {
+                    style.next = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"pPr" => style.paragraph = parse_paragraph_style_properties(reader, numbering)?,
+                b"rPr" => style.run = parse_run_style_properties(reader)?,
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"name" => style.name = attribute_value(&start, b"val"),
+                b"basedOn" => style.based_on = attribute_value(&start, b"val"),
+                b"next" => style.next = attribute_value(&start, b"val"),
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"style" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML styles part: unexpected end of file in paragraph style",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(style)
+}
+
+fn parse_run_style_definition<R>(
+    reader: &mut Reader<R>,
+    style_id: &str,
+    is_empty: bool,
+) -> Result<RunStyle>
+where
+    R: BufRead,
+{
+    let mut style = RunStyle::new(style_id.to_string());
+    if is_empty {
+        return Ok(style);
+    }
+
+    let mut buffer = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"name" => {
+                    style.name = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"basedOn" => {
+                    style.based_on = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"rPr" => style.properties = parse_run_style_properties(reader)?,
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"name" => style.name = attribute_value(&start, b"val"),
+                b"basedOn" => style.based_on = attribute_value(&start, b"val"),
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"style" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML styles part: unexpected end of file in run style",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(style)
+}
+
+fn parse_table_style_definition<R>(
+    reader: &mut Reader<R>,
+    style_id: &str,
+    is_empty: bool,
+) -> Result<TableStyle>
+where
+    R: BufRead,
+{
+    let mut style = TableStyle::new(style_id.to_string());
+    if is_empty {
+        return Ok(style);
+    }
+
+    let mut buffer = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"name" => {
+                    style.name = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"basedOn" => {
+                    style.based_on = attribute_value(&start, b"val");
+                    skip_current_element(reader)?;
+                }
+                b"tblPr" => style.properties = parse_table_style_properties(reader)?,
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"name" => style.name = attribute_value(&start, b"val"),
+                b"basedOn" => style.based_on = attribute_value(&start, b"val"),
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"style" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML styles part: unexpected end of file in table style",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(style)
+}
+
+fn parse_paragraph_style_properties<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<ParagraphStyleProperties>
+where
+    R: BufRead,
+{
+    let mut properties = ParagraphStyleProperties::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"numPr" => {
+                    properties.list = parse_numbering_properties(reader, numbering)?;
+                }
+                b"jc" => {
+                    properties.alignment = attribute_value(&start, b"val")
+                        .map(|value| ParagraphAlignment::from_xml(&value));
+                    skip_current_element(reader)?;
+                }
+                b"spacing" => {
+                    properties.spacing_before = attribute_value(&start, b"before")
+                        .and_then(|value| value.parse::<u32>().ok());
+                    properties.spacing_after = attribute_value(&start, b"after")
+                        .and_then(|value| value.parse::<u32>().ok());
+                    skip_current_element(reader)?;
+                }
+                b"keepNext" => {
+                    properties.keep_next = Some(truthy_attribute(&start, b"val").unwrap_or(true));
+                    skip_current_element(reader)?;
+                }
+                b"pageBreakBefore" => {
+                    properties.page_break_before =
+                        Some(truthy_attribute(&start, b"val").unwrap_or(true));
+                    skip_current_element(reader)?;
+                }
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"numPr" => properties.list = None,
+                b"jc" => {
+                    properties.alignment = attribute_value(&start, b"val")
+                        .map(|value| ParagraphAlignment::from_xml(&value));
+                }
+                b"spacing" => {
+                    properties.spacing_before = attribute_value(&start, b"before")
+                        .and_then(|value| value.parse::<u32>().ok());
+                    properties.spacing_after = attribute_value(&start, b"after")
+                        .and_then(|value| value.parse::<u32>().ok());
+                }
+                b"keepNext" => {
+                    properties.keep_next = Some(truthy_attribute(&start, b"val").unwrap_or(true));
+                }
+                b"pageBreakBefore" => {
+                    properties.page_break_before =
+                        Some(truthy_attribute(&start, b"val").unwrap_or(true));
+                }
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"pPr" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML styles part: unexpected end of file in paragraph style properties",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(properties)
+}
+
+fn parse_run_style_properties<R>(reader: &mut Reader<R>) -> Result<RunStyleProperties>
+where
+    R: BufRead,
+{
+    let mut properties = RunStyleProperties::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => {
+                apply_run_style_property(&mut properties, &start);
+                skip_current_element(reader)?;
+            }
+            Event::Empty(start) => apply_run_style_property(&mut properties, &start),
+            Event::End(end) if local_name(end.name().as_ref()) == b"rPr" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML styles part: unexpected end of file in run style properties",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(properties)
+}
+
+fn parse_table_style_properties<R>(reader: &mut Reader<R>) -> Result<TableStyleProperties>
+where
+    R: BufRead,
+{
+    let properties = parse_table_properties(reader)?;
+    Ok(TableStyleProperties {
+        width: properties.width,
+        borders: properties.borders,
+    })
+}
+
+fn apply_run_style_property(properties: &mut RunStyleProperties, start: &BytesStart<'_>) {
+    match local_name(start.name().as_ref()) {
+        b"b" => properties.bold = Some(truthy_attribute(start, b"val").unwrap_or(true)),
+        b"i" => properties.italic = Some(truthy_attribute(start, b"val").unwrap_or(true)),
+        b"u" => {
+            properties.underline = Some(
+                attribute_value(start, b"val")
+                    .map(|value| UnderlineStyle::from_xml(&value))
+                    .unwrap_or(UnderlineStyle::Single),
+            );
+        }
+        b"strike" => {
+            properties.strikethrough = Some(truthy_attribute(start, b"val").unwrap_or(true))
+        }
+        b"smallCaps" => {
+            properties.small_caps = Some(truthy_attribute(start, b"val").unwrap_or(true))
+        }
+        b"shadow" => properties.shadow = Some(truthy_attribute(start, b"val").unwrap_or(true)),
+        b"color" => properties.color = attribute_value(start, b"val"),
+        b"sz" => {
+            properties.font_size =
+                attribute_value(start, b"val").and_then(|value| value.parse::<u16>().ok());
+        }
+        b"rFonts" => {
+            properties.font_family = attribute_value(start, b"ascii")
+                .or_else(|| attribute_value(start, b"hAnsi"))
+                .or_else(|| attribute_value(start, b"cs"));
+        }
+        b"vertAlign" => {
+            if let Some(value) = attribute_value(start, b"val") {
+                properties.vertical_align = Some(VerticalAlign::from_xml(&value));
+            }
+        }
+        _ => {}
+    }
+}
+
+fn write_paragraph_style_definition<W>(
+    writer: &mut Writer<W>,
+    style: &ParagraphStyle,
+    is_default: bool,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut start = BytesStart::new("w:style");
+    start.push_attribute(("w:type", "paragraph"));
+    start.push_attribute(("w:styleId", style.id.as_str()));
+    if is_default {
+        start.push_attribute(("w:default", "1"));
+    }
+    writer.write_event(Event::Start(start))?;
+    write_style_metadata(
+        writer,
+        style.name.as_deref().unwrap_or(style.id.as_str()),
+        style.based_on.as_deref(),
+        style.next.as_deref(),
+    )?;
+    writer.write_event(Event::Empty(BytesStart::new("w:qFormat")))?;
+    write_paragraph_style_properties_definition(writer, &style.paragraph)?;
+    write_run_style_properties_definition(writer, &style.run)?;
+    writer.write_event(Event::End(BytesEnd::new("w:style")))?;
+    Ok(())
+}
+
+fn write_run_style_definition<W>(
+    writer: &mut Writer<W>,
+    style: &RunStyle,
+    is_default: bool,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut start = BytesStart::new("w:style");
+    start.push_attribute(("w:type", "character"));
+    start.push_attribute(("w:styleId", style.id.as_str()));
+    if is_default {
+        start.push_attribute(("w:default", "1"));
+    }
+    writer.write_event(Event::Start(start))?;
+    write_style_metadata(
+        writer,
+        style.name.as_deref().unwrap_or(style.id.as_str()),
+        style.based_on.as_deref(),
+        None,
+    )?;
+    write_run_style_properties_definition(writer, &style.properties)?;
+    writer.write_event(Event::End(BytesEnd::new("w:style")))?;
+    Ok(())
+}
+
+fn write_table_style_definition<W>(
+    writer: &mut Writer<W>,
+    style: &TableStyle,
+    is_default: bool,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut start = BytesStart::new("w:style");
+    start.push_attribute(("w:type", "table"));
+    start.push_attribute(("w:styleId", style.id.as_str()));
+    if is_default {
+        start.push_attribute(("w:default", "1"));
+    }
+    writer.write_event(Event::Start(start))?;
+    write_style_metadata(
+        writer,
+        style.name.as_deref().unwrap_or(style.id.as_str()),
+        style.based_on.as_deref(),
+        None,
+    )?;
+    write_table_style_properties_definition(writer, &style.properties)?;
+    writer.write_event(Event::End(BytesEnd::new("w:style")))?;
+    Ok(())
+}
+
+fn write_style_metadata<W>(
+    writer: &mut Writer<W>,
+    name: &str,
+    based_on: Option<&str>,
+    next: Option<&str>,
+) -> Result<()>
+where
+    W: Write,
+{
+    let mut name_tag = BytesStart::new("w:name");
+    name_tag.push_attribute(("w:val", name));
+    writer.write_event(Event::Empty(name_tag))?;
+
+    if let Some(based_on) = based_on {
+        let mut tag = BytesStart::new("w:basedOn");
+        tag.push_attribute(("w:val", based_on));
+        writer.write_event(Event::Empty(tag))?;
+    }
+    if let Some(next) = next {
+        let mut tag = BytesStart::new("w:next");
+        tag.push_attribute(("w:val", next));
+        writer.write_event(Event::Empty(tag))?;
+    }
+    Ok(())
+}
+
+fn write_paragraph_style_properties_definition<W>(
+    writer: &mut Writer<W>,
+    properties: &ParagraphStyleProperties,
+) -> Result<()>
+where
+    W: Write,
+{
+    if properties.list.is_none()
+        && properties.alignment.is_none()
+        && properties.spacing_before.is_none()
+        && properties.spacing_after.is_none()
+        && properties.keep_next.is_none()
+        && properties.page_break_before.is_none()
+    {
+        return Ok(());
+    }
+
+    writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+    if let Some(list) = properties.list.as_ref() {
+        writer.write_event(Event::Start(BytesStart::new("w:numPr")))?;
+        let mut level = BytesStart::new("w:ilvl");
+        let level_string = list.level().to_string();
+        level.push_attribute(("w:val", level_string.as_str()));
+        writer.write_event(Event::Empty(level))?;
+        let mut num_id = BytesStart::new("w:numId");
+        let num_id_string = list.id().to_string();
+        num_id.push_attribute(("w:val", num_id_string.as_str()));
+        writer.write_event(Event::Empty(num_id))?;
+        writer.write_event(Event::End(BytesEnd::new("w:numPr")))?;
+    }
+    if let Some(alignment) = properties.alignment.as_ref() {
+        let mut start = BytesStart::new("w:jc");
+        start.push_attribute(("w:val", alignment.as_xml_value()));
+        writer.write_event(Event::Empty(start))?;
+    }
+    if properties.spacing_before.is_some() || properties.spacing_after.is_some() {
+        let mut start = BytesStart::new("w:spacing");
+        let spacing_before = properties.spacing_before.map(|value| value.to_string());
+        let spacing_after = properties.spacing_after.map(|value| value.to_string());
+        if let Some(spacing_before) = spacing_before.as_deref() {
+            start.push_attribute(("w:before", spacing_before));
+        }
+        if let Some(spacing_after) = spacing_after.as_deref() {
+            start.push_attribute(("w:after", spacing_after));
+        }
+        writer.write_event(Event::Empty(start))?;
+    }
+    write_on_off_property(writer, "w:keepNext", properties.keep_next)?;
+    write_on_off_property(writer, "w:pageBreakBefore", properties.page_break_before)?;
+    writer.write_event(Event::End(BytesEnd::new("w:pPr")))?;
+    Ok(())
+}
+
+fn write_run_style_properties_definition<W>(
+    writer: &mut Writer<W>,
+    properties: &RunStyleProperties,
+) -> Result<()>
+where
+    W: Write,
+{
+    if properties.bold.is_none()
+        && properties.italic.is_none()
+        && properties.underline.is_none()
+        && properties.strikethrough.is_none()
+        && properties.small_caps.is_none()
+        && properties.shadow.is_none()
+        && properties.color.is_none()
+        && properties.font_size.is_none()
+        && properties.font_family.is_none()
+        && properties.vertical_align.is_none()
+    {
+        return Ok(());
+    }
+
+    writer.write_event(Event::Start(BytesStart::new("w:rPr")))?;
+    write_on_off_property(writer, "w:b", properties.bold)?;
+    write_on_off_property(writer, "w:i", properties.italic)?;
+    if let Some(underline) = properties.underline.as_ref() {
+        let mut start = BytesStart::new("w:u");
+        start.push_attribute(("w:val", underline.as_xml_value()));
+        writer.write_event(Event::Empty(start))?;
+    }
+    write_on_off_property(writer, "w:strike", properties.strikethrough)?;
+    write_on_off_property(writer, "w:smallCaps", properties.small_caps)?;
+    write_on_off_property(writer, "w:shadow", properties.shadow)?;
+    if let Some(color) = properties.color.as_deref() {
+        let mut start = BytesStart::new("w:color");
+        start.push_attribute(("w:val", color));
+        writer.write_event(Event::Empty(start))?;
+    }
+    if let Some(font_size) = properties.font_size {
+        let font_size = font_size.to_string();
+        let mut start = BytesStart::new("w:sz");
+        start.push_attribute(("w:val", font_size.as_str()));
+        writer.write_event(Event::Empty(start))?;
+        let mut complex_start = BytesStart::new("w:szCs");
+        complex_start.push_attribute(("w:val", font_size.as_str()));
+        writer.write_event(Event::Empty(complex_start))?;
+    }
+    if let Some(font_family) = properties.font_family.as_deref() {
+        let mut start = BytesStart::new("w:rFonts");
+        start.push_attribute(("w:ascii", font_family));
+        start.push_attribute(("w:hAnsi", font_family));
+        start.push_attribute(("w:cs", font_family));
+        writer.write_event(Event::Empty(start))?;
+    }
+    if let Some(vertical_align) = properties.vertical_align {
+        let mut start = BytesStart::new("w:vertAlign");
+        start.push_attribute(("w:val", vertical_align.as_xml_value()));
+        writer.write_event(Event::Empty(start))?;
+    }
+    writer.write_event(Event::End(BytesEnd::new("w:rPr")))?;
+    Ok(())
+}
+
+fn write_table_style_properties_definition<W>(
+    writer: &mut Writer<W>,
+    properties: &TableStyleProperties,
+) -> Result<()>
+where
+    W: Write,
+{
+    if properties.width.is_none() && properties.borders.is_none() {
+        return Ok(());
+    }
+
+    writer.write_event(Event::Start(BytesStart::new("w:tblPr")))?;
+    if let Some(width) = properties.width {
+        let mut start = BytesStart::new("w:tblW");
+        let width_string = width.to_string();
+        start.push_attribute(("w:type", "dxa"));
+        start.push_attribute(("w:w", width_string.as_str()));
+        writer.write_event(Event::Empty(start))?;
+    }
+    if let Some(borders) = properties.borders.as_ref() {
+        write_borders(writer, "w:tblBorders", borders)?;
+    }
+    writer.write_event(Event::End(BytesEnd::new("w:tblPr")))?;
+    Ok(())
+}
+
+fn write_on_off_property<W>(
+    writer: &mut Writer<W>,
+    tag_name: &str,
+    value: Option<bool>,
+) -> Result<()>
+where
+    W: Write,
+{
+    let Some(value) = value else {
+        return Ok(());
+    };
+    if value {
+        writer.write_event(Event::Empty(BytesStart::new(tag_name)))?;
+    } else {
+        let mut start = BytesStart::new(tag_name);
+        start.push_attribute(("w:val", "0"));
+        writer.write_event(Event::Empty(start))?;
+    }
+    Ok(())
+}
+
 fn write_paragraph<W>(writer: &mut Writer<W>, paragraph: &Paragraph) -> Result<()>
 where
     W: Write,
@@ -1641,6 +2384,11 @@ where
     writer.write_event(Event::Start(BytesStart::new("w:p")))?;
     if paragraph.has_properties() {
         writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+        if let Some(style_id) = paragraph.style_id() {
+            let mut style = BytesStart::new("w:pStyle");
+            style.push_attribute(("w:val", style_id));
+            writer.write_event(Event::Empty(style))?;
+        }
         if let Some(list) = paragraph.list() {
             writer.write_event(Event::Start(BytesStart::new("w:numPr")))?;
 
@@ -1801,8 +2549,13 @@ where
     W: Write,
 {
     writer.write_event(Event::Start(BytesStart::new("w:r")))?;
-    if run.properties().has_serialized_content() {
+    if run.style_id().is_some() || run.properties().has_serialized_content() {
         writer.write_event(Event::Start(BytesStart::new("w:rPr")))?;
+        if let Some(style_id) = run.style_id() {
+            let mut style = BytesStart::new("w:rStyle");
+            style.push_attribute(("w:val", style_id));
+            writer.write_event(Event::Empty(style))?;
+        }
         if run.properties().bold {
             writer.write_event(Event::Empty(BytesStart::new("w:b")))?;
         }
@@ -1956,8 +2709,16 @@ where
     W: Write,
 {
     writer.write_event(Event::Start(BytesStart::new("w:tbl")))?;
-    if table.properties().width.is_some() || table.properties().borders.is_some() {
+    if table.properties().style_id.is_some()
+        || table.properties().width.is_some()
+        || table.properties().borders.is_some()
+    {
         writer.write_event(Event::Start(BytesStart::new("w:tblPr")))?;
+        if let Some(style_id) = table.style_id() {
+            let mut style = BytesStart::new("w:tblStyle");
+            style.push_attribute(("w:val", style_id));
+            writer.write_event(Event::Empty(style))?;
+        }
         if let Some(width) = table.properties().width {
             let mut start = BytesStart::new("w:tblW");
             let width_string = width.to_string();
@@ -2603,10 +3364,15 @@ fn local_name(name: &[u8]) -> &[u8] {
 mod tests {
     use std::collections::BTreeMap;
 
-    use super::{parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml};
+    use super::{
+        parse_document_xml, parse_numbering_xml, parse_styles_xml, write_document_xml,
+        write_numbering_xml, write_styles_xml,
+    };
     use crate::document::BodyBlock;
     use crate::{
-        HeaderFooter, Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow,
+        Border, BorderStyle, HeaderFooter, Paragraph, ParagraphAlignment, ParagraphList,
+        ParagraphStyle, ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet,
+        Table, TableBorders, TableCell, TableRow, TableStyle, TableStyleProperties,
     };
 
     #[test]
@@ -2695,6 +3461,32 @@ mod tests {
     }
 
     #[test]
+    fn writer_emits_style_references_for_paragraph_runs_and_tables() {
+        let paragraph = Paragraph::new()
+            .with_style("Lead")
+            .add_run(Run::from_text("Styled").with_style("Accent"));
+        let table = Table::new()
+            .style("DataGrid")
+            .add_row(TableRow::new().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("Metric"))),
+            ));
+        let document_xml = write_document_xml(
+            &[
+                BodyBlock::Paragraph(paragraph),
+                BodyBlock::Table(Box::new(table)),
+            ],
+            &super::SectionProperties::default(),
+            &[],
+        )
+        .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
+        let xml = String::from_utf8_lossy(&document_xml);
+
+        assert!(xml.contains(r#"<w:pStyle w:val="Lead"/>"#));
+        assert!(xml.contains(r#"<w:rStyle w:val="Accent"/>"#));
+        assert!(xml.contains(r#"<w:tblStyle w:val="DataGrid"/>"#));
+    }
+
+    #[test]
     fn header_footer_templates_emit_fields_and_round_trip_placeholders() {
         let footer =
             HeaderFooter::new("Page {page} of {pages}").with_alignment(ParagraphAlignment::Right);
@@ -2744,8 +3536,8 @@ mod tests {
                     .add_run(Run::from_text("Number")),
             ),
         ];
-        let numbering_xml =
-            write_numbering_xml(&body).unwrap_or_else(|error| panic!("write numbering: {error}"));
+        let numbering_xml = write_numbering_xml(&body, &Stylesheet::default())
+            .unwrap_or_else(|error| panic!("write numbering: {error}"));
         let xml = String::from_utf8_lossy(&numbering_xml);
 
         assert!(xml.contains(r#"<w:abstractNum w:abstractNumId="1">"#));
@@ -2757,14 +3549,126 @@ mod tests {
     }
 
     #[test]
+    fn styles_part_round_trips_named_styles_and_stylesheet_lists() {
+        let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+        let lead_properties = ParagraphStyleProperties {
+            list: Some(ParagraphList::bullet_with_id(12)),
+            alignment: Some(ParagraphAlignment::Center),
+            spacing_before: Some(120),
+            spacing_after: Some(240),
+            keep_next: Some(true),
+            page_break_before: Some(false),
+        };
+        let body_properties = ParagraphStyleProperties {
+            keep_next: Some(false),
+            ..ParagraphStyleProperties::default()
+        };
+        let styles = Stylesheet::new()
+            .add_paragraph_style(
+                ParagraphStyle::new("Lead")
+                    .name("Lead")
+                    .based_on("Normal")
+                    .next("Body")
+                    .paragraph(lead_properties)
+                    .run(RunStyleProperties::new().bold().color("112233")),
+            )
+            .add_paragraph_style(
+                ParagraphStyle::new("Body")
+                    .based_on("Lead")
+                    .paragraph(body_properties),
+            )
+            .add_run_style(
+                RunStyle::new("Accent")
+                    .name("Accent")
+                    .based_on("DefaultParagraphFont")
+                    .properties(RunStyleProperties::new().italic().color("AA5500")),
+            )
+            .add_table_style(
+                TableStyle::new("DataGrid")
+                    .name("Data Grid")
+                    .based_on("TableNormal")
+                    .properties(
+                        TableStyleProperties::new()
+                            .width(9_000)
+                            .borders(TableBorders::new().top(border.clone())),
+                    ),
+            );
+
+        let styles_xml =
+            write_styles_xml(&styles).unwrap_or_else(|error| panic!("write styles: {error}"));
+        let numbering_xml = write_numbering_xml(&[], &styles)
+            .unwrap_or_else(|error| panic!("write numbering: {error}"));
+        let styles_text = String::from_utf8_lossy(&styles_xml);
+        let numbering_text = String::from_utf8_lossy(&numbering_xml);
+
+        assert!(styles_text.contains(r#"<w:style w:type="paragraph" w:styleId="Lead""#));
+        assert!(styles_text.contains(r#"<w:basedOn w:val="Normal"/>"#));
+        assert!(styles_text.contains(r#"<w:next w:val="Body"/>"#));
+        assert!(styles_text.contains(r#"<w:keepNext w:val="0"/>"#));
+        assert!(styles_text.contains(r#"<w:pageBreakBefore w:val="0"/>"#));
+        assert!(styles_text.contains(r#"<w:style w:type="character" w:styleId="Accent""#));
+        assert!(styles_text.contains(r#"<w:style w:type="table" w:styleId="DataGrid""#));
+        assert!(numbering_text.contains(r#"<w:num w:numId="12">"#));
+        assert!(numbering_text.contains(r#"<w:numFmt w:val="bullet"/>"#));
+
+        let numbering = parse_numbering_xml(&numbering_xml)
+            .unwrap_or_else(|error| panic!("parse numbering: {error}"));
+        let parsed = parse_styles_xml(&styles_xml, Some(&numbering))
+            .unwrap_or_else(|error| panic!("parse styles: {error}"));
+
+        let lead = parsed
+            .paragraph_style("Lead")
+            .expect("lead paragraph style should exist");
+        assert_eq!(lead.name.as_deref(), Some("Lead"));
+        assert_eq!(lead.based_on.as_deref(), Some("Normal"));
+        assert_eq!(lead.next.as_deref(), Some("Body"));
+        assert_eq!(lead.paragraph.list, Some(ParagraphList::bullet_with_id(12)));
+        assert_eq!(lead.paragraph.alignment, Some(ParagraphAlignment::Center));
+        assert_eq!(lead.paragraph.spacing_before, Some(120));
+        assert_eq!(lead.paragraph.spacing_after, Some(240));
+        assert_eq!(lead.paragraph.keep_next, Some(true));
+        assert_eq!(lead.paragraph.page_break_before, Some(false));
+        assert_eq!(lead.run.bold, Some(true));
+        assert_eq!(lead.run.color.as_deref(), Some("112233"));
+
+        let body = parsed
+            .paragraph_style("Body")
+            .expect("body paragraph style should exist");
+        assert_eq!(body.based_on.as_deref(), Some("Lead"));
+        assert_eq!(body.paragraph.keep_next, Some(false));
+
+        let accent = parsed
+            .run_style("Accent")
+            .expect("accent run style should exist");
+        assert_eq!(accent.name.as_deref(), Some("Accent"));
+        assert_eq!(accent.based_on.as_deref(), Some("DefaultParagraphFont"));
+        assert_eq!(accent.properties.italic, Some(true));
+        assert_eq!(accent.properties.color.as_deref(), Some("AA5500"));
+
+        let grid = parsed
+            .table_style("DataGrid")
+            .expect("table style should exist");
+        assert_eq!(grid.name.as_deref(), Some("Data Grid"));
+        assert_eq!(grid.based_on.as_deref(), Some("TableNormal"));
+        assert_eq!(grid.properties.width, Some(9_000));
+        assert_eq!(
+            grid.properties
+                .borders
+                .as_ref()
+                .and_then(|borders| borders.top.as_ref()),
+            Some(&border)
+        );
+    }
+
+    #[test]
     fn parser_restores_semantic_numbering_from_document_and_numbering_parts() {
         let body = [BodyBlock::Paragraph(
             Paragraph::new()
                 .with_list(ParagraphList::numbered_with_id(4).with_level(1))
                 .add_run(Run::from_text("Alpha")),
         )];
-        let numbering_xml =
-            write_numbering_xml(&body).unwrap_or_else(|error| panic!("write numbering: {error}"));
+        let numbering_xml = write_numbering_xml(&body, &Stylesheet::default())
+            .unwrap_or_else(|error| panic!("write numbering: {error}"));
         let numbering = parse_numbering_xml(&numbering_xml)
             .unwrap_or_else(|error| panic!("parse numbering: {error}"));
         let document_xml = write_document_xml(&body, &super::SectionProperties::default(), &[])

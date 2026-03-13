@@ -1,5 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 /// Supported underline styles for a text run.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum UnderlineStyle {
     /// A single underline.
     Single,
@@ -48,7 +51,8 @@ impl UnderlineStyle {
 }
 
 /// Vertical alignment for a run.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum VerticalAlign {
     /// Superscript text.
     Superscript,
@@ -120,6 +124,7 @@ impl RunProperties {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Run {
     text: String,
+    style_id: Option<String>,
     properties: RunProperties,
 }
 
@@ -147,6 +152,7 @@ impl Run {
     pub fn from_text(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
+            style_id: None,
             properties: RunProperties::default(),
         }
     }
@@ -160,6 +166,23 @@ impl Run {
     /// Returns the run text.
     pub fn text(&self) -> &str {
         self.text.as_str()
+    }
+
+    /// Returns the referenced named run style id, if present.
+    pub fn style_id(&self) -> Option<&str> {
+        self.style_id.as_deref()
+    }
+
+    /// Applies a named run style.
+    pub fn with_style(mut self, style_id: impl Into<String>) -> Self {
+        self.style_id = Some(style_id.into());
+        self
+    }
+
+    /// Sets the named run style in place.
+    pub fn set_style(&mut self, style_id: impl Into<String>) -> &mut Self {
+        self.style_id = Some(style_id.into());
+        self
     }
 
     /// Replaces the run text in place.
@@ -250,8 +273,16 @@ impl Run {
         self
     }
 
-    pub(crate) fn from_parts(text: String, properties: RunProperties) -> Self {
-        Self { text, properties }
+    pub(crate) fn from_parts(
+        text: String,
+        style_id: Option<String>,
+        properties: RunProperties,
+    ) -> Self {
+        Self {
+            text,
+            style_id,
+            properties,
+        }
     }
 
     pub(crate) fn needs_space_preserve(&self) -> bool {
@@ -434,7 +465,7 @@ mod tests {
             vertical_align: Some(VerticalAlign::Baseline),
         };
 
-        let run = Run::from_parts("abc".to_string(), properties.clone());
+        let run = Run::from_parts("abc".to_string(), None, properties.clone());
         assert_eq!(run.text(), "abc");
         assert_eq!(run.properties(), &properties);
     }

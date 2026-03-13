@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result};
+use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result, Stylesheet};
 
 /// A high-level, serializable document specification.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -19,6 +19,8 @@ pub struct DocumentSpec {
     pub footer: Option<HeaderFooter>,
     /// Optional page numbering format and restart control.
     pub page_numbering: Option<PageNumbering>,
+    /// Reusable named styles available to blocks and runs in this document.
+    pub styles: Stylesheet,
     pub blocks: Vec<BlockSpec>,
     #[serde(skip)]
     asset_base_dir: Option<PathBuf>,
@@ -226,6 +228,7 @@ pub enum BlockSpec {
 #[serde(default)]
 pub struct ParagraphSpec {
     pub runs: Vec<RunSpec>,
+    pub style_id: Option<String>,
     pub alignment: Option<ParagraphAlignmentSpec>,
     pub spacing_before_twips: Option<u32>,
     pub spacing_after_twips: Option<u32>,
@@ -259,6 +262,7 @@ pub enum ParagraphAlignmentSpec {
 #[serde(default)]
 pub struct RunSpec {
     pub text: String,
+    pub style_id: Option<String>,
     pub bold: bool,
     pub italic: bool,
     pub underline: Option<UnderlineStyleSpec>,
@@ -352,6 +356,7 @@ pub enum Tone {
 /// A grid table specification.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TableSpec {
+    pub style_id: Option<String>,
     pub columns: Vec<ColumnSpec>,
     pub rows: Vec<RowSpec>,
 }
@@ -394,6 +399,7 @@ where
         header: None,
         footer: None,
         page_numbering: None,
+        styles: Stylesheet::default(),
         blocks: blocks.into_iter().collect(),
         asset_base_dir: None,
     }
@@ -525,6 +531,7 @@ where
 {
     BlockSpec::Table {
         spec: TableSpec {
+            style_id: None,
             columns: columns.into_iter().collect(),
             rows: rows.into_iter().collect(),
         },
@@ -626,6 +633,23 @@ output_name: my-document
 # page_numbering:
 #   start_at: 1
 #   format: decimal
+# Optional reusable named styles:
+# styles:
+#   paragraph:
+#     - id: lead
+#       based_on: Normal
+#       paragraph:
+#         alignment: center
+#         spacing_after: 180
+#       run:
+#         bold: true
+#         color: "0F172A"
+#   run:
+#     - id: accent
+#       based_on: DefaultParagraphFont
+#       properties:
+#         italic: true
+#         color: "AA5500"
 blocks:
   - type: title
     text: My Document
@@ -653,7 +677,11 @@ mod tests {
         paragraph, row, section, signature, status, table, title, BlockSpec,
         ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone, UnderlineStyleSpec, VisualSpec,
     };
-    use crate::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, ParagraphAlignment};
+    use crate::{
+        Border, BorderStyle, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup,
+        ParagraphAlignment, ParagraphList, ParagraphStyle, ParagraphStyleProperties, RunStyle,
+        RunStyleProperties, Stylesheet, TableBorders, TableStyle, TableStyleProperties,
+    };
 
     #[test]
     fn spec_round_trips_through_json() {
@@ -702,6 +730,7 @@ mod tests {
                     .with_alignment(ParagraphAlignment::Right),
             ),
             page_numbering: Some(PageNumbering::new(PageNumberFormat::UpperRoman).start_at(3)),
+            styles: crate::Stylesheet::default(),
             blocks: vec![
                 title("Hello"),
                 paragraph(ParagraphSpec {
@@ -732,6 +761,94 @@ mod tests {
         let yaml = spec.to_yaml_string().expect("serialize yaml");
         let round_trip = super::DocumentSpec::from_yaml_str(&yaml).expect("deserialize yaml");
 
+        assert_eq!(round_trip, spec);
+    }
+
+    #[test]
+    fn spec_round_trips_named_styles_and_style_references() {
+        let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+        let spec = super::DocumentSpec {
+            output_name: Some("styled-spec".to_string()),
+            page_setup: None,
+            header: None,
+            footer: None,
+            page_numbering: None,
+            styles: Stylesheet::new()
+                .add_paragraph_style(
+                    ParagraphStyle::new("lead")
+                        .based_on("Normal")
+                        .next("body")
+                        .paragraph(ParagraphStyleProperties {
+                            list: Some(ParagraphList::bullet_with_id(7)),
+                            alignment: Some(ParagraphAlignment::Center),
+                            spacing_before: Some(120),
+                            spacing_after: Some(240),
+                            keep_next: Some(true),
+                            page_break_before: Some(false),
+                        })
+                        .run(RunStyleProperties::new().bold().color("0F172A")),
+                )
+                .add_run_style(
+                    RunStyle::new("accent")
+                        .based_on("DefaultParagraphFont")
+                        .properties(RunStyleProperties::new().italic().color("AA5500")),
+                )
+                .add_table_style(
+                    TableStyle::new("grid").based_on("TableNormal").properties(
+                        TableStyleProperties::new()
+                            .width(9_360)
+                            .borders(TableBorders::new().top(border)),
+                    ),
+                ),
+            blocks: vec![
+                paragraph(ParagraphSpec {
+                    style_id: Some("lead".to_string()),
+                    runs: vec![RunSpec {
+                        text: "Styled".to_string(),
+                        style_id: Some("accent".to_string()),
+                        ..RunSpec::default()
+                    }],
+                    ..ParagraphSpec::default()
+                }),
+                BlockSpec::Table {
+                    spec: super::TableSpec {
+                        style_id: Some("grid".to_string()),
+                        columns: vec![
+                            super::ColumnSpec {
+                                label: "Metric".to_string(),
+                                width: 4_680,
+                            },
+                            super::ColumnSpec {
+                                label: "Value".to_string(),
+                                width: 4_680,
+                            },
+                        ],
+                        rows: vec![super::RowSpec {
+                            cells: vec![
+                                super::CellSpec::Text {
+                                    text: "ARR".to_string(),
+                                },
+                                super::CellSpec::Text {
+                                    text: "$18.7M".to_string(),
+                                },
+                            ],
+                        }],
+                    },
+                },
+            ],
+            asset_base_dir: None,
+        };
+
+        let yaml = spec.to_yaml_string().expect("serialize yaml");
+        assert!(yaml.contains("styles:"));
+        assert!(yaml.contains("style_id: lead"));
+        assert!(yaml.contains("style_id: accent"));
+        assert!(yaml.contains("style_id: grid"));
+        assert!(yaml.contains("based_on: Normal"));
+        assert!(yaml.contains("based_on: DefaultParagraphFont"));
+        assert!(yaml.contains("based_on: TableNormal"));
+
+        let round_trip = super::DocumentSpec::from_yaml_str(&yaml).expect("deserialize yaml");
         assert_eq!(round_trip, spec);
     }
 

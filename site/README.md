@@ -107,6 +107,7 @@ rusdox examples
 - No LibreOffice dependency
 - Human-readable YAML examples
 - Config-driven styling through `rusdox.toml`
+- Reusable named paragraph, run, and table styles with inheritance
 
 ## Examples
 
@@ -119,6 +120,7 @@ Highlights:
 - `examples/product_launch_brief.yaml`
 - `examples/talent_profile.yaml`
 - `examples/formatting_showcase.yaml`
+- `examples/named_styles_showcase.yaml`
 - `examples/visual_assets_showcase.yaml`
 - `examples/stress/stress_1000_pages.yaml`
 
@@ -220,12 +222,13 @@ The current foundation focuses on fast, typed support for:
 - paragraphs
 - runs and common text formatting
 - tables, rows, and cells
+- named paragraph, run, and table styles with inheritance
 - image, logo, signature, and SVG/chart blocks
 - plain-text extraction
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Deferred areas include numbering, headers and footers, comments, tracked changes, and advanced style inheritance.
+Deferred areas include comments, tracked changes, richer metadata, and broader table-style coverage.
 
 ## Development
 

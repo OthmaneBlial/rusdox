@@ -10,12 +10,13 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 use crate::error::{DocxError, Result};
 use crate::layout::{HeaderFooter, PageNumbering, PageSetup};
 use crate::paragraph::Paragraph;
+use crate::style::Stylesheet;
 use crate::table::Table;
 use crate::visual::Visual;
 use crate::xml_utils::{
-    hydrate_section_from_package_parts, parse_document_xml, parse_numbering_xml,
-    render_header_footer_xml, write_document_xml, write_numbering_xml, DocxVisual,
-    SectionProperties, DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART,
+    hydrate_section_from_package_parts, parse_document_xml, parse_numbering_xml, parse_styles_xml,
+    render_header_footer_xml, write_document_xml, write_numbering_xml, write_styles_xml,
+    DocxVisual, SectionProperties, DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART,
     DEFAULT_HEADER_REL_ID, FOOTER_REL_TYPE, HEADER_REL_TYPE, IMAGE_REL_TYPE,
 };
 
@@ -41,6 +42,7 @@ const PACKAGE_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalon
 
 const DOCUMENT_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdRusDoxStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
   <Relationship Id="rIdRusDoxNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
 </Relationships>
 "#;
@@ -132,6 +134,7 @@ struct RenderedVisualPart {
 pub struct Document {
     mode: DocumentMode,
     body: Vec<BodyBlock>,
+    styles: Stylesheet,
     package_parts: BTreeMap<String, Vec<u8>>,
     source_path: Option<PathBuf>,
     section_properties: SectionProperties,
@@ -156,6 +159,7 @@ impl Document {
         Self {
             mode: DocumentMode::New,
             body: Vec::new(),
+            styles: Stylesheet::default(),
             package_parts: default_package_parts(),
             source_path: None,
             section_properties: SectionProperties::default(),
@@ -190,6 +194,7 @@ impl Document {
         let mut package_parts = BTreeMap::new();
         let mut document_xml = None;
         let mut numbering = None;
+        let mut styles_xml = None;
 
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index)?;
@@ -201,6 +206,9 @@ impl Document {
             } else if name == "word/numbering.xml" {
                 numbering = Some(parse_numbering_xml(&bytes)?);
                 package_parts.insert(name, bytes);
+            } else if name == "word/styles.xml" {
+                styles_xml = Some(bytes.clone());
+                package_parts.insert(name, bytes);
             } else {
                 package_parts.insert(name, bytes);
             }
@@ -208,6 +216,10 @@ impl Document {
 
         let document_xml = document_xml
             .ok_or_else(|| DocxError::parse("missing OOXML part: word/document.xml"))?;
+        let styles = match styles_xml.as_deref() {
+            Some(bytes) => parse_styles_xml(bytes, numbering.as_ref())?,
+            None => Stylesheet::default(),
+        };
         let mut parsed = parse_document_xml(&document_xml, numbering.as_ref(), &package_parts)?;
         hydrate_section_from_package_parts(&mut parsed.section_properties, &package_parts)?;
 
@@ -217,6 +229,7 @@ impl Document {
                 other => other,
             },
             body: parsed.body,
+            styles,
             package_parts,
             source_path: None,
             section_properties: parsed.section_properties,
@@ -287,6 +300,28 @@ impl Document {
     /// Returns page numbering settings when present.
     pub fn page_numbering(&self) -> Option<&PageNumbering> {
         self.section_properties.page_numbering()
+    }
+
+    /// Returns the document stylesheet.
+    pub fn styles(&self) -> &Stylesheet {
+        &self.styles
+    }
+
+    /// Returns mutable access to the document stylesheet.
+    pub fn styles_mut(&mut self) -> &mut Stylesheet {
+        &mut self.styles
+    }
+
+    /// Replaces the document stylesheet.
+    pub fn set_styles(&mut self, styles: Stylesheet) -> &mut Self {
+        self.styles = styles;
+        self
+    }
+
+    /// Replaces the document stylesheet in builder style.
+    pub fn with_styles(mut self, styles: Stylesheet) -> Self {
+        self.styles = styles;
+        self
     }
 
     /// Sets or clears page numbering settings.
@@ -466,8 +501,13 @@ impl Document {
         let mut package_parts = self.package_parts.clone();
         let visuals = self.render_visual_parts()?;
         package_parts.insert(
+            "word/styles.xml".to_string(),
+            write_styles_xml(&self.styles)?,
+        );
+        ensure_styles_relationship(&mut package_parts)?;
+        package_parts.insert(
             "word/numbering.xml".to_string(),
-            write_numbering_xml(&self.body)?,
+            write_numbering_xml(&self.body, &self.styles)?,
         );
         ensure_numbering_content_type(&mut package_parts)?;
         ensure_numbering_relationship(&mut package_parts)?;
@@ -564,6 +604,19 @@ impl Document {
 
         Ok(rendered)
     }
+}
+
+fn ensure_styles_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {
+    let xml = parts
+        .entry("word/_rels/document.xml.rels".to_string())
+        .or_insert_with(|| DOCUMENT_RELS_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Relationships>",
+        r#"Target="styles.xml""#,
+        r#"  <Relationship Id="rIdRusDoxStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+"#,
+    )
 }
 
 fn ensure_numbering_content_type(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {

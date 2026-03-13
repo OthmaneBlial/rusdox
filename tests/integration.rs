@@ -5,8 +5,9 @@ use rusdox::config::RusdoxConfig;
 use rusdox::studio::Studio;
 use rusdox::{
     Border, BorderStyle, Document, DocumentMode, HeaderFooter, PageNumberFormat, PageNumbering,
-    PageSetup, Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableBorders, TableCell,
-    TableRow, UnderlineStyle, Visual, VisualKind,
+    PageSetup, Paragraph, ParagraphAlignment, ParagraphList, ParagraphStyle,
+    ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
+    TableCell, TableRow, TableStyle, TableStyleProperties, UnderlineStyle, Visual, VisualKind,
 };
 use tempfile::tempdir;
 use zip::write::SimpleFileOptions;
@@ -273,6 +274,150 @@ fn rich_formatting_round_trips() -> Result<(), rusdox::DocxError> {
         cell.properties().background_color.as_deref(),
         Some("E2E8F0")
     );
+
+    Ok(())
+}
+
+#[test]
+fn named_styles_round_trip_and_preserve_style_references() -> Result<(), rusdox::DocxError> {
+    let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+    let styles = Stylesheet::new()
+        .add_paragraph_style(
+            ParagraphStyle::new("Lead")
+                .name("Lead")
+                .based_on("Normal")
+                .next("Body")
+                .paragraph(ParagraphStyleProperties {
+                    list: Some(ParagraphList::bullet_with_id(12)),
+                    alignment: Some(ParagraphAlignment::Center),
+                    spacing_before: Some(120),
+                    spacing_after: Some(240),
+                    keep_next: Some(true),
+                    page_break_before: Some(false),
+                })
+                .run(RunStyleProperties::new().bold().color("112233")),
+        )
+        .add_paragraph_style(ParagraphStyle::new("Body").based_on("Lead").paragraph(
+            ParagraphStyleProperties {
+                keep_next: Some(false),
+                ..ParagraphStyleProperties::default()
+            },
+        ))
+        .add_run_style(
+            RunStyle::new("Accent")
+                .based_on("DefaultParagraphFont")
+                .properties(RunStyleProperties::new().italic().color("AA5500")),
+        )
+        .add_table_style(
+            TableStyle::new("DataGrid")
+                .based_on("TableNormal")
+                .properties(
+                    TableStyleProperties::new().width(9_360).borders(
+                        TableBorders::new()
+                            .top(border.clone())
+                            .bottom(border.clone()),
+                    ),
+                ),
+        );
+
+    let mut document = Document::new().with_styles(styles);
+    document.push_paragraph(
+        Paragraph::new()
+            .with_style("Lead")
+            .add_run(Run::from_text("Quarterly").with_style("Accent")),
+    );
+    document.push_table(
+        Table::new()
+            .style("DataGrid")
+            .add_row(TableRow::new().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("ARR"))),
+            )),
+    );
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    let paragraph = reopened
+        .paragraphs()
+        .next()
+        .expect("paragraph should exist");
+    let run = paragraph.runs().next().expect("run should exist");
+    let table = reopened.tables().next().expect("table should exist");
+
+    assert_eq!(paragraph.style_id(), Some("Lead"));
+    assert_eq!(paragraph.alignment(), None);
+    assert_eq!(paragraph.spacing_before_value(), None);
+    assert_eq!(paragraph.spacing_after_value(), None);
+    assert!(!paragraph.has_keep_next());
+    assert!(!paragraph.has_page_break_before());
+    assert_eq!(run.style_id(), Some("Accent"));
+    assert_eq!(run.properties().color, None);
+    assert_eq!(run.properties().font_family, None);
+    assert_eq!(table.style_id(), Some("DataGrid"));
+    assert_eq!(table.properties().width, None);
+    assert_eq!(table.properties().borders, None);
+
+    let lead = reopened
+        .styles()
+        .paragraph_style("Lead")
+        .expect("lead style should exist");
+    assert_eq!(lead.based_on.as_deref(), Some("Normal"));
+    assert_eq!(lead.next.as_deref(), Some("Body"));
+    assert_eq!(lead.paragraph.list, Some(ParagraphList::bullet_with_id(12)));
+    assert_eq!(lead.run.bold, Some(true));
+    assert_eq!(lead.run.color.as_deref(), Some("112233"));
+
+    let accent = reopened
+        .styles()
+        .run_style("Accent")
+        .expect("accent style should exist");
+    assert_eq!(accent.based_on.as_deref(), Some("DefaultParagraphFont"));
+    assert_eq!(accent.properties.italic, Some(true));
+    assert_eq!(accent.properties.color.as_deref(), Some("AA5500"));
+
+    let grid = reopened
+        .styles()
+        .table_style("DataGrid")
+        .expect("table style should exist");
+    assert_eq!(grid.based_on.as_deref(), Some("TableNormal"));
+    assert_eq!(grid.properties.width, Some(9_360));
+    assert_eq!(
+        grid.properties
+            .borders
+            .as_ref()
+            .and_then(|borders| borders.top.as_ref()),
+        Some(&border)
+    );
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+    assert!(document_xml.contains(r#"<w:pStyle w:val="Lead"/>"#));
+    assert!(document_xml.contains(r#"<w:rStyle w:val="Accent"/>"#));
+    assert!(document_xml.contains(r#"<w:tblStyle w:val="DataGrid"/>"#));
+
+    let mut styles_xml = String::new();
+    archive
+        .by_name("word/styles.xml")?
+        .read_to_string(&mut styles_xml)?;
+    assert!(styles_xml.contains(r#"<w:style w:type="paragraph" w:styleId="Lead""#));
+    assert!(styles_xml.contains(r#"<w:basedOn w:val="Normal"/>"#));
+    assert!(styles_xml.contains(r#"<w:style w:type="character" w:styleId="Accent""#));
+    assert!(styles_xml.contains(r#"<w:style w:type="table" w:styleId="DataGrid""#));
+    assert!(styles_xml.contains(r#"<w:keepNext w:val="0"/>"#));
+    assert!(styles_xml.contains(r#"<w:pageBreakBefore w:val="0"/>"#));
+
+    let mut numbering_xml = String::new();
+    archive
+        .by_name("word/numbering.xml")?
+        .read_to_string(&mut numbering_xml)?;
+    assert!(numbering_xml.contains(r#"<w:num w:numId="12">"#));
 
     Ok(())
 }

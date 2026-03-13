@@ -27,6 +27,124 @@ blocks:
 - Ordered from top to bottom
 - This is the document structure
 
+`styles`
+
+- Optional
+- Defines reusable named paragraph, run, and table styles
+- Supports inheritance through `based_on`
+- Paragraph styles can also set `next`
+
+## Named Styles
+
+Use named styles when the document needs stable reusable formatting instead of repeating direct properties on every block.
+
+Example:
+
+```yaml
+styles:
+  paragraph:
+    - id: lead
+      based_on: Normal
+      next: body
+      paragraph:
+        alignment: center
+        spacing_after: 180
+        keep_next: true
+      run:
+        bold: true
+        color: "0F172A"
+        font_family: Georgia
+        font_size: 28
+  run:
+    - id: accent
+      based_on: DefaultParagraphFont
+      properties:
+        italic: true
+        color: "AA5500"
+  table:
+    - id: grid
+      based_on: TableNormal
+      properties:
+        width: 9360
+
+blocks:
+  - type: paragraph
+    spec:
+      style_id: lead
+      runs:
+        - text: Styled
+        - text: " emphasis"
+          style_id: accent
+  - type: table
+    spec:
+      style_id: grid
+      columns:
+        - label: Metric
+          width: 4680
+      rows:
+        - cells:
+            - kind: text
+              text: ARR
+```
+
+Style definition groups:
+
+- `styles.paragraph`
+- `styles.run`
+- `styles.table`
+
+Paragraph style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `next`
+- `paragraph.list`
+- `paragraph.alignment`
+- `paragraph.spacing_before`
+- `paragraph.spacing_after`
+- `paragraph.keep_next`
+- `paragraph.page_break_before`
+- `run.bold`
+- `run.italic`
+- `run.underline`
+- `run.strikethrough`
+- `run.small_caps`
+- `run.shadow`
+- `run.color`
+- `run.font_family`
+- `run.font_size`
+- `run.vertical_align`
+
+Run style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `properties.bold`
+- `properties.italic`
+- `properties.underline`
+- `properties.strikethrough`
+- `properties.small_caps`
+- `properties.shadow`
+- `properties.color`
+- `properties.font_family`
+- `properties.font_size`
+- `properties.vertical_align`
+
+Table style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `properties.width`
+- `properties.borders`
+
+Units:
+
+- paragraph spacing and table widths use twips
+- run `font_size` uses OOXML half-points, so `24` means `12pt`
+
 ## Simple Block Types
 
 Use these when you want readable documents with strong defaults:
@@ -180,6 +298,7 @@ Example:
 ```yaml
 - type: table
   spec:
+    style_id: grid
     columns:
       - label: Category
         width: 2800
@@ -226,6 +345,7 @@ Example:
 Supported paragraph fields:
 
 - `runs`
+- `style_id`
 - `alignment`: `left`, `center`, `right`, `justified`
 - `spacing_before_twips`
 - `spacing_after_twips`
@@ -234,6 +354,7 @@ Supported paragraph fields:
 Supported run fields:
 
 - `text`
+- `style_id`
 - `bold`
 - `italic`
 - `underline`
@@ -273,3 +394,4 @@ Vertical align values:
 - [../examples/board_report.yaml](../examples/board_report.yaml)
 - [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
 - [../examples/formatting_showcase.yaml](../examples/formatting_showcase.yaml)
+- [../examples/named_styles_showcase.yaml](../examples/named_styles_showcase.yaml)

@@ -90,6 +90,8 @@ This is the best Rust path when:
 - content comes from code, not a static YAML file
 - you still want the document to stay easy to reason about
 
+`DocumentSpec` also exposes `styles`, so reusable named styles can be defined once and referenced from paragraph, run, and table specs.
+
 ## Hybrid Rust: Start With A Spec, Then Add Custom Pieces
 
 You can also compose a spec and then append lower-level content.
@@ -122,6 +124,77 @@ fn main() -> rusdox::Result<()> {
 ```
 
 This is a good middle ground when 90% of the document fits the high-level API and only a few sections need special handling.
+
+## Reusable Named Styles
+
+Named styles are available in both the spec layer and the low-level document model.
+
+Built-in fallback ids:
+
+- paragraph: `Normal`
+- run: `DefaultParagraphFont`
+- table: `TableNormal`
+
+```rust
+use rusdox::{
+    Border, BorderStyle, Document, Paragraph, ParagraphAlignment, ParagraphStyle,
+    ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
+    TableCell, TableRow, TableStyle, TableStyleProperties,
+};
+
+fn main() -> rusdox::Result<()> {
+    let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+    let styles = Stylesheet::new()
+        .add_paragraph_style(
+            ParagraphStyle::new("lead")
+                .based_on("Normal")
+                .paragraph(
+                    ParagraphStyleProperties::new()
+                        .alignment(ParagraphAlignment::Center)
+                        .spacing_after(180),
+                )
+                .run(RunStyleProperties::new().bold().color("0F172A")),
+        )
+        .add_run_style(
+            RunStyle::new("accent")
+                .based_on("DefaultParagraphFont")
+                .properties(RunStyleProperties::new().italic().color("AA5500")),
+        )
+        .add_table_style(
+            TableStyle::new("grid")
+                .based_on("TableNormal")
+                .properties(
+                    TableStyleProperties::new()
+                        .width(9_360)
+                        .borders(TableBorders::new().top(border.clone()).bottom(border)),
+                ),
+        );
+
+    let mut document = Document::new().with_styles(styles);
+    document.push_paragraph(
+        Paragraph::new()
+            .with_style("lead")
+            .add_run(Run::from_text("Quarterly ").with_style("accent"))
+            .add_run(Run::from_text("review")),
+    );
+    document.push_table(
+        Table::new().style("grid").add_row(
+            TableRow::new().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("ARR"))),
+            ),
+        ),
+    );
+
+    document.save("styled-output.docx")?;
+    Ok(())
+}
+```
+
+Use these APIs when:
+
+- multiple paragraphs should share the same typography and spacing rules
+- run-level emphasis should stay stable across documents
+- table framing should be reusable instead of copied as direct borders and widths
 
 ## Config-Driven Builders With `Studio`
 
@@ -206,6 +279,7 @@ fn main() -> rusdox::Result<()> {
 Use this layer when:
 
 - you need exact run-level formatting
+- you want reusable styles through `Document::with_styles(...)`
 - you want to open and modify existing DOCX files
 - you are building custom abstractions on top of RusDox
 

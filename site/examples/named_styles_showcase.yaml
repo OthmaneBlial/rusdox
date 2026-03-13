@@ -1,0 +1,180 @@
+output_name: named-styles-showcase
+styles:
+  paragraph:
+    - id: cover_title
+      name: Cover Title
+      based_on: Normal
+      next: body_text
+      paragraph:
+        alignment: center
+        spacing_after: 240
+        keep_next: true
+      run:
+        bold: true
+        font_family: Georgia
+        font_size: 36
+        color: "0F172A"
+    - id: section_heading
+      name: Section Heading
+      based_on: body_text
+      next: body_text
+      paragraph:
+        spacing_before: 180
+        spacing_after: 120
+        keep_next: true
+      run:
+        bold: true
+        color: "1D4ED8"
+    - id: body_text
+      name: Body Text
+      based_on: Normal
+      paragraph:
+        spacing_after: 120
+      run:
+        font_family: Georgia
+        font_size: 24
+        color: "334155"
+    - id: checklist
+      name: Checklist
+      based_on: body_text
+      paragraph:
+        spacing_after: 60
+        list:
+          kind: bullet
+          level: 0
+          id: 21
+    - id: callout
+      name: Callout
+      based_on: body_text
+      paragraph:
+        alignment: center
+        spacing_before: 120
+        spacing_after: 180
+      run:
+        bold: true
+        color: "0F766E"
+  run:
+    - id: accent
+      name: Accent
+      based_on: DefaultParagraphFont
+      properties:
+        italic: true
+        color: "AA5500"
+    - id: metric_value
+      name: Metric Value
+      based_on: DefaultParagraphFont
+      properties:
+        bold: true
+        color: "0F172A"
+    - id: muted
+      name: Muted
+      based_on: DefaultParagraphFont
+      properties:
+        color: "64748B"
+  table:
+    - id: dashboard_grid
+      name: Dashboard Grid
+      based_on: TableNormal
+      properties:
+        width: 9360
+        borders:
+          top:
+            style: single
+            size: 8
+            color: "1E293B"
+          bottom:
+            style: single
+            size: 8
+            color: "1E293B"
+          left:
+            style: single
+            size: 8
+            color: "CBD5E1"
+          right:
+            style: single
+            size: 8
+            color: "CBD5E1"
+          inside_horizontal:
+            style: single
+            size: 6
+            color: "CBD5E1"
+          inside_vertical:
+            style: single
+            size: 6
+            color: "CBD5E1"
+blocks:
+  - type: paragraph
+    spec:
+      style_id: cover_title
+      runs:
+        - text: Named Styles Showcase
+  - type: paragraph
+    spec:
+      style_id: body_text
+      runs:
+        - text: Reusable paragraph, run, and table styles now support
+        - text: " inheritance "
+          style_id: accent
+        - text: and stable references across DOCX and PDF output.
+  - type: paragraph
+    spec:
+      style_id: callout
+      runs:
+        - text: One style change can now re-theme an entire document surface.
+  - type: paragraph
+    spec:
+      style_id: section_heading
+      runs:
+        - text: Checklist
+  - type: paragraph
+    spec:
+      style_id: checklist
+      runs:
+        - text: Cover and body paragraphs inherit from shared base styles.
+  - type: paragraph
+    spec:
+      style_id: checklist
+      runs:
+        - text: Inline runs can switch to named emphasis without repeating formatting.
+  - type: paragraph
+    spec:
+      style_id: checklist
+      runs:
+        - text: Tables can pick up shared widths and border systems by style id.
+  - type: paragraph
+    spec:
+      style_id: section_heading
+      runs:
+        - text: Styled Summary Table
+  - type: table
+    spec:
+      style_id: dashboard_grid
+      columns:
+        - label: Metric
+          width: 3600
+        - label: Value
+          width: 2800
+        - label: Note
+          width: 2960
+      rows:
+        - cells:
+            - kind: text
+              text: Approval State
+            - kind: text
+              text: Ready
+            - kind: text
+              text: Uses a named table style for consistent framing.
+        - cells:
+            - kind: text
+              text: Body Copy
+            - kind: text
+              text: Centralized
+            - kind: text
+              text: Paragraph styles keep spacing and typography reusable.
+        - cells:
+            - kind: text
+              text: Emphasis
+            - kind: text
+              text: Targeted
+            - kind: text
+              text: Run styles add accent treatment without duplicating direct formatting.

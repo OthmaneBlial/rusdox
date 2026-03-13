@@ -1,8 +1,10 @@
 use std::fs;
+use std::io::{Cursor, Read};
 use std::path::Path;
 use std::process::Command;
 
 use tempfile::tempdir;
+use zip::ZipArchive;
 
 fn rusdox_bin() -> &'static str {
     env!("CARGO_BIN_EXE_rusdox")
@@ -276,6 +278,63 @@ fn run_example_spec_with_visual_assets_resolves_paths_relative_to_spec() {
     assert!(docx
         .windows("word/media/".len())
         .any(|window| window == b"word/media/"));
+    assert!(pdf.starts_with(b"%PDF-"));
+    assert!(
+        pdf.len() > 2_000,
+        "expected rendered pdf to contain real content"
+    );
+}
+
+#[test]
+fn run_example_spec_with_named_styles_emits_style_parts_and_pdf() {
+    let temp = tempdir().expect("temp dir");
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let spec_path = manifest_dir.join("examples/named_styles_showcase.yaml");
+    let output_docx = temp.path().join("named-styles.docx");
+
+    let output = run_cli(
+        &[
+            spec_path.to_string_lossy().as_ref(),
+            "--output",
+            output_docx.to_string_lossy().as_ref(),
+            "--with-pdf",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let pdf_path = temp.path().join("rendered").join("named-styles.pdf");
+    assert!(output_docx.exists(), "expected {}", output_docx.display());
+    assert!(pdf_path.exists(), "expected {}", pdf_path.display());
+
+    let docx = fs::read(&output_docx).expect("read docx");
+    let mut archive = ZipArchive::new(Cursor::new(docx)).expect("open docx zip");
+
+    let mut styles_xml = String::new();
+    archive
+        .by_name("word/styles.xml")
+        .expect("styles part should exist")
+        .read_to_string(&mut styles_xml)
+        .expect("read styles xml");
+    assert!(styles_xml.contains(r#"w:styleId="cover_title""#));
+    assert!(styles_xml.contains(r#"w:styleId="accent""#));
+    assert!(styles_xml.contains(r#"w:styleId="dashboard_grid""#));
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")
+        .expect("document part should exist")
+        .read_to_string(&mut document_xml)
+        .expect("read document xml");
+    assert!(document_xml.contains(r#"<w:pStyle w:val="cover_title"/>"#));
+    assert!(document_xml.contains(r#"<w:rStyle w:val="accent"/>"#));
+    assert!(document_xml.contains(r#"<w:tblStyle w:val="dashboard_grid"/>"#));
+
+    let pdf = fs::read(&pdf_path).expect("read pdf");
     assert!(pdf.starts_with(b"%PDF-"));
     assert!(
         pdf.len() > 2_000,

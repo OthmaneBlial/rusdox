@@ -45,7 +45,8 @@ impl ParagraphAlignment {
 }
 
 /// Semantic paragraph list kinds supported by the DOCX writer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ParagraphListKind {
     /// Bulleted list formatting.
     Bullet,
@@ -71,7 +72,7 @@ impl ParagraphListKind {
 }
 
 /// Semantic DOCX numbering metadata for a paragraph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParagraphList {
     kind: ParagraphListKind,
     level: u8,
@@ -145,6 +146,7 @@ fn sanitize_list_id(id: u32) -> u32 {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Paragraph {
     runs: Vec<Run>,
+    style_id: Option<String>,
     list: Option<ParagraphList>,
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
@@ -186,6 +188,23 @@ impl Paragraph {
     /// Returns mutable access to the paragraph runs.
     pub fn runs_mut(&mut self) -> std::slice::IterMut<'_, Run> {
         self.runs.iter_mut()
+    }
+
+    /// Returns the referenced named paragraph style id, if present.
+    pub fn style_id(&self) -> Option<&str> {
+        self.style_id.as_deref()
+    }
+
+    /// Applies a named paragraph style.
+    pub fn with_style(mut self, style_id: impl Into<String>) -> Self {
+        self.style_id = Some(style_id.into());
+        self
+    }
+
+    /// Sets the named paragraph style in place.
+    pub fn set_style(&mut self, style_id: impl Into<String>) -> &mut Self {
+        self.style_id = Some(style_id.into());
+        self
     }
 
     /// Returns the semantic list metadata, if present.
@@ -277,8 +296,10 @@ impl Paragraph {
         self.keep_next
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn from_parts(
         runs: Vec<Run>,
+        style_id: Option<String>,
         list: Option<ParagraphList>,
         alignment: Option<ParagraphAlignment>,
         spacing_before: Option<u32>,
@@ -288,6 +309,7 @@ impl Paragraph {
     ) -> Self {
         Self {
             runs,
+            style_id,
             list,
             alignment,
             spacing_before,
@@ -299,6 +321,7 @@ impl Paragraph {
 
     pub(crate) fn has_properties(&self) -> bool {
         self.list.is_some()
+            || self.style_id.is_some()
             || self.alignment.is_some()
             || self.spacing_before.is_some()
             || self.spacing_after.is_some()
@@ -411,6 +434,7 @@ mod tests {
         let runs = vec![Run::from_text("one"), Run::from_text("two")];
         let paragraph = Paragraph::from_parts(
             runs,
+            None,
             Some(ParagraphList::numbered_with_id(9).with_level(1)),
             Some(ParagraphAlignment::Justified),
             Some(160),

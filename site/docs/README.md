@@ -38,7 +38,7 @@ If you are a developer and want full power:
 - how to create your first YAML document
 - how output folders work
 - how DOCX and PDF generation works
-- how to style documents with config
+- how to style documents with config and named styles
 - how to render one file or a whole folder
 - how to use the Rust layer for advanced cases
 - how to present the repository well on GitHub

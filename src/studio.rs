@@ -24,8 +24,8 @@ use crate::{
         Tone, UnderlineStyleSpec, VerticalAlignSpec, VisualSpec as BlockVisualSpec,
     },
     Border, BorderStyle, Document, DocumentBlockRef, Paragraph, ParagraphAlignment, ParagraphList,
-    Run, Table, TableBorders, TableCell, TableRow, UnderlineStyle, VerticalAlign, Visual,
-    VisualKind,
+    Run, RunProperties, Stylesheet, Table, TableBorders, TableCell, TableRow, UnderlineStyle,
+    VerticalAlign, Visual, VisualKind,
 };
 
 /// Default config file expected in the current working directory.
@@ -141,6 +141,7 @@ impl Studio {
         document.set_header(spec.header.clone());
         document.set_footer(spec.footer.clone());
         document.set_page_numbering(spec.page_numbering.clone());
+        document.set_styles(spec.styles.clone());
         self.append_spec(&mut document, spec);
         document
     }
@@ -707,6 +708,10 @@ impl Studio {
     fn paragraph_from_spec(&self, spec: &BlockParagraphSpec) -> Paragraph {
         let mut paragraph = Paragraph::new();
 
+        if let Some(style_id) = &spec.style_id {
+            paragraph = paragraph.with_style(style_id.clone());
+        }
+
         if let Some(alignment) = &spec.alignment {
             paragraph = paragraph.with_alignment(match alignment {
                 ParagraphAlignmentSpec::Left => ParagraphAlignment::Left,
@@ -737,6 +742,10 @@ impl Studio {
 
     fn run_from_spec(&self, spec: &BlockRunSpec) -> Run {
         let mut run = self.text_run(&spec.text);
+
+        if let Some(style_id) = &spec.style_id {
+            run = run.with_style(style_id.clone());
+        }
 
         if spec.bold {
             run = run.bold();
@@ -790,20 +799,25 @@ impl Studio {
 
     fn table_from_spec(&self, spec: &BlockTableSpec) -> Table {
         let total_width = spec.columns.iter().map(|column| column.width).sum::<u32>();
-        let mut table = Table::new()
-            .width(if total_width == 0 {
-                self.config.table.default_width_twips
-            } else {
-                total_width
-            })
-            .borders(self.grid_borders())
-            .add_row(
-                spec.columns
-                    .iter()
-                    .fold(TableRow::new().repeat_as_header(), |row, column| {
-                        row.add_cell(self.header_cell(&column.label, column.width))
-                    }),
-            );
+        let mut table = Table::new().add_row(
+            spec.columns
+                .iter()
+                .fold(TableRow::new().repeat_as_header(), |row, column| {
+                    row.add_cell(self.header_cell(&column.label, column.width))
+                }),
+        );
+
+        if let Some(style_id) = &spec.style_id {
+            table = table.style(style_id.clone());
+        } else {
+            table = table
+                .width(if total_width == 0 {
+                    self.config.table.default_width_twips
+                } else {
+                    total_width
+                })
+                .borders(self.grid_borders());
+        }
 
         for row_spec in &spec.rows {
             let mut row = TableRow::new();
@@ -1947,14 +1961,17 @@ fn layout_document(
 ) -> crate::Result<PdfDocumentLayout> {
     let mut layout = PdfLayout::new(settings);
     let blocks = document.blocks().collect::<Vec<_>>();
+    let styles = document.styles();
 
     for (index, block) in blocks.iter().copied().enumerate() {
-        maybe_push_page_for_keep_next_group(&mut layout, &blocks, index, font_system)?;
+        maybe_push_page_for_keep_next_group(&mut layout, styles, &blocks, index, font_system)?;
         match block {
             DocumentBlockRef::Paragraph(paragraph) => {
-                layout_paragraph_block(&mut layout, paragraph, font_system)?
+                layout_paragraph_block(&mut layout, styles, paragraph, font_system)?
             }
-            DocumentBlockRef::Table(table) => layout_table_block(&mut layout, table, font_system)?,
+            DocumentBlockRef::Table(table) => {
+                layout_table_block(&mut layout, styles, table, font_system)?
+            }
             DocumentBlockRef::Visual(visual) => layout_visual_block(&mut layout, visual)?,
         }
     }
@@ -1967,6 +1984,7 @@ fn layout_document(
 
 fn maybe_push_page_for_keep_next_group(
     layout: &mut PdfLayout,
+    styles: &Stylesheet,
     blocks: &[DocumentBlockRef<'_>],
     start_index: usize,
     font_system: &mut PdfFontSystem,
@@ -1985,7 +2003,7 @@ fn maybe_push_page_for_keep_next_group(
 
     loop {
         let Some(block_height) =
-            estimated_keep_next_block_height(layout, blocks[index], font_system)?
+            estimated_keep_next_block_height(layout, styles, blocks[index], font_system)?
         else {
             return Ok(());
         };
@@ -2021,12 +2039,14 @@ fn maybe_push_page_for_keep_next_group(
 
 fn estimated_keep_next_block_height(
     layout: &PdfLayout,
+    styles: &Stylesheet,
     block: DocumentBlockRef<'_>,
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<Option<f32>> {
     match block {
         DocumentBlockRef::Paragraph(paragraph) => {
             let lines = layout_paragraph_lines(
+                styles,
                 paragraph,
                 layout.settings.content_width,
                 layout.settings,
@@ -2037,10 +2057,11 @@ fn estimated_keep_next_block_height(
             } else {
                 lines.iter().map(|line| line.line_height).sum()
             };
+            let resolved = styles.resolve_paragraph(paragraph)?;
             Ok(Some(
-                twips_to_points(paragraph.spacing_before_value().unwrap_or(0))
+                twips_to_points(resolved.spacing_before.unwrap_or(0))
                     + content_height
-                    + twips_to_points(paragraph.spacing_after_value().unwrap_or(0)),
+                    + twips_to_points(resolved.spacing_after.unwrap_or(0)),
             ))
         }
         DocumentBlockRef::Visual(visual) => {
@@ -2060,15 +2081,18 @@ fn estimated_keep_next_block_height(
 
 fn layout_paragraph_block(
     layout: &mut PdfLayout,
+    styles: &Stylesheet,
     paragraph: &Paragraph,
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<()> {
-    if paragraph.has_page_break_before() && layout.cursor_y > layout.settings.margin_top {
+    let resolved = styles.resolve_paragraph(paragraph)?;
+    if resolved.page_break_before && layout.cursor_y > layout.settings.margin_top {
         layout.push_page();
     }
 
-    layout.cursor_y += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
+    layout.cursor_y += twips_to_points(resolved.spacing_before.unwrap_or(0));
     let lines = layout_paragraph_lines(
+        styles,
         paragraph,
         layout.settings.content_width,
         layout.settings,
@@ -2093,17 +2117,18 @@ fn layout_paragraph_block(
         }
     }
 
-    layout.cursor_y += twips_to_points(paragraph.spacing_after_value().unwrap_or(0));
+    layout.cursor_y += twips_to_points(resolved.spacing_after.unwrap_or(0));
     Ok(())
 }
 
 fn layout_table_block(
     layout: &mut PdfLayout,
+    styles: &Stylesheet,
     table: &Table,
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<()> {
-    let total_width = table
-        .properties()
+    let resolved_table = styles.resolve_table(table)?;
+    let total_width = resolved_table
         .width
         .map(twips_to_points)
         .unwrap_or(layout.settings.content_width)
@@ -2111,7 +2136,7 @@ fn layout_table_block(
     let column_widths = resolve_table_column_widths(table, total_width);
     let row_layouts = table
         .rows()
-        .map(|row| layout_row(row, &column_widths, layout.settings, font_system))
+        .map(|row| layout_row(row, styles, &column_widths, layout.settings, font_system))
         .collect::<crate::Result<Vec<_>>>()?;
     let repeated_headers = row_layouts
         .iter()
@@ -2219,6 +2244,7 @@ struct ResolvedTableCell<'a> {
 
 fn layout_row(
     row: &TableRow,
+    styles: &Stylesheet,
     column_widths: &[f32],
     settings: PdfRenderSettings,
     font_system: &mut PdfFontSystem,
@@ -2233,13 +2259,14 @@ fn layout_row(
         let mut y_offset = settings.table_cell_padding_y;
 
         for paragraph in resolved_cell.cell.paragraphs() {
-            y_offset += twips_to_points(paragraph.spacing_before_value().unwrap_or(0));
+            let resolved_paragraph = styles.resolve_paragraph(paragraph)?;
+            y_offset += twips_to_points(resolved_paragraph.spacing_before.unwrap_or(0));
             let paragraph_lines =
-                layout_paragraph_lines(paragraph, content_width, settings, font_system)?;
+                layout_paragraph_lines(styles, paragraph, content_width, settings, font_system)?;
             if paragraph_lines.is_empty() {
                 lines.push(CellLine {
                     y_offset,
-                    layout: blank_line_layout(paragraph, settings),
+                    layout: blank_line_layout(styles, paragraph, settings)?,
                 });
                 y_offset += settings.default_line_height;
             } else {
@@ -2252,7 +2279,7 @@ fn layout_row(
                     y_offset += line_height;
                 }
             }
-            y_offset += twips_to_points(paragraph.spacing_after_value().unwrap_or(0));
+            y_offset += twips_to_points(resolved_paragraph.spacing_after.unwrap_or(0));
         }
 
         let height = cell_height(&lines, settings);
@@ -2278,16 +2305,20 @@ fn layout_row(
     })
 }
 
-fn blank_line_layout(paragraph: &Paragraph, settings: PdfRenderSettings) -> LineLayout {
-    LineLayout {
+fn blank_line_layout(
+    styles: &Stylesheet,
+    paragraph: &Paragraph,
+    settings: PdfRenderSettings,
+) -> crate::Result<LineLayout> {
+    Ok(LineLayout {
         spans: Vec::new(),
         width: 0.0,
         line_height: settings.default_line_height,
-        alignment: paragraph
-            .alignment()
-            .cloned()
+        alignment: styles
+            .resolve_paragraph(paragraph)?
+            .alignment
             .unwrap_or(ParagraphAlignment::Left),
-    }
+    })
 }
 
 fn resolve_table_column_widths(table: &Table, total_width: f32) -> Vec<f32> {
@@ -2557,14 +2588,15 @@ fn cell_height(lines: &[CellLine], settings: PdfRenderSettings) -> f32 {
 }
 
 fn layout_paragraph_lines(
+    styles: &Stylesheet,
     paragraph: &Paragraph,
     max_width: f32,
     settings: PdfRenderSettings,
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<Vec<LineLayout>> {
-    let alignment = paragraph
-        .alignment()
-        .cloned()
+    let alignment = styles
+        .resolve_paragraph(paragraph)?
+        .alignment
         .unwrap_or(ParagraphAlignment::Left);
     let mut lines = Vec::new();
     let mut current_spans = Vec::new();
@@ -2572,7 +2604,8 @@ fn layout_paragraph_lines(
     let mut current_line_height = settings.default_line_height;
 
     for run in paragraph.runs() {
-        let style = style_from_run(run, settings, font_system.default_family());
+        let run_properties = styles.resolve_run(paragraph, run)?;
+        let style = style_from_run(&run_properties, settings, font_system.default_family());
         for token in tokenize(run.text()) {
             if token == "\n" {
                 flush_line(
@@ -2698,11 +2731,10 @@ fn tokenize(text: &str) -> Vec<String> {
 }
 
 fn style_from_run(
-    run: &Run,
+    properties: &RunProperties,
     settings: PdfRenderSettings,
     default_family: &str,
 ) -> RequestedTextStyle {
-    let properties = run.properties();
     let font = match (properties.bold, properties.italic) {
         (true, true) => PdfFont::BoldOblique,
         (true, false) => PdfFont::Bold,
@@ -3172,7 +3204,7 @@ mod tests {
     };
     use crate::{
         Document, DocumentBlockRef, HeaderFooter, PageNumberFormat, PageNumbering, PageSetup,
-        Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableCell, TableRow,
+        Paragraph, ParagraphAlignment, ParagraphList, Run, Stylesheet, Table, TableCell, TableRow,
         VerticalAlign, Visual, VisualFormat, VisualKind,
     };
 
@@ -3388,7 +3420,7 @@ mod tests {
             .italic()
             .size_points(18)
             .color("AABBCC");
-        let style = style_from_run(&run, default_pdf_settings(), "Arial");
+        let style = style_from_run(run.properties(), default_pdf_settings(), "Arial");
         assert!(style.font_request.font == PdfFont::BoldOblique);
         assert_eq!(style.font_request.family, "Arial");
         assert_eq!(style.size, 18.0);
@@ -3756,9 +3788,14 @@ mod tests {
         ));
         let config = RusdoxConfig::default();
         let mut font_system = pdf_font_system(&config);
-        let lines =
-            layout_paragraph_lines(&paragraph, 120.0, default_pdf_settings(), &mut font_system)
-                .expect("layout lines");
+        let lines = layout_paragraph_lines(
+            &Stylesheet::default(),
+            &paragraph,
+            120.0,
+            default_pdf_settings(),
+            &mut font_system,
+        )
+        .expect("layout lines");
         assert!(lines.len() >= 2);
         assert!(lines.iter().all(|line| line.width > 0.0));
     }
@@ -3772,8 +3809,14 @@ mod tests {
         let mut font_system = pdf_font_system(&config);
 
         let paragraph = Paragraph::new().add_run(Run::from_text("Scaled").size_points(20));
-        let lines = layout_paragraph_lines(&paragraph, 400.0, settings, &mut font_system)
-            .expect("layout lines");
+        let lines = layout_paragraph_lines(
+            &Stylesheet::default(),
+            &paragraph,
+            400.0,
+            settings,
+            &mut font_system,
+        )
+        .expect("layout lines");
 
         assert_eq!(lines.len(), 1);
         assert_close(lines[0].line_height, 32.0);
@@ -3794,6 +3837,7 @@ mod tests {
         let mut font_system = pdf_font_system(&config);
         let layout = layout_row(
             &row,
+            &Stylesheet::default(),
             &[100.0, 300.0],
             default_pdf_settings(),
             &mut font_system,
@@ -3815,7 +3859,14 @@ mod tests {
         let row = TableRow::new().add_cell(
             TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("left"))),
         );
-        let layout = layout_row(&row, &[240.0], settings, &mut font_system).expect("layout row");
+        let layout = layout_row(
+            &row,
+            &Stylesheet::default(),
+            &[240.0],
+            settings,
+            &mut font_system,
+        )
+        .expect("layout row");
 
         assert_eq!(layout.cells.len(), 1);
         assert_close(layout.cells[0].lines[0].y_offset, 10.0);
@@ -3856,6 +3907,7 @@ mod tests {
         let column_widths = resolve_table_column_widths(&table, twips_to_points(6_000));
         let layout = layout_row(
             table.rows().nth(1).expect("second row"),
+            &Stylesheet::default(),
             &column_widths,
             settings,
             &mut font_system,
