@@ -2438,6 +2438,7 @@ fn render_page_content(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
     use std::fmt::Write as _;
     use std::{fs, path::PathBuf};
 
@@ -2490,6 +2491,39 @@ mod tests {
             (actual - expected).abs() < 0.01,
             "expected {expected:.2}, got {actual:.2}"
         );
+    }
+
+    fn find_family_triggering_multiscript_fallback() -> Option<String> {
+        let mut tested_families = BTreeSet::new();
+        let mut font_system = pdf_font_system(&RusdoxConfig::default());
+
+        for face in super::system_font_db().faces() {
+            for (family, _) in &face.families {
+                if !tested_families.insert(family.clone()) {
+                    continue;
+                }
+
+                let style = RequestedTextStyle {
+                    font_request: PdfFontRequest::new(family.clone(), PdfFont::Regular),
+                    size: DEFAULT_TEXT_SIZE,
+                    color: Rgb(15, 23, 42),
+                };
+                let shaped = match font_system.shape_text(&style, "Latin 你好") {
+                    Ok(shaped) => shaped,
+                    Err(_) => continue,
+                };
+                let distinct_fonts = shaped
+                    .spans
+                    .iter()
+                    .map(|span| span.style.font_id)
+                    .collect::<BTreeSet<_>>();
+                if distinct_fonts.len() >= 2 {
+                    return Some(family.clone());
+                }
+            }
+        }
+
+        None
     }
 
     #[test]
@@ -3065,7 +3099,32 @@ mod tests {
         config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
         config.output.pdf_dir = temp.path().join("pdf").to_string_lossy().to_string();
         config.output.emit_pdf_preview = true;
-        config.typography.font_family = "Liberation Sans".to_string();
+        config.typography.font_family = find_family_triggering_multiscript_fallback()
+            .expect("expected at least one installed font family to require CJK fallback");
+
+        let mut font_system = pdf_font_system(&config);
+        let shaped = font_system
+            .shape_text(
+                &default_text_style(&config, PdfFont::Regular, config.typography.body_size_pt),
+                "Latin 你好",
+            )
+            .expect("shape text");
+        let distinct_fonts = shaped
+            .spans
+            .iter()
+            .map(|span| span.style.font_id)
+            .collect::<BTreeSet<_>>();
+        let used_families = distinct_fonts
+            .iter()
+            .map(|&font_id| font_system.face(font_id).family_name.clone())
+            .collect::<Vec<_>>();
+        assert!(
+            distinct_fonts.len() >= 2,
+            "expected multiple PDF faces for '{}', got {:?}",
+            config.typography.font_family,
+            used_families
+        );
+
         let studio = Studio::new(config);
 
         let mut document = Document::new();
