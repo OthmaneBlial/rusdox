@@ -12,18 +12,20 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use fontdb::{Database as FontDatabase, Family as FontFamily, Query as FontQuery};
+use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
-use pdf_writer::{Name, Pdf, Rect, Ref, Str};
+use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str};
 
 use crate::{
     config::RusdoxConfig,
     spec::{
         BlockSpec, CellSpec, DocumentSpec, ParagraphAlignmentSpec,
         ParagraphSpec as BlockParagraphSpec, RunSpec as BlockRunSpec, TableSpec as BlockTableSpec,
-        Tone, UnderlineStyleSpec, VerticalAlignSpec,
+        Tone, UnderlineStyleSpec, VerticalAlignSpec, VisualSpec as BlockVisualSpec,
     },
     Border, BorderStyle, Document, DocumentBlockRef, Paragraph, ParagraphAlignment, ParagraphList,
-    Run, Table, TableBorders, TableCell, TableRow, UnderlineStyle, VerticalAlign,
+    Run, Table, TableBorders, TableCell, TableRow, UnderlineStyle, VerticalAlign, Visual,
+    VisualKind,
 };
 
 /// Default config file expected in the current working directory.
@@ -145,8 +147,9 @@ impl Studio {
 
     /// Appends a high-level document specification to an existing [`Document`].
     pub fn append_spec(&self, document: &mut Document, spec: &DocumentSpec) {
+        let asset_base_dir = spec.asset_base_dir().map(Path::to_path_buf);
         for block in &spec.blocks {
-            self.push_spec_block(document, block);
+            self.push_spec_block(document, block, asset_base_dir.as_deref());
         }
     }
 
@@ -536,7 +539,12 @@ impl Studio {
         path
     }
 
-    fn push_spec_block(&self, document: &mut Document, block: &BlockSpec) {
+    fn push_spec_block(
+        &self,
+        document: &mut Document,
+        block: &BlockSpec,
+        asset_base_dir: Option<&Path>,
+    ) {
         match block {
             BlockSpec::CoverTitle { text } => {
                 document.push_paragraph(self.cover_title(text));
@@ -606,6 +614,30 @@ impl Studio {
             }
             BlockSpec::Table { spec } => {
                 document.push_table(self.table_from_spec(spec));
+            }
+            BlockSpec::Image { spec } => {
+                document.push_visual(self.visual_from_spec(
+                    spec,
+                    VisualKind::Image,
+                    asset_base_dir,
+                ));
+            }
+            BlockSpec::Logo { spec } => {
+                document.push_visual(self.visual_from_spec(spec, VisualKind::Logo, asset_base_dir));
+            }
+            BlockSpec::Signature { spec } => {
+                document.push_visual(self.visual_from_spec(
+                    spec,
+                    VisualKind::Signature,
+                    asset_base_dir,
+                ));
+            }
+            BlockSpec::Chart { spec } => {
+                document.push_visual(self.visual_from_spec(
+                    spec,
+                    VisualKind::Chart,
+                    asset_base_dir,
+                ));
             }
             BlockSpec::Spacer => {
                 document.push_paragraph(self.spacer());
@@ -744,6 +776,48 @@ impl Studio {
             Tone::Warning => &self.config.colors.amber,
             Tone::Risk => &self.config.colors.rose,
         }
+    }
+
+    fn visual_from_spec(
+        &self,
+        spec: &BlockVisualSpec,
+        kind: VisualKind,
+        asset_base_dir: Option<&Path>,
+    ) -> Visual {
+        let mut source_path = PathBuf::from(&spec.path);
+        if source_path.is_relative() {
+            if let Some(base_dir) = asset_base_dir {
+                source_path = base_dir.join(source_path);
+            }
+        }
+
+        let mut visual = Visual::from_path(source_path).with_kind(kind);
+
+        if let Some(alt_text) = &spec.alt_text {
+            visual = visual.alt_text_text(alt_text);
+        }
+        if let Some(alignment) = &spec.alignment {
+            visual = visual.with_alignment(match alignment {
+                ParagraphAlignmentSpec::Left => ParagraphAlignment::Left,
+                ParagraphAlignmentSpec::Center => ParagraphAlignment::Center,
+                ParagraphAlignmentSpec::Right => ParagraphAlignment::Right,
+                ParagraphAlignmentSpec::Justified => ParagraphAlignment::Justified,
+            });
+        }
+        if let Some(width_twips) = spec.width_twips {
+            visual = visual.width_twips(width_twips);
+        }
+        if let Some(height_twips) = spec.height_twips {
+            visual = visual.height_twips(height_twips);
+        }
+        if let Some(max_width_twips) = spec.max_width_twips {
+            visual = visual.max_width_twips(max_width_twips);
+        }
+        if let Some(max_height_twips) = spec.max_height_twips {
+            visual = visual.max_height_twips(max_height_twips);
+        }
+
+        visual
     }
 
     fn tone_foreground(&self, tone: Tone) -> &str {
@@ -1102,10 +1176,31 @@ enum DrawOp {
         fill: Option<Rgb>,
         stroke: Option<(Rgb, f32)>,
     },
+    Image {
+        x: f32,
+        y_top: f32,
+        width: f32,
+        height: f32,
+        image_id: usize,
+    },
+}
+
+struct PdfDocumentLayout {
+    pages: Vec<Page>,
+    images: Vec<PdfImageAsset>,
+}
+
+struct PdfImageAsset {
+    resource_name: String,
+    width_px: u32,
+    height_px: u32,
+    encoded_rgb: Vec<u8>,
+    encoded_alpha: Option<Vec<u8>>,
 }
 
 struct PdfLayout {
     pages: Vec<Page>,
+    images: Vec<PdfImageAsset>,
     cursor_y: f32,
     settings: PdfRenderSettings,
 }
@@ -1114,6 +1209,7 @@ impl PdfLayout {
     fn new(settings: PdfRenderSettings) -> Self {
         Self {
             pages: vec![Page::default()],
+            images: Vec::new(),
             cursor_y: settings.margin_top,
             settings,
         }
@@ -1580,17 +1676,23 @@ struct PdfFaceObjectIds {
     cid_to_gid_map_id: Ref,
 }
 
+#[derive(Clone, Copy)]
+struct PdfImageObjectIds {
+    image_id: Ref,
+    alpha_id: Option<Ref>,
+}
+
 fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> crate::Result<()> {
     let settings = PdfRenderSettings::from_config(config);
     let mut font_system = PdfFontSystem::new(config, settings);
-    let pages = layout_document(document, settings, &mut font_system)?;
+    let layout = layout_document(document, settings, &mut font_system)?;
     let catalog_id = Ref::new(1);
     let page_tree_id = Ref::new(2);
     let mut next_id = 3;
-    let mut page_ids = Vec::with_capacity(pages.len());
-    let mut content_ids = Vec::with_capacity(pages.len());
+    let mut page_ids = Vec::with_capacity(layout.pages.len());
+    let mut content_ids = Vec::with_capacity(layout.pages.len());
 
-    for _ in &pages {
+    for _ in &layout.pages {
         page_ids.push(Ref::new(next_id));
         next_id += 1;
         content_ids.push(Ref::new(next_id));
@@ -1612,7 +1714,20 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
         font_object_ids.insert(face_id, object_ids);
     }
 
-    let estimated_capacity = pages
+    let mut image_object_ids = Vec::with_capacity(layout.images.len());
+    for image in &layout.images {
+        let image_id = Ref::new(next_id);
+        next_id += 1;
+        let alpha_id = image.encoded_alpha.as_ref().map(|_| {
+            let id = Ref::new(next_id);
+            next_id += 1;
+            id
+        });
+        image_object_ids.push(PdfImageObjectIds { image_id, alpha_id });
+    }
+
+    let estimated_capacity = layout
+        .pages
         .iter()
         .map(|page| page.ops.len() * 96)
         .sum::<usize>()
@@ -1678,8 +1793,32 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
             .to_unicode(object_ids.to_unicode_id);
     }
 
-    for ((page, page_id), content_id) in pages.iter().zip(&page_ids).zip(&content_ids) {
-        let content = render_page_content(page, settings, &font_system);
+    for (index, image) in layout.images.iter().enumerate() {
+        let object_ids = image_object_ids[index];
+        let mut image_stream = pdf.image_xobject(object_ids.image_id, &image.encoded_rgb);
+        image_stream.filter(Filter::FlateDecode);
+        image_stream.width(image.width_px as i32);
+        image_stream.height(image.height_px as i32);
+        image_stream.color_space().device_rgb();
+        image_stream.bits_per_component(8);
+        if let Some(alpha_id) = object_ids.alpha_id {
+            image_stream.s_mask(alpha_id);
+        }
+        image_stream.finish();
+
+        if let (Some(alpha_id), Some(alpha)) = (object_ids.alpha_id, image.encoded_alpha.as_ref()) {
+            let mut alpha_stream = pdf.image_xobject(alpha_id, alpha);
+            alpha_stream.filter(Filter::FlateDecode);
+            alpha_stream.width(image.width_px as i32);
+            alpha_stream.height(image.height_px as i32);
+            alpha_stream.color_space().device_gray();
+            alpha_stream.bits_per_component(8);
+            alpha_stream.finish();
+        }
+    }
+
+    for ((page, page_id), content_id) in layout.pages.iter().zip(&page_ids).zip(&content_ids) {
+        let content = render_page_content(page, settings, &font_system, &layout.images);
         pdf.stream(*content_id, &content);
 
         let mut page_writer = pdf.page(*page_id);
@@ -1694,13 +1833,19 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
             .contents(*content_id);
 
         let mut resources = page_writer.resources();
-        let mut fonts = resources.fonts();
-        for &face_id in &used_face_ids {
-            let face = font_system.face(face_id);
-            fonts.pair(
-                Name(face.resource_name.as_bytes()),
-                font_object_ids[&face_id].type0_id,
-            );
+        {
+            let mut fonts = resources.fonts();
+            for &face_id in &used_face_ids {
+                let face = font_system.face(face_id);
+                fonts.pair(
+                    Name(face.resource_name.as_bytes()),
+                    font_object_ids[&face_id].type0_id,
+                );
+            }
+        }
+        let mut x_objects = resources.x_objects();
+        for (image, object_ids) in layout.images.iter().zip(&image_object_ids) {
+            x_objects.pair(Name(image.resource_name.as_bytes()), object_ids.image_id);
         }
     }
 
@@ -1712,7 +1857,7 @@ fn layout_document(
     document: &Document,
     settings: PdfRenderSettings,
     font_system: &mut PdfFontSystem,
-) -> crate::Result<Vec<Page>> {
+) -> crate::Result<PdfDocumentLayout> {
     let mut layout = PdfLayout::new(settings);
 
     for block in document.blocks() {
@@ -1721,10 +1866,14 @@ fn layout_document(
                 layout_paragraph_block(&mut layout, paragraph, font_system)?
             }
             DocumentBlockRef::Table(table) => layout_table_block(&mut layout, table, font_system)?,
+            DocumentBlockRef::Visual(visual) => layout_visual_block(&mut layout, visual)?,
         }
     }
 
-    Ok(layout.pages)
+    Ok(PdfDocumentLayout {
+        pages: layout.pages,
+        images: layout.images,
+    })
 }
 
 fn layout_paragraph_block(
@@ -1794,6 +1943,68 @@ fn layout_table_block(
 
     layout.cursor_y += layout.settings.table_after_spacing;
     Ok(())
+}
+
+fn layout_visual_block(layout: &mut PdfLayout, visual: &Visual) -> crate::Result<()> {
+    let content_width_twips = points_to_twips(layout.settings.content_width);
+    let content_height_twips = points_to_twips(
+        layout.settings.page_height - layout.settings.margin_top - layout.settings.margin_bottom,
+    );
+    let (width_twips, height_twips) =
+        visual.resolved_dimensions_twips(content_width_twips, content_height_twips)?;
+    let width = twips_to_points(width_twips);
+    let height = twips_to_points(height_twips);
+    let image_id = prepare_pdf_image_asset(layout, visual, width_twips, height_twips)?;
+
+    layout.ensure_space(height);
+    let x = match visual.alignment() {
+        ParagraphAlignment::Center => {
+            layout.settings.margin_x + ((layout.settings.content_width - width).max(0.0) / 2.0)
+        }
+        ParagraphAlignment::Right => {
+            layout.settings.margin_x + (layout.settings.content_width - width).max(0.0)
+        }
+        _ => layout.settings.margin_x,
+    };
+    let y_top = layout.cursor_y;
+    layout.push_op(DrawOp::Image {
+        x,
+        y_top,
+        width,
+        height,
+        image_id,
+    });
+    layout.cursor_y += height;
+    Ok(())
+}
+
+fn prepare_pdf_image_asset(
+    layout: &mut PdfLayout,
+    visual: &Visual,
+    width_twips: u32,
+    height_twips: u32,
+) -> crate::Result<usize> {
+    let raster = visual.pdf_raster(width_twips, height_twips)?;
+    let level = CompressionLevel::DefaultLevel as u8;
+    let mut rgb = Vec::with_capacity((raster.width_px * raster.height_px * 3) as usize);
+    let mut alpha = Vec::with_capacity((raster.width_px * raster.height_px) as usize);
+    let mut has_alpha = false;
+
+    for pixel in raster.rgba.chunks_exact(4) {
+        rgb.extend_from_slice(&pixel[..3]);
+        alpha.push(pixel[3]);
+        has_alpha |= pixel[3] < 255;
+    }
+
+    let image_id = layout.images.len();
+    layout.images.push(PdfImageAsset {
+        resource_name: format!("Im{}", image_id + 1),
+        width_px: raster.width_px,
+        height_px: raster.height_px,
+        encoded_rgb: compress_to_vec_zlib(&rgb, level),
+        encoded_alpha: has_alpha.then(|| compress_to_vec_zlib(&alpha, level)),
+    });
+    Ok(image_id)
 }
 
 #[derive(Clone)]
@@ -2343,6 +2554,16 @@ fn twips_to_points(twips: u32) -> f32 {
     twips as f32 / 20.0
 }
 
+fn points_to_twips(points: f32) -> u32 {
+    if !points.is_finite() || points <= 0.0 {
+        0
+    } else if points >= u32::MAX as f32 / 20.0 {
+        u32::MAX
+    } else {
+        (points * 20.0).round() as u32
+    }
+}
+
 fn points_to_u16(points: f32) -> u16 {
     if !points.is_finite() || points <= 0.0 {
         0
@@ -2623,6 +2844,21 @@ impl PdfContentWriter {
         self.buffer.extend_from_slice(b"ET\n");
     }
 
+    fn draw_image(&mut self, x: f32, y_top: f32, width: f32, height: f32, resource_name: &str) {
+        let y = self.page_height - y_top - height;
+        self.buffer.extend_from_slice(b"q\n");
+        self.push_f32(width);
+        self.buffer.extend_from_slice(b" 0 0 ");
+        self.push_f32(height);
+        self.buffer.push(b' ');
+        self.push_f32(x);
+        self.buffer.push(b' ');
+        self.push_f32(y);
+        self.buffer.extend_from_slice(b" cm\n/");
+        self.buffer.extend_from_slice(resource_name.as_bytes());
+        self.buffer.extend_from_slice(b" Do\nQ\n");
+    }
+
     fn set_fill_color(&mut self, color: Rgb) {
         if self.current_fill == Some(color) {
             return;
@@ -2690,6 +2926,7 @@ fn render_page_content(
     page: &Page,
     settings: PdfRenderSettings,
     font_system: &PdfFontSystem,
+    images: &[PdfImageAsset],
 ) -> Vec<u8> {
     let mut writer = PdfContentWriter::with_capacity(page.ops.len() * 96, settings);
 
@@ -2709,6 +2946,19 @@ fn render_page_content(
                 fill,
                 stroke,
             } => writer.draw_rect(*x, *y_top, *width, *height, *fill, *stroke),
+            DrawOp::Image {
+                x,
+                y_top,
+                width,
+                height,
+                image_id,
+            } => writer.draw_image(
+                *x,
+                *y_top,
+                *width,
+                *height,
+                &images[*image_id].resource_name,
+            ),
         }
     }
 
@@ -2785,6 +3035,7 @@ mod tests {
                         .collect::<String>(),
                 ),
                 DrawOp::Rect { .. } => None,
+                DrawOp::Image { .. } => None,
             })
             .collect()
     }
@@ -3170,14 +3421,13 @@ mod tests {
         let footer =
             HeaderFooter::new("Page {page} of {pages}").with_alignment(ParagraphAlignment::Right);
         let numbering = PageNumbering::new(PageNumberFormat::UpperRoman).start_at(4);
-        let spec = DocumentSpec {
-            output_name: Some("board-report".to_string()),
-            page_setup: Some(page_setup.clone()),
-            header: Some(header.clone()),
-            footer: Some(footer.clone()),
-            page_numbering: Some(numbering.clone()),
-            blocks: vec![crate::spec::title("Board Report")],
-        };
+        let mut spec = DocumentSpec::new();
+        spec.output_name = Some("board-report".to_string());
+        spec.page_setup = Some(page_setup.clone());
+        spec.header = Some(header.clone());
+        spec.footer = Some(footer.clone());
+        spec.page_numbering = Some(numbering.clone());
+        spec.blocks = vec![crate::spec::title("Board Report")];
 
         let document = studio.compose(&spec);
 
@@ -3393,9 +3643,9 @@ mod tests {
         );
 
         let pages = layout_document(&document, settings, &mut font_system).expect("layout");
-        let page_texts = pages.iter().map(page_line_texts).collect::<Vec<_>>();
+        let page_texts = pages.pages.iter().map(page_line_texts).collect::<Vec<_>>();
 
-        assert_eq!(pages.len(), 2);
+        assert_eq!(pages.pages.len(), 2);
         assert_eq!(
             page_texts[0],
             vec!["Header".to_string(), "Alpha".to_string()]
@@ -3428,9 +3678,9 @@ mod tests {
         )));
 
         let pages = layout_document(&document, settings, &mut font_system).expect("layout");
-        let page_texts = pages.iter().map(page_line_texts).collect::<Vec<_>>();
+        let page_texts = pages.pages.iter().map(page_line_texts).collect::<Vec<_>>();
 
-        assert!(pages.len() >= 2);
+        assert!(pages.pages.len() >= 2);
         assert_eq!(page_texts[0], vec!["Alpha".to_string()]);
         assert_eq!(page_texts[1], vec!["Beta".to_string()]);
         assert!(

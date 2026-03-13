@@ -21,7 +21,7 @@ For advanced users:
 
 - use `spec::DocumentSpec` from Rust when you still want a data-shaped document model
 - use `studio::Studio` helpers when you want config-driven paragraphs and tables
-- use `Document`, `Paragraph`, `Run`, and `Table` directly when you need full control
+- use `Document`, `Paragraph`, `Run`, `Table`, and `Visual` directly when you need full control
 
 ## Install
 
@@ -66,19 +66,18 @@ use rusdox::studio::Studio;
 fn main() -> rusdox::Result<()> {
     let studio = Studio::from_default_file_or_default()?;
 
-    let spec = DocumentSpec {
-        output_name: Some("weekly-brief".to_string()),
-        blocks: vec![
-            title("Weekly Brief"),
-            section("Summary"),
-            body("Pipeline grew 14% week over week."),
-            bullets([
-                "Security review closed",
-                "Support handoff approved",
-                "Launch remains on schedule",
-            ]),
-        ],
-    };
+    let mut spec = DocumentSpec::new();
+    spec.output_name = Some("weekly-brief".to_string());
+    spec.blocks = vec![
+        title("Weekly Brief"),
+        section("Summary"),
+        body("Pipeline grew 14% week over week."),
+        bullets([
+            "Security review closed",
+            "Support handoff approved",
+            "Launch remains on schedule",
+        ]),
+    ];
 
     studio.save_spec_named(&spec, "weekly-brief")?;
     Ok(())
@@ -103,14 +102,12 @@ use rusdox::{Paragraph, Run};
 fn main() -> rusdox::Result<()> {
     let studio = Studio::from_default_file_or_default()?;
 
-    let spec = DocumentSpec {
-        output_name: None,
-        blocks: vec![
-            title("Launch Packet"),
-            section("Summary"),
-            body("Core rollout is approved."),
-        ],
-    };
+    let mut spec = DocumentSpec::new();
+    spec.blocks = vec![
+        title("Launch Packet"),
+        section("Summary"),
+        body("Core rollout is approved."),
+    ];
 
     let mut document = studio.compose(&spec);
     document.push_paragraph(
@@ -163,7 +160,7 @@ When you need full control, use the core document model directly.
 ```rust
 use rusdox::{
     Border, BorderStyle, Document, Paragraph, Run, Table, TableBorders, TableCell, TableRow,
-    UnderlineStyle,
+    UnderlineStyle, Visual,
 };
 
 fn main() -> rusdox::Result<()> {
@@ -193,6 +190,12 @@ fn main() -> rusdox::Result<()> {
                         Paragraph::new().add_run(Run::from_text("Header B").bold()),
                     )),
             ),
+    );
+
+    doc.push_visual(
+        Visual::logo("assets/rusdox-mark.svg")
+            .alt_text_text("RusDox logo")
+            .max_width_twips(2_200),
     );
 
     doc.save("output.docx")?;

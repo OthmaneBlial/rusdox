@@ -57,6 +57,7 @@ Example files:
 - `project_brief.yaml`
 - `table_report.yaml`
 - `talent_profile.yaml`
+- `visual_assets_showcase.yaml`
 
 Showcase examples:
 
@@ -65,6 +66,7 @@ Showcase examples:
 - `client_proposal.yaml`: styled proposal with phases, pricing, and delivery plan
 - `product_launch_brief.yaml`: launch narrative, milestones, readiness checks, and metrics
 - `talent_profile.yaml`: polished resume/profile style document with experience and skills sections
+- `visual_assets_showcase.yaml`: focused regression example for logos, raster images, signatures, and SVG chart assets
 
 Benchmark note:
 

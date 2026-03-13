@@ -1,9 +1,12 @@
 use std::io::{Cursor, Read, Write};
+use std::path::Path;
 
+use rusdox::config::RusdoxConfig;
+use rusdox::studio::Studio;
 use rusdox::{
     Border, BorderStyle, Document, DocumentMode, HeaderFooter, PageNumberFormat, PageNumbering,
     PageSetup, Paragraph, ParagraphAlignment, ParagraphList, Run, Table, TableBorders, TableCell,
-    TableRow, UnderlineStyle,
+    TableRow, UnderlineStyle, Visual, VisualKind,
 };
 use tempfile::tempdir;
 use zip::write::SimpleFileOptions;
@@ -310,6 +313,127 @@ fn table_row_pagination_properties_round_trip_and_emit_ooxml() -> Result<(), rus
 
     assert!(document_xml.contains("<w:tblHeader/>"));
     assert!(document_xml.contains("<w:cantSplit/>"));
+
+    Ok(())
+}
+
+#[test]
+fn visual_blocks_round_trip_and_emit_media_parts() -> Result<(), rusdox::DocxError> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut document = Document::new();
+    document.push_visual(
+        Visual::logo(root.join("assets/rusdox-mark.svg"))
+            .alt_text_text("RusDox logo")
+            .max_width_twips(2_200),
+    );
+    document.push_visual(
+        Visual::from_path(root.join("assets/template-gallery.png"))
+            .alt_text_text("RusDox gallery")
+            .max_width_twips(7_200),
+    );
+    document.push_visual(
+        Visual::chart(root.join("assets/benchmark-stress-1000-pages.svg"))
+            .alt_text_text("RusDox benchmark chart")
+            .max_width_twips(7_200),
+    );
+    document.push_visual(
+        Visual::signature(root.join("assets/signature-demo.svg"))
+            .alt_text_text("Approval signature")
+            .max_width_twips(2_800),
+    );
+
+    let mut buffer = Cursor::new(Vec::new());
+    document.save_to_writer(&mut buffer)?;
+    buffer.set_position(0);
+
+    let reopened = Document::open_from_reader(&mut buffer, DocumentMode::ReadWrite)?;
+    let kinds = reopened
+        .visuals()
+        .map(|visual| visual.kind())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        kinds,
+        vec![
+            VisualKind::Logo,
+            VisualKind::Image,
+            VisualKind::Chart,
+            VisualKind::Signature,
+        ]
+    );
+    assert_eq!(
+        reopened
+            .visuals()
+            .next()
+            .and_then(|visual| visual.alt_text()),
+        Some("RusDox logo")
+    );
+
+    buffer.set_position(0);
+    let mut archive = ZipArchive::new(buffer)?;
+    let mut media_parts = Vec::new();
+    for index in 0..archive.len() {
+        let name = archive.by_index(index)?.name().to_string();
+        if name.starts_with("word/media/") {
+            media_parts.push(name);
+        }
+    }
+    assert_eq!(media_parts.len(), 4);
+    assert!(media_parts.iter().all(|name| name.ends_with(".png")));
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+    assert!(document_xml.contains("<w:drawing>"));
+    assert!(document_xml.contains("RusDox Logo 1"));
+    assert!(document_xml.contains("rIdRusDoxImage1"));
+
+    let mut rels_xml = String::new();
+    archive
+        .by_name("word/_rels/document.xml.rels")?
+        .read_to_string(&mut rels_xml)?;
+    assert!(rels_xml.contains("relationships/image"));
+
+    let mut content_types = String::new();
+    archive
+        .by_name("[Content_Types].xml")?
+        .read_to_string(&mut content_types)?;
+    assert!(content_types.contains(r#"Extension="png""#));
+
+    Ok(())
+}
+
+#[test]
+fn pdf_preview_renders_visual_blocks_as_image_xobjects() -> Result<(), rusdox::DocxError> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp = tempdir()?;
+    let mut config = RusdoxConfig::default();
+    config.output.docx_dir = temp.path().join("generated").to_string_lossy().to_string();
+    config.output.pdf_dir = temp.path().join("rendered").to_string_lossy().to_string();
+    config.output.emit_pdf_preview = true;
+    let studio = Studio::new(config);
+
+    let mut document = Document::new();
+    document.push_visual(
+        Visual::logo(root.join("assets/rusdox-mark.svg"))
+            .alt_text_text("RusDox logo")
+            .max_width_twips(2_200),
+    );
+    document.push_visual(
+        Visual::chart(root.join("assets/benchmark-stress-1000-pages.svg"))
+            .alt_text_text("RusDox benchmark chart")
+            .max_width_twips(7_200),
+    );
+
+    let docx_path = temp.path().join("generated/visual-preview.docx");
+    studio.save_with_pdf_stats(&document, &docx_path)?;
+
+    let pdf_path = temp.path().join("rendered/visual-preview.pdf");
+    let pdf = std::fs::read(pdf_path)?;
+    let pdf_text = String::from_utf8_lossy(&pdf);
+
+    assert!(pdf_text.matches("/Subtype /Image").count() >= 2);
+    assert!(pdf_text.contains("/XObject"));
 
     Ok(())
 }

@@ -28,6 +28,7 @@ mod run;
 pub mod spec;
 pub mod studio;
 mod table;
+mod visual;
 mod xml_utils;
 
 pub use document::{Document, DocumentBlockRef, DocumentMode};
@@ -39,3 +40,4 @@ pub use table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
     TableRow, TableRowProperties,
 };
+pub use visual::{Visual, VisualFormat, VisualKind, VisualSizing, VisualSource};

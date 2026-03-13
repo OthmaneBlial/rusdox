@@ -632,24 +632,20 @@ fn default_path_with_fallback() -> PathBuf {
 }
 
 fn starter_document_spec() -> DocumentSpec {
-    DocumentSpec {
-        output_name: Some("my-document".to_string()),
-        page_setup: None,
-        header: None,
-        footer: None,
-        page_numbering: None,
-        blocks: vec![
-            rusdox::spec::title("My Document"),
-            rusdox::spec::subtitle("Written as data, rendered by Rust"),
-            rusdox::spec::section("Summary"),
-            rusdox::spec::body("Replace this with your real content."),
-            rusdox::spec::bullets([
-                "Keep content in order.",
-                "Let config handle styling.",
-                "Render to DOCX and PDF with one command.",
-            ]),
-        ],
-    }
+    let mut spec = DocumentSpec::new();
+    spec.output_name = Some("my-document".to_string());
+    spec.blocks = vec![
+        rusdox::spec::title("My Document"),
+        rusdox::spec::subtitle("Written as data, rendered by Rust"),
+        rusdox::spec::section("Summary"),
+        rusdox::spec::body("Replace this with your real content."),
+        rusdox::spec::bullets([
+            "Keep content in order.",
+            "Let config handle styling.",
+            "Render to DOCX and PDF with one command.",
+        ]),
+    ];
+    spec
 }
 
 fn run_basic_wizard(config: &mut RusdoxConfig) -> Result<()> {

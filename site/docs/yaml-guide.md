@@ -40,6 +40,10 @@ Use these when you want readable documents with strong defaults:
 - `section`
 - `body`
 - `tagline`
+- `image`
+- `logo`
+- `signature`
+- `chart`
 - `spacer`
 
 Example:
@@ -63,6 +67,50 @@ blocks:
 `page_heading` starts a new page before the heading.
 
 `spacer` adds vertical space when you want breathing room between sections.
+
+## Visual Blocks
+
+Use visual blocks when the document needs brand marks, screenshots, signatures, or SVG charts.
+
+Example:
+
+```yaml
+- type: logo
+  path: ../assets/rusdox-mark.svg
+  alt_text: RusDox logo
+  max_width_twips: 2200
+
+- type: image
+  path: ../assets/template-gallery.png
+  alt_text: RusDox template gallery
+  max_width_twips: 7200
+
+- type: chart
+  path: ../assets/benchmark-stress-1000-pages.svg
+  alt_text: RusDox benchmark chart
+  max_width_twips: 7200
+
+- type: signature
+  path: ../assets/signature-demo.svg
+  alt_text: Automated approval signature
+  max_width_twips: 2800
+```
+
+Supported visual fields:
+
+- `path`
+- `alt_text`
+- `alignment`: `left`, `center`, `right`, `justified`
+- `width_twips`
+- `height_twips`
+- `max_width_twips`
+- `max_height_twips`
+
+Supported file formats:
+
+- PNG
+- JPEG
+- SVG
 
 ## List Blocks
 

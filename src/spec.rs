@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +20,8 @@ pub struct DocumentSpec {
     /// Optional page numbering format and restart control.
     pub page_numbering: Option<PageNumbering>,
     pub blocks: Vec<BlockSpec>,
+    #[serde(skip)]
+    asset_base_dir: Option<PathBuf>,
 }
 
 impl DocumentSpec {
@@ -39,14 +41,16 @@ impl DocumentSpec {
             .unwrap_or_default()
             .to_ascii_lowercase();
 
-        match extension.as_str() {
+        let mut spec = match extension.as_str() {
             "yaml" | "yml" | "" => Self::from_yaml_str(&content),
             "json" => Self::from_json_str(&content),
             "toml" => Self::from_toml_str(&content),
             other => Err(DocxError::parse(format!(
                 "unsupported document spec extension '{other}', expected .yaml, .yml, .json, or .toml"
             ))),
-        }
+        }?;
+        spec.asset_base_dir = path.parent().map(Path::to_path_buf);
+        Ok(spec)
     }
 
     /// Parses a YAML document specification string.
@@ -130,27 +134,90 @@ impl DocumentSpec {
     pub fn default_yaml_template() -> &'static str {
         DEFAULT_YAML_TEMPLATE
     }
+
+    /// Returns the base directory used to resolve relative asset paths.
+    pub fn asset_base_dir(&self) -> Option<&Path> {
+        self.asset_base_dir.as_deref()
+    }
+
+    /// Sets the base directory used to resolve relative asset paths.
+    pub fn set_asset_base_dir(&mut self, base_dir: Option<PathBuf>) -> &mut Self {
+        self.asset_base_dir = base_dir;
+        self
+    }
+
+    /// Sets the base directory used to resolve relative asset paths in builder style.
+    pub fn with_asset_base_dir(mut self, base_dir: impl Into<PathBuf>) -> Self {
+        self.asset_base_dir = Some(base_dir.into());
+        self
+    }
 }
 
 /// A high-level document block.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlockSpec {
-    CoverTitle { text: String },
-    Title { text: String },
-    Subtitle { text: String },
-    Hero { text: String },
-    CenteredNote { text: String },
-    PageHeading { text: String },
-    Section { text: String },
-    Body { text: String },
-    Tagline { text: String },
-    Paragraph { spec: ParagraphSpec },
-    Bullets { items: Vec<String> },
-    Numbered { items: Vec<String> },
-    LabelValues { items: Vec<LabelValueSpec> },
-    Metrics { items: Vec<MetricSpec> },
-    Table { spec: TableSpec },
+    CoverTitle {
+        text: String,
+    },
+    Title {
+        text: String,
+    },
+    Subtitle {
+        text: String,
+    },
+    Hero {
+        text: String,
+    },
+    CenteredNote {
+        text: String,
+    },
+    PageHeading {
+        text: String,
+    },
+    Section {
+        text: String,
+    },
+    Body {
+        text: String,
+    },
+    Tagline {
+        text: String,
+    },
+    Paragraph {
+        spec: ParagraphSpec,
+    },
+    Bullets {
+        items: Vec<String>,
+    },
+    Numbered {
+        items: Vec<String>,
+    },
+    LabelValues {
+        items: Vec<LabelValueSpec>,
+    },
+    Metrics {
+        items: Vec<MetricSpec>,
+    },
+    Table {
+        spec: TableSpec,
+    },
+    Image {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Logo {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Signature {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Chart {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
     Spacer,
 }
 
@@ -202,6 +269,28 @@ pub struct RunSpec {
     pub font_family: Option<String>,
     pub size_pt: Option<f32>,
     pub vertical_align: Option<VerticalAlignSpec>,
+}
+
+/// A fully specified visual/image block.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct VisualSpec {
+    pub path: String,
+    pub alt_text: Option<String>,
+    pub alignment: Option<ParagraphAlignmentSpec>,
+    pub width_twips: Option<u32>,
+    pub height_twips: Option<u32>,
+    pub max_width_twips: Option<u32>,
+    pub max_height_twips: Option<u32>,
+}
+
+impl VisualSpec {
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            ..Self::default()
+        }
+    }
 }
 
 impl RunSpec {
@@ -306,6 +395,7 @@ where
         footer: None,
         page_numbering: None,
         blocks: blocks.into_iter().collect(),
+        asset_base_dir: None,
     }
 }
 
@@ -441,6 +531,30 @@ where
     }
 }
 
+pub fn image(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Image {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn logo(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Logo {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn signature(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Signature {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn chart(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Chart {
+        spec: VisualSpec::new(path),
+    }
+}
+
 pub fn spacer() -> BlockSpec {
     BlockSpec::Spacer
 }
@@ -535,9 +649,9 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        body, bullets, col, document, label_values, metric, metrics, numbered, paragraph, row,
-        section, status, table, title, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone,
-        UnderlineStyleSpec,
+        body, bullets, chart, col, document, image, label_values, logo, metric, metrics, numbered,
+        paragraph, row, section, signature, status, table, title, BlockSpec,
+        ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone, UnderlineStyleSpec, VisualSpec,
     };
     use crate::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, ParagraphAlignment};
 
@@ -555,6 +669,17 @@ mod tests {
                 [col("Item", 4_000), col("Status", 2_000)],
                 [row(("Pipeline", status("Watch", Tone::Warning)))],
             ),
+            BlockSpec::Image {
+                spec: VisualSpec {
+                    path: "assets/template-gallery.png".to_string(),
+                    alt_text: Some("Gallery".to_string()),
+                    max_width_twips: Some(7_200),
+                    ..VisualSpec::default()
+                },
+            },
+            logo("assets/rusdox-mark.svg"),
+            chart("assets/benchmark-stress-1000-pages.svg"),
+            signature("assets/signature-demo.svg"),
         ]);
 
         let json = serde_json::to_string_pretty(&spec).expect("serialize spec");
@@ -599,7 +724,9 @@ mod tests {
                     alignment: Some(ParagraphAlignmentSpec::Center),
                     ..ParagraphSpec::default()
                 }),
+                image("assets/template-gallery.png"),
             ],
+            asset_base_dir: None,
         };
 
         let yaml = spec.to_yaml_string().expect("serialize yaml");

@@ -119,6 +119,7 @@ Highlights:
 - `examples/product_launch_brief.yaml`
 - `examples/talent_profile.yaml`
 - `examples/formatting_showcase.yaml`
+- `examples/visual_assets_showcase.yaml`
 - `examples/stress/stress_1000_pages.yaml`
 
 More detail is in [examples/README.md](examples/README.md).
@@ -219,11 +220,12 @@ The current foundation focuses on fast, typed support for:
 - paragraphs
 - runs and common text formatting
 - tables, rows, and cells
+- image, logo, signature, and SVG/chart blocks
 - plain-text extraction
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Deferred areas include images, headers and footers, comments, tracked changes, and advanced style inheritance.
+Deferred areas include headers and footers, comments, tracked changes, and advanced style inheritance.
 
 ## Development
 

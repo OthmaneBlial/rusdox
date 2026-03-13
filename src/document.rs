@@ -11,11 +11,12 @@ use crate::error::{DocxError, Result};
 use crate::layout::{HeaderFooter, PageNumbering, PageSetup};
 use crate::paragraph::Paragraph;
 use crate::table::Table;
+use crate::visual::Visual;
 use crate::xml_utils::{
     hydrate_section_from_package_parts, parse_document_xml, parse_numbering_xml,
-    render_header_footer_xml, write_document_xml, write_numbering_xml, SectionProperties,
-    DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART, DEFAULT_HEADER_REL_ID,
-    FOOTER_REL_TYPE, HEADER_REL_TYPE,
+    render_header_footer_xml, write_document_xml, write_numbering_xml, DocxVisual,
+    SectionProperties, DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART,
+    DEFAULT_HEADER_REL_ID, FOOTER_REL_TYPE, HEADER_REL_TYPE, IMAGE_REL_TYPE,
 };
 
 const CONTENT_TYPES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -92,12 +93,15 @@ pub enum DocumentBlockRef<'a> {
     Paragraph(&'a Paragraph),
     /// A table block.
     Table(&'a Table),
+    /// A visual/image block.
+    Visual(&'a Visual),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum BodyBlock {
     Paragraph(Paragraph),
     Table(Box<Table>),
+    Visual(Visual),
 }
 
 impl BodyBlock {
@@ -105,8 +109,22 @@ impl BodyBlock {
         match self {
             Self::Paragraph(paragraph) => paragraph.text(),
             Self::Table(table) => table.text(),
+            Self::Visual(visual) => visual.alt_text().unwrap_or_default().to_string(),
         }
     }
+}
+
+struct RenderedPackage {
+    parts: BTreeMap<String, Vec<u8>>,
+    visuals: Vec<DocxVisual>,
+}
+
+struct RenderedVisualPart {
+    xml: DocxVisual,
+    part_name: String,
+    target: String,
+    content_type: &'static str,
+    bytes: Vec<u8>,
 }
 
 /// A `.docx` document containing paragraphs and tables.
@@ -190,7 +208,7 @@ impl Document {
 
         let document_xml = document_xml
             .ok_or_else(|| DocxError::parse("missing OOXML part: word/document.xml"))?;
-        let mut parsed = parse_document_xml(&document_xml, numbering.as_ref())?;
+        let mut parsed = parse_document_xml(&document_xml, numbering.as_ref(), &package_parts)?;
         hydrate_section_from_package_parts(&mut parsed.section_properties, &package_parts)?;
 
         Ok(Self {
@@ -308,11 +326,23 @@ impl Document {
         self
     }
 
+    /// Adds a visual block to the end of the document body.
+    pub fn push_visual(&mut self, visual: Visual) -> &mut Self {
+        self.body.push(BodyBlock::Visual(visual));
+        self
+    }
+
+    /// Adds a visual block in a builder-style fashion.
+    pub fn add_visual(mut self, visual: Visual) -> Self {
+        self.body.push(BodyBlock::Visual(visual));
+        self
+    }
+
     /// Returns immutable access to top-level paragraphs.
     pub fn paragraphs(&self) -> impl Iterator<Item = &Paragraph> {
         self.body.iter().filter_map(|block| match block {
             BodyBlock::Paragraph(paragraph) => Some(paragraph),
-            BodyBlock::Table(_) => None,
+            BodyBlock::Table(_) | BodyBlock::Visual(_) => None,
         })
     }
 
@@ -320,14 +350,14 @@ impl Document {
     pub fn paragraphs_mut(&mut self) -> impl Iterator<Item = &mut Paragraph> {
         self.body.iter_mut().filter_map(|block| match block {
             BodyBlock::Paragraph(paragraph) => Some(paragraph),
-            BodyBlock::Table(_) => None,
+            BodyBlock::Table(_) | BodyBlock::Visual(_) => None,
         })
     }
 
     /// Returns immutable access to top-level tables.
     pub fn tables(&self) -> impl Iterator<Item = &Table> {
         self.body.iter().filter_map(|block| match block {
-            BodyBlock::Paragraph(_) => None,
+            BodyBlock::Paragraph(_) | BodyBlock::Visual(_) => None,
             BodyBlock::Table(table) => Some(table.as_ref()),
         })
     }
@@ -335,8 +365,24 @@ impl Document {
     /// Returns mutable access to top-level tables.
     pub fn tables_mut(&mut self) -> impl Iterator<Item = &mut Table> {
         self.body.iter_mut().filter_map(|block| match block {
-            BodyBlock::Paragraph(_) => None,
+            BodyBlock::Paragraph(_) | BodyBlock::Visual(_) => None,
             BodyBlock::Table(table) => Some(table.as_mut()),
+        })
+    }
+
+    /// Returns immutable access to top-level visual blocks.
+    pub fn visuals(&self) -> impl Iterator<Item = &Visual> {
+        self.body.iter().filter_map(|block| match block {
+            BodyBlock::Visual(visual) => Some(visual),
+            BodyBlock::Paragraph(_) | BodyBlock::Table(_) => None,
+        })
+    }
+
+    /// Returns mutable access to top-level visual blocks.
+    pub fn visuals_mut(&mut self) -> impl Iterator<Item = &mut Visual> {
+        self.body.iter_mut().filter_map(|block| match block {
+            BodyBlock::Visual(visual) => Some(visual),
+            BodyBlock::Paragraph(_) | BodyBlock::Table(_) => None,
         })
     }
 
@@ -345,6 +391,7 @@ impl Document {
         self.body.iter().map(|block| match block {
             BodyBlock::Paragraph(paragraph) => DocumentBlockRef::Paragraph(paragraph),
             BodyBlock::Table(table) => DocumentBlockRef::Table(table.as_ref()),
+            BodyBlock::Visual(visual) => DocumentBlockRef::Visual(visual),
         })
     }
 
@@ -396,13 +443,17 @@ impl Document {
 
         let mut archive = ZipWriter::new(writer);
         let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
-        let package_parts = self.render_package_parts()?;
+        let rendered_package = self.render_package_parts()?;
 
         archive.start_file("word/document.xml", options)?;
-        let document_xml = write_document_xml(&self.body, &self.section_properties)?;
+        let document_xml = write_document_xml(
+            &self.body,
+            &self.section_properties,
+            &rendered_package.visuals,
+        )?;
         archive.write_all(&document_xml)?;
 
-        for (name, contents) in &package_parts {
+        for (name, contents) in &rendered_package.parts {
             archive.start_file(name, options)?;
             archive.write_all(contents)?;
         }
@@ -411,14 +462,29 @@ impl Document {
         Ok(())
     }
 
-    fn render_package_parts(&self) -> Result<BTreeMap<String, Vec<u8>>> {
+    fn render_package_parts(&self) -> Result<RenderedPackage> {
         let mut package_parts = self.package_parts.clone();
+        let visuals = self.render_visual_parts()?;
         package_parts.insert(
             "word/numbering.xml".to_string(),
             write_numbering_xml(&self.body)?,
         );
         ensure_numbering_content_type(&mut package_parts)?;
         ensure_numbering_relationship(&mut package_parts)?;
+        for visual in &visuals {
+            package_parts.insert(visual.part_name.clone(), visual.bytes.clone());
+            ensure_default_content_type(
+                &mut package_parts,
+                visual.part_name.rsplit('.').next().unwrap_or_default(),
+                visual.content_type,
+            )?;
+            ensure_header_footer_relationship(
+                &mut package_parts,
+                &visual.xml.relation_id,
+                IMAGE_REL_TYPE,
+                &visual.target,
+            )?;
+        }
         if let Some(header) = self.header() {
             package_parts.insert(
                 DEFAULT_HEADER_PART.to_string(),
@@ -453,7 +519,50 @@ impl Document {
                 "footer1.xml",
             )?;
         }
-        Ok(package_parts)
+        Ok(RenderedPackage {
+            parts: package_parts,
+            visuals: visuals.into_iter().map(|visual| visual.xml).collect(),
+        })
+    }
+
+    fn render_visual_parts(&self) -> Result<Vec<RenderedVisualPart>> {
+        let page_setup = self.page_setup();
+        let content_width_twips = page_setup
+            .width_twips
+            .saturating_sub(page_setup.margin_left_twips)
+            .saturating_sub(page_setup.margin_right_twips)
+            .saturating_sub(page_setup.gutter_twips)
+            .max(1);
+        let content_height_twips = page_setup
+            .height_twips
+            .saturating_sub(page_setup.margin_top_twips)
+            .saturating_sub(page_setup.margin_bottom_twips)
+            .max(1);
+
+        let mut rendered = Vec::new();
+        for (index, visual) in self.visuals().enumerate() {
+            let sequence = index + 1;
+            let (width_twips, height_twips) =
+                visual.resolved_dimensions_twips(content_width_twips, content_height_twips)?;
+            let (format, bytes) = visual.docx_media(width_twips, height_twips)?;
+            let extension = format.extension();
+            rendered.push(RenderedVisualPart {
+                xml: DocxVisual {
+                    relation_id: format!("rIdRusDoxImage{sequence}"),
+                    width_emu: width_twips.saturating_mul(635),
+                    height_emu: height_twips.saturating_mul(635),
+                    doc_pr_id: sequence as u32,
+                    name: format!("{} {sequence}", visual.docx_name()),
+                    alt_text: visual.alt_text().map(str::to_owned),
+                },
+                part_name: format!("word/media/rusdox-image-{sequence}.{extension}"),
+                target: format!("media/rusdox-image-{sequence}.{extension}"),
+                content_type: format.content_type(),
+                bytes,
+            });
+        }
+
+        Ok(rendered)
     }
 }
 
@@ -480,6 +589,25 @@ fn ensure_numbering_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Resul
         r#"Target="numbering.xml""#,
         r#"  <Relationship Id="rIdRusDoxNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>
 "#,
+    )
+}
+
+fn ensure_default_content_type(
+    parts: &mut BTreeMap<String, Vec<u8>>,
+    extension: &str,
+    content_type: &str,
+) -> Result<()> {
+    let xml = parts
+        .entry("[Content_Types].xml".to_string())
+        .or_insert_with(|| CONTENT_TYPES_XML.as_bytes().to_vec());
+    ensure_xml_fragment(
+        xml,
+        "</Types>",
+        &format!(r#"Extension="{extension}""#),
+        &format!(
+            r#"  <Default Extension="{extension}" ContentType="{content_type}"/>
+"#
+        ),
     )
 }
 
@@ -641,6 +769,7 @@ mod tests {
             .map(|block| match block {
                 DocumentBlockRef::Paragraph(_) => "p",
                 DocumentBlockRef::Table(_) => "t",
+                DocumentBlockRef::Visual(_) => "v",
             })
             .collect();
         assert_eq!(kinds, vec!["p", "t", "p", "t"]);
@@ -797,9 +926,9 @@ mod tests {
         let parts = document
             .render_package_parts()
             .expect("render package parts");
-        let content_types =
-            String::from_utf8(parts["[Content_Types].xml"].clone()).expect("utf8 content types");
-        let rels = String::from_utf8(parts["word/_rels/document.xml.rels"].clone())
+        let content_types = String::from_utf8(parts.parts["[Content_Types].xml"].clone())
+            .expect("utf8 content types");
+        let rels = String::from_utf8(parts.parts["word/_rels/document.xml.rels"].clone())
             .expect("utf8 relationships");
 
         assert!(content_types.contains(r#"PartName="/word/numbering.xml""#));

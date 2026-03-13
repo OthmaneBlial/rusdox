@@ -244,3 +244,41 @@ fn run_script_rejects_missing_file() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("input not found"));
 }
+
+#[test]
+fn run_example_spec_with_visual_assets_resolves_paths_relative_to_spec() {
+    let temp = tempdir().expect("temp dir");
+    let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let spec_path = manifest_dir.join("examples/visual_assets_showcase.yaml");
+    let output_docx = temp.path().join("visual-assets.docx");
+
+    let output = run_cli(
+        &[
+            spec_path.to_string_lossy().as_ref(),
+            "--output",
+            output_docx.to_string_lossy().as_ref(),
+            "--with-pdf",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let pdf_path = temp.path().join("rendered").join("visual-assets.pdf");
+    assert!(output_docx.exists(), "expected {}", output_docx.display());
+    assert!(pdf_path.exists(), "expected {}", pdf_path.display());
+
+    let docx = fs::read(&output_docx).expect("read docx");
+    let pdf = fs::read(&pdf_path).expect("read pdf");
+    assert!(docx
+        .windows("word/media/".len())
+        .any(|window| window == b"word/media/"));
+    assert!(pdf.starts_with(b"%PDF-"));
+    assert!(
+        pdf.len() > 2_000,
+        "expected rendered pdf to contain real content"
+    );
+}

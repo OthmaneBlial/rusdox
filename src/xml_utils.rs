@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::io::{BufRead, Cursor, Write};
+use std::path::Path;
 
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::{Reader, Writer};
@@ -13,17 +14,24 @@ use crate::table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
     TableRow, TableRowProperties,
 };
+use crate::visual::{Visual, VisualFormat, VisualKind};
 
 const WORD_NS: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const REL_NS: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const WP_NS: &str = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
+const A_NS: &str = "http://schemas.openxmlformats.org/drawingml/2006/main";
+const PIC_NS: &str = "http://schemas.openxmlformats.org/drawingml/2006/picture";
 pub(crate) const HEADER_REL_TYPE: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header";
 pub(crate) const FOOTER_REL_TYPE: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
+pub(crate) const IMAGE_REL_TYPE: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
 pub(crate) const DEFAULT_HEADER_REL_ID: &str = "rIdRusDoxHeaderDefault";
 pub(crate) const DEFAULT_FOOTER_REL_ID: &str = "rIdRusDoxFooterDefault";
 pub(crate) const DEFAULT_HEADER_PART: &str = "word/header1.xml";
 pub(crate) const DEFAULT_FOOTER_PART: &str = "word/footer1.xml";
+const EMUS_PER_TWIP: u32 = 635;
 
 /// Internal section settings preserved for the generated document body.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,19 +101,53 @@ pub(crate) struct ParsedDocument {
 }
 
 type NumberingDefinitions = BTreeMap<u32, ParagraphListKind>;
+type VisualRelationships = BTreeMap<String, EmbeddedVisualPart>;
+
+#[derive(Debug, Clone)]
+pub(crate) struct DocxVisual {
+    pub(crate) relation_id: String,
+    pub(crate) width_emu: u32,
+    pub(crate) height_emu: u32,
+    pub(crate) doc_pr_id: u32,
+    pub(crate) name: String,
+    pub(crate) alt_text: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+struct EmbeddedVisualPart {
+    format: VisualFormat,
+    bytes: Vec<u8>,
+}
+
+#[derive(Debug, Default)]
+struct ParsedDrawing {
+    relation_id: Option<String>,
+    width_emu: Option<u32>,
+    height_emu: Option<u32>,
+    name: Option<String>,
+    alt_text: Option<String>,
+}
+
+#[derive(Debug, Default)]
+struct ParsedRun {
+    run: Option<Run>,
+    drawing: Option<ParsedDrawing>,
+}
 
 pub(crate) fn parse_document_xml(
     xml: &[u8],
     numbering: Option<&NumberingDefinitions>,
+    package_parts: &BTreeMap<String, Vec<u8>>,
 ) -> Result<ParsedDocument> {
     let mut reader = Reader::from_reader(Cursor::new(xml));
     reader.config_mut().trim_text(false);
+    let visuals = parse_visual_relationships(package_parts)?;
 
     let mut buffer = Vec::new();
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) if local_name(start.name().as_ref()) == b"body" => {
-                let parsed = parse_body(&mut reader, numbering)?;
+                let parsed = parse_body(&mut reader, numbering, &visuals)?;
                 return Ok(parsed);
             }
             Event::Empty(start) if local_name(start.name().as_ref()) == b"body" => {
@@ -128,6 +170,7 @@ pub(crate) fn parse_document_xml(
 pub(crate) fn write_document_xml(
     body: &[BodyBlock],
     section_properties: &SectionProperties,
+    visuals: &[DocxVisual],
 ) -> Result<Vec<u8>> {
     let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
     writer.write_event(Event::Decl(BytesDecl::new(
@@ -139,13 +182,23 @@ pub(crate) fn write_document_xml(
     let mut document = BytesStart::new("w:document");
     document.push_attribute(("xmlns:w", WORD_NS));
     document.push_attribute(("xmlns:r", REL_NS));
+    document.push_attribute(("xmlns:wp", WP_NS));
+    document.push_attribute(("xmlns:a", A_NS));
+    document.push_attribute(("xmlns:pic", PIC_NS));
     writer.write_event(Event::Start(document))?;
 
     writer.write_event(Event::Start(BytesStart::new("w:body")))?;
+    let mut visual_iter = visuals.iter();
     for block in body {
         match block {
             BodyBlock::Paragraph(paragraph) => write_paragraph(&mut writer, paragraph)?,
             BodyBlock::Table(table) => write_table(&mut writer, table)?,
+            BodyBlock::Visual(visual) => {
+                let docx_visual = visual_iter.next().ok_or_else(|| {
+                    DocxError::parse("missing visual metadata while writing OOXML document")
+                })?;
+                write_visual_paragraph(&mut writer, visual, docx_visual)?;
+            }
         }
     }
     write_section_properties(&mut writer, section_properties)?;
@@ -382,6 +435,7 @@ fn collect_numbering_instances(body: &[BodyBlock]) -> Result<BTreeMap<u32, Parag
                     }
                 }
             }
+            BodyBlock::Visual(_) => {}
         }
     }
 
@@ -502,6 +556,7 @@ fn list_level_text(kind: ParagraphListKind, level: u8) -> String {
 fn parse_body<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
+    visuals: &VisualRelationships,
 ) -> Result<ParsedDocument>
 where
     R: BufRead,
@@ -513,7 +568,7 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
-                b"p" => body.push(BodyBlock::Paragraph(parse_paragraph(reader, numbering)?)),
+                b"p" => body.push(parse_body_paragraph(reader, numbering, visuals)?),
                 b"tbl" => body.push(BodyBlock::Table(Box::new(parse_table(reader, numbering)?))),
                 b"sectPr" => section_properties = parse_section_properties(reader)?,
                 _ => skip_current_element(reader)?,
@@ -550,7 +605,39 @@ fn parse_paragraph<R>(
 where
     R: BufRead,
 {
+    let (paragraph, _) = parse_paragraph_content(reader, numbering)?;
+    Ok(paragraph)
+}
+
+fn parse_body_paragraph<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+    visuals: &VisualRelationships,
+) -> Result<BodyBlock>
+where
+    R: BufRead,
+{
+    let (paragraph, drawing) = parse_paragraph_content(reader, numbering)?;
+    if paragraph.text().is_empty() {
+        if let Some(visual) =
+            drawing.and_then(|drawing| visual_from_parsed_drawing(&paragraph, drawing, visuals))
+        {
+            return Ok(BodyBlock::Visual(visual));
+        }
+    }
+
+    Ok(BodyBlock::Paragraph(paragraph))
+}
+
+fn parse_paragraph_content<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+) -> Result<(Paragraph, Option<ParsedDrawing>)>
+where
+    R: BufRead,
+{
     let mut runs = Vec::new();
+    let mut drawings = Vec::new();
     let mut list = None;
     let mut alignment = None;
     let mut spacing_before = None;
@@ -561,7 +648,15 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
-                b"r" => runs.push(parse_run(reader)?),
+                b"r" => {
+                    let parsed = parse_run(reader)?;
+                    if let Some(run) = parsed.run {
+                        runs.push(run);
+                    }
+                    if let Some(drawing) = parsed.drawing {
+                        drawings.push(drawing);
+                    }
+                }
                 b"pPr" => {
                     let properties = parse_paragraph_properties(reader, numbering)?;
                     list = properties.list;
@@ -590,13 +685,20 @@ where
         buffer.clear();
     }
 
-    Ok(Paragraph::from_parts(
-        runs,
-        list,
-        alignment,
-        spacing_before,
-        spacing_after,
-        page_break_before,
+    Ok((
+        Paragraph::from_parts(
+            runs,
+            list,
+            alignment,
+            spacing_before,
+            spacing_after,
+            page_break_before,
+        ),
+        if drawings.len() == 1 {
+            drawings.into_iter().next()
+        } else {
+            None
+        },
     ))
 }
 
@@ -737,12 +839,13 @@ where
     }))
 }
 
-fn parse_run<R>(reader: &mut Reader<R>) -> Result<Run>
+fn parse_run<R>(reader: &mut Reader<R>) -> Result<ParsedRun>
 where
     R: BufRead,
 {
     let mut text = String::new();
     let mut properties = RunProperties::default();
+    let mut drawing = None;
     let mut buffer = Vec::new();
 
     loop {
@@ -758,6 +861,7 @@ where
                     text.push('\n');
                     skip_current_element(reader)?;
                 }
+                b"drawing" => drawing = parse_drawing(reader)?,
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) => match local_name(start.name().as_ref()) {
@@ -778,7 +882,102 @@ where
         buffer.clear();
     }
 
-    Ok(Run::from_parts(text, properties))
+    Ok(ParsedRun {
+        run: Some(Run::from_parts(text, properties)),
+        drawing,
+    })
+}
+
+fn parse_drawing<R>(reader: &mut Reader<R>) -> Result<Option<ParsedDrawing>>
+where
+    R: BufRead,
+{
+    let mut drawing = ParsedDrawing::default();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"inline" | b"anchor" => parse_inline_drawing(reader, &mut drawing)?,
+                _ => skip_current_element(reader)?,
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"inline" | b"anchor" => {}
+                _ => {}
+            },
+            Event::End(end) if local_name(end.name().as_ref()) == b"drawing" => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:drawing",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(drawing.relation_id.is_some().then_some(drawing))
+}
+
+fn parse_inline_drawing<R>(reader: &mut Reader<R>, drawing: &mut ParsedDrawing) -> Result<()>
+where
+    R: BufRead,
+{
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) => match local_name(start.name().as_ref()) {
+                b"extent" => {
+                    drawing.width_emu =
+                        attribute_value(&start, b"cx").and_then(|value| value.parse().ok());
+                    drawing.height_emu =
+                        attribute_value(&start, b"cy").and_then(|value| value.parse().ok());
+                    skip_current_element(reader)?;
+                }
+                b"docPr" => {
+                    drawing.name = attribute_value(&start, b"name");
+                    drawing.alt_text = attribute_value(&start, b"descr");
+                    skip_current_element(reader)?;
+                }
+                b"blip" => {
+                    drawing.relation_id = attribute_value(&start, b"embed");
+                    skip_current_element(reader)?;
+                }
+                _ => {}
+            },
+            Event::Empty(start) => match local_name(start.name().as_ref()) {
+                b"extent" => {
+                    drawing.width_emu =
+                        attribute_value(&start, b"cx").and_then(|value| value.parse().ok());
+                    drawing.height_emu =
+                        attribute_value(&start, b"cy").and_then(|value| value.parse().ok());
+                }
+                b"docPr" => {
+                    drawing.name = attribute_value(&start, b"name");
+                    drawing.alt_text = attribute_value(&start, b"descr");
+                }
+                b"blip" => {
+                    drawing.relation_id = attribute_value(&start, b"embed");
+                }
+                _ => {}
+            },
+            Event::End(end) if matches!(local_name(end.name().as_ref()), b"inline" | b"anchor") => {
+                break;
+            }
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in inline drawing",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(())
 }
 
 fn parse_run_properties<R>(reader: &mut Reader<R>) -> Result<RunProperties>
@@ -873,6 +1072,120 @@ where
     }
 
     Ok(text)
+}
+
+fn visual_from_parsed_drawing(
+    paragraph: &Paragraph,
+    drawing: ParsedDrawing,
+    visuals: &VisualRelationships,
+) -> Option<Visual> {
+    let relation_id = drawing.relation_id?;
+    let embedded = visuals.get(&relation_id)?;
+    let mut visual = Visual::from_bytes(embedded.bytes.clone(), embedded.format).with_kind(
+        drawing
+            .name
+            .as_deref()
+            .map(VisualKind::from_docx_name)
+            .unwrap_or(VisualKind::Image),
+    );
+    visual = visual.with_alignment(
+        paragraph
+            .alignment()
+            .cloned()
+            .unwrap_or(ParagraphAlignment::Left),
+    );
+    if let Some(alt_text) = drawing.alt_text {
+        if !alt_text.trim().is_empty() {
+            visual = visual.alt_text_text(alt_text);
+        }
+    }
+    if let Some(width_emu) = drawing.width_emu {
+        visual = visual.width_twips(width_emu / EMUS_PER_TWIP);
+    }
+    if let Some(height_emu) = drawing.height_emu {
+        visual = visual.height_twips(height_emu / EMUS_PER_TWIP);
+    }
+    Some(visual)
+}
+
+fn parse_visual_relationships(
+    package_parts: &BTreeMap<String, Vec<u8>>,
+) -> Result<VisualRelationships> {
+    let Some(rels_xml) = package_parts.get("word/_rels/document.xml.rels") else {
+        return Ok(BTreeMap::new());
+    };
+
+    let mut reader = Reader::from_reader(Cursor::new(rels_xml));
+    reader.config_mut().trim_text(false);
+    let mut visuals = BTreeMap::new();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == b"Relationship" => {
+                maybe_insert_visual_relationship(&mut visuals, package_parts, &start)?;
+                skip_current_element(&mut reader)?;
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"Relationship" => {
+                maybe_insert_visual_relationship(&mut visuals, package_parts, &start)?;
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(visuals)
+}
+
+fn relationship_target_to_part_name(target: &str) -> String {
+    if target.starts_with('/') {
+        target.trim_start_matches('/').to_string()
+    } else if target.starts_with("word/") {
+        target.to_string()
+    } else {
+        format!("word/{target}")
+    }
+}
+
+fn maybe_insert_visual_relationship(
+    visuals: &mut VisualRelationships,
+    package_parts: &BTreeMap<String, Vec<u8>>,
+    start: &BytesStart<'_>,
+) -> Result<()> {
+    let Some(relation_type) = attribute_value(start, b"Type") else {
+        return Ok(());
+    };
+    if relation_type != IMAGE_REL_TYPE {
+        return Ok(());
+    }
+
+    let Some(relation_id) = attribute_value(start, b"Id") else {
+        return Ok(());
+    };
+    let Some(target) = attribute_value(start, b"Target") else {
+        return Ok(());
+    };
+
+    let part_name = relationship_target_to_part_name(&target);
+    let Some(bytes) = package_parts.get(&part_name) else {
+        return Ok(());
+    };
+    let format = VisualFormat::from_path(Path::new(&part_name))
+        .or_else(|| VisualFormat::guess(bytes))
+        .ok_or_else(|| {
+            DocxError::parse(format!(
+                "unsupported embedded image format in OOXML part {part_name}"
+            ))
+        })?;
+    visuals.insert(
+        relation_id,
+        EmbeddedVisualPart {
+            format,
+            bytes: bytes.clone(),
+        },
+    );
+    Ok(())
 }
 
 fn parse_table<R>(reader: &mut Reader<R>, numbering: Option<&NumberingDefinitions>) -> Result<Table>
@@ -1361,6 +1674,110 @@ where
     for run in paragraph.runs() {
         write_run(writer, run)?;
     }
+    writer.write_event(Event::End(BytesEnd::new("w:p")))?;
+    Ok(())
+}
+
+fn write_visual_paragraph<W>(
+    writer: &mut Writer<W>,
+    visual: &Visual,
+    docx_visual: &DocxVisual,
+) -> Result<()>
+where
+    W: Write,
+{
+    writer.write_event(Event::Start(BytesStart::new("w:p")))?;
+    if !matches!(visual.alignment(), ParagraphAlignment::Left) {
+        writer.write_event(Event::Start(BytesStart::new("w:pPr")))?;
+        let mut alignment = BytesStart::new("w:jc");
+        alignment.push_attribute(("w:val", visual.alignment().as_xml_value()));
+        writer.write_event(Event::Empty(alignment))?;
+        writer.write_event(Event::End(BytesEnd::new("w:pPr")))?;
+    }
+
+    writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+    writer.write_event(Event::Start(BytesStart::new("w:drawing")))?;
+
+    let mut inline = BytesStart::new("wp:inline");
+    inline.push_attribute(("distT", "0"));
+    inline.push_attribute(("distB", "0"));
+    inline.push_attribute(("distL", "0"));
+    inline.push_attribute(("distR", "0"));
+    writer.write_event(Event::Start(inline))?;
+
+    let mut extent = BytesStart::new("wp:extent");
+    let width = docx_visual.width_emu.to_string();
+    let height = docx_visual.height_emu.to_string();
+    extent.push_attribute(("cx", width.as_str()));
+    extent.push_attribute(("cy", height.as_str()));
+    writer.write_event(Event::Empty(extent))?;
+
+    let mut doc_pr = BytesStart::new("wp:docPr");
+    let doc_pr_id = docx_visual.doc_pr_id.to_string();
+    doc_pr.push_attribute(("id", doc_pr_id.as_str()));
+    doc_pr.push_attribute(("name", docx_visual.name.as_str()));
+    if let Some(alt_text) = docx_visual.alt_text.as_deref() {
+        doc_pr.push_attribute(("descr", alt_text));
+    }
+    writer.write_event(Event::Empty(doc_pr))?;
+
+    writer.write_event(Event::Start(BytesStart::new("wp:cNvGraphicFramePr")))?;
+    let mut locks = BytesStart::new("a:graphicFrameLocks");
+    locks.push_attribute(("noChangeAspect", "1"));
+    writer.write_event(Event::Empty(locks))?;
+    writer.write_event(Event::End(BytesEnd::new("wp:cNvGraphicFramePr")))?;
+
+    writer.write_event(Event::Start(BytesStart::new("a:graphic")))?;
+    let mut graphic_data = BytesStart::new("a:graphicData");
+    graphic_data.push_attribute(("uri", PIC_NS));
+    writer.write_event(Event::Start(graphic_data))?;
+
+    writer.write_event(Event::Start(BytesStart::new("pic:pic")))?;
+    writer.write_event(Event::Start(BytesStart::new("pic:nvPicPr")))?;
+
+    let mut c_nv_pr = BytesStart::new("pic:cNvPr");
+    c_nv_pr.push_attribute(("id", "0"));
+    c_nv_pr.push_attribute(("name", docx_visual.name.as_str()));
+    if let Some(alt_text) = docx_visual.alt_text.as_deref() {
+        c_nv_pr.push_attribute(("descr", alt_text));
+    }
+    writer.write_event(Event::Empty(c_nv_pr))?;
+    writer.write_event(Event::Empty(BytesStart::new("pic:cNvPicPr")))?;
+    writer.write_event(Event::End(BytesEnd::new("pic:nvPicPr")))?;
+
+    writer.write_event(Event::Start(BytesStart::new("pic:blipFill")))?;
+    let mut blip = BytesStart::new("a:blip");
+    blip.push_attribute(("r:embed", docx_visual.relation_id.as_str()));
+    writer.write_event(Event::Empty(blip))?;
+    writer.write_event(Event::Start(BytesStart::new("a:stretch")))?;
+    writer.write_event(Event::Empty(BytesStart::new("a:fillRect")))?;
+    writer.write_event(Event::End(BytesEnd::new("a:stretch")))?;
+    writer.write_event(Event::End(BytesEnd::new("pic:blipFill")))?;
+
+    writer.write_event(Event::Start(BytesStart::new("pic:spPr")))?;
+    writer.write_event(Event::Start(BytesStart::new("a:xfrm")))?;
+    let mut offset = BytesStart::new("a:off");
+    offset.push_attribute(("x", "0"));
+    offset.push_attribute(("y", "0"));
+    writer.write_event(Event::Empty(offset))?;
+    let mut ext = BytesStart::new("a:ext");
+    ext.push_attribute(("cx", width.as_str()));
+    ext.push_attribute(("cy", height.as_str()));
+    writer.write_event(Event::Empty(ext))?;
+    writer.write_event(Event::End(BytesEnd::new("a:xfrm")))?;
+    let mut geometry = BytesStart::new("a:prstGeom");
+    geometry.push_attribute(("prst", "rect"));
+    writer.write_event(Event::Start(geometry))?;
+    writer.write_event(Event::Empty(BytesStart::new("a:avLst")))?;
+    writer.write_event(Event::End(BytesEnd::new("a:prstGeom")))?;
+    writer.write_event(Event::End(BytesEnd::new("pic:spPr")))?;
+
+    writer.write_event(Event::End(BytesEnd::new("pic:pic")))?;
+    writer.write_event(Event::End(BytesEnd::new("a:graphicData")))?;
+    writer.write_event(Event::End(BytesEnd::new("a:graphic")))?;
+    writer.write_event(Event::End(BytesEnd::new("wp:inline")))?;
+    writer.write_event(Event::End(BytesEnd::new("w:drawing")))?;
+    writer.write_event(Event::End(BytesEnd::new("w:r")))?;
     writer.write_event(Event::End(BytesEnd::new("w:p")))?;
     Ok(())
 }
@@ -2170,6 +2587,8 @@ fn local_name(name: &[u8]) -> &[u8] {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::{parse_document_xml, parse_numbering_xml, write_document_xml, write_numbering_xml};
     use crate::document::BodyBlock;
     use crate::{
@@ -2182,6 +2601,7 @@ mod tests {
         let document_xml = write_document_xml(
             &[BodyBlock::Paragraph(paragraph)],
             &super::SectionProperties::default(),
+            &[],
         )
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
@@ -2194,6 +2614,7 @@ mod tests {
         let document_xml = write_document_xml(
             &[BodyBlock::Paragraph(paragraph)],
             &super::SectionProperties::default(),
+            &[],
         )
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
@@ -2213,6 +2634,7 @@ mod tests {
         let document_xml = write_document_xml(
             &[BodyBlock::Table(Box::new(table))],
             &super::SectionProperties::default(),
+            &[],
         )
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
@@ -2245,6 +2667,7 @@ mod tests {
                 BodyBlock::Table(Box::new(table)),
             ],
             &super::SectionProperties::default(),
+            &[],
         )
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
@@ -2280,6 +2703,7 @@ mod tests {
         let document_xml = write_document_xml(
             &[BodyBlock::Paragraph(paragraph)],
             &super::SectionProperties::default(),
+            &[],
         )
         .unwrap_or_else(|error| panic!("writer should succeed in test: {error}"));
         let xml = String::from_utf8_lossy(&document_xml);
@@ -2327,9 +2751,9 @@ mod tests {
             write_numbering_xml(&body).unwrap_or_else(|error| panic!("write numbering: {error}"));
         let numbering = parse_numbering_xml(&numbering_xml)
             .unwrap_or_else(|error| panic!("parse numbering: {error}"));
-        let document_xml = write_document_xml(&body, &super::SectionProperties::default())
+        let document_xml = write_document_xml(&body, &super::SectionProperties::default(), &[])
             .unwrap_or_else(|error| panic!("write document: {error}"));
-        let parsed = parse_document_xml(&document_xml, Some(&numbering))
+        let parsed = parse_document_xml(&document_xml, Some(&numbering), &BTreeMap::new())
             .unwrap_or_else(|error| panic!("parse document: {error}"));
 
         let paragraph = match parsed.body.first() {
