@@ -5,7 +5,7 @@ use rusdox::{
     Table, TableBorders, TableCell, TableRow, UnderlineStyle,
 };
 use tempfile::tempdir;
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 use zip::ZipArchive;
 use zip::{CompressionMethod, ZipWriter};
 
@@ -315,7 +315,7 @@ fn custom_package_part_is_preserved_across_open_modify_save() -> Result<(), rusd
     let mut with_custom = Cursor::new(Vec::new());
     {
         let mut writer = ZipWriter::new(&mut with_custom);
-        let options = FileOptions::default().compression_method(CompressionMethod::Deflated);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
         for index in 0..base_archive.len() {
             let mut file = base_archive.by_index(index)?;
             let name = file.name().to_string();

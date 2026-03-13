@@ -690,7 +690,7 @@ fn run_advanced_wizard(config: &mut RusdoxConfig) -> Result<()> {
         ];
         let choice = Select::new()
             .with_prompt("Advanced settings section")
-            .items(&menu)
+            .items(menu)
             .default(0)
             .interact()
             .map_err(dialog_err)?;
