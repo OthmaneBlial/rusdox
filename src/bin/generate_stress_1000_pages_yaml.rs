@@ -49,14 +49,10 @@ fn build_spec() -> DocumentSpec {
         append_page(&mut blocks, template, page_index);
     }
 
-    DocumentSpec {
-        output_name: Some("stress-1000-pages".to_string()),
-        page_setup: None,
-        header: None,
-        footer: None,
-        page_numbering: None,
-        blocks,
-    }
+    let mut spec = DocumentSpec::new();
+    spec.output_name = Some("stress-1000-pages".to_string());
+    spec.blocks = blocks;
+    spec
 }
 
 fn build_templates() -> Vec<PageTemplate> {

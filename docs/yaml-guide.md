@@ -21,11 +21,233 @@ blocks:
 - Controls the file name of the generated output
 - If omitted, RusDox uses the spec file stem
 
+`metadata`
+
+- Optional
+- Controls DOCX package properties such as title, author, subject, keywords, and custom properties
+
 `blocks`
 
 - Required for real documents
 - Ordered from top to bottom
 - This is the document structure
+
+`styles`
+
+- Optional
+- Defines reusable named paragraph, run, and table styles
+- Supports inheritance through `based_on`
+- Paragraph styles can also set `next`
+
+`variables`
+
+- Optional
+- Defines reusable values for text interpolation and repeat blocks in YAML
+
+## Metadata
+
+Use metadata when generated documents need clean properties in Word, search tools, or downstream automation.
+
+```yaml
+metadata:
+  title: Client Rollout Plan
+  author: RusDox Studio
+  subject: Q4 regional rollout
+  keywords:
+    - rollout
+    - planning
+  custom_properties:
+    Client: Northwind Health
+    Sponsor: Maya Chen
+```
+
+Supported metadata fields:
+
+- `title`
+- `author`
+- `subject`
+- `keywords`
+- `custom_properties`
+
+`custom_properties` values are stored as string custom properties in the DOCX package.
+
+## Variables, Includes, And Repeaters
+
+Use these features when one YAML file would otherwise become repetitive.
+
+Variables use `{{name}}` placeholders:
+
+```yaml
+variables:
+  client: Northwind Health
+  quarter: Q4 2026
+
+blocks:
+  - type: title
+    text: "{{client}} Rollout Plan"
+  - type: subtitle
+    text: "{{quarter}} program snapshot"
+```
+
+Includes inline reusable block fragments relative to the current YAML file:
+
+```yaml
+blocks:
+  - type: include
+    path: fragments/summary.yaml
+    variables:
+      sponsor: Maya Chen
+```
+
+An included YAML fragment can be:
+
+- a single block mapping
+- a sequence of blocks
+- a mapping with optional `variables` plus `blocks`
+
+Repeaters expand a block template for each item in a sequence:
+
+```yaml
+variables:
+  regions:
+    - name: North America
+      owner: Maya
+    - name: EMEA
+      owner: Leon
+
+blocks:
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: "{{region.name}}"
+      - type: body
+        text: "Owner: {{region.owner}}"
+```
+
+Supported repeat fields:
+
+- `variable`: name of a sequence variable to iterate
+- `items`: inline sequence to iterate
+- `as`: loop variable name, defaults to `item`
+- `blocks`: template block list
+
+Each repeat iteration also exposes:
+
+- `repeat_index`: zero-based index
+- `repeat_number`: one-based index
+
+## Named Styles
+
+Use named styles when the document needs stable reusable formatting instead of repeating direct properties on every block.
+
+Example:
+
+```yaml
+styles:
+  paragraph:
+    - id: lead
+      based_on: Normal
+      next: body
+      paragraph:
+        alignment: center
+        spacing_after: 180
+        keep_next: true
+      run:
+        bold: true
+        color: "0F172A"
+        font_family: Georgia
+        font_size: 28
+  run:
+    - id: accent
+      based_on: DefaultParagraphFont
+      properties:
+        italic: true
+        color: "AA5500"
+  table:
+    - id: grid
+      based_on: TableNormal
+      properties:
+        width: 9360
+
+blocks:
+  - type: paragraph
+    spec:
+      style_id: lead
+      runs:
+        - text: Styled
+        - text: " emphasis"
+          style_id: accent
+  - type: table
+    spec:
+      style_id: grid
+      columns:
+        - label: Metric
+          width: 4680
+      rows:
+        - cells:
+            - kind: text
+              text: ARR
+```
+
+Style definition groups:
+
+- `styles.paragraph`
+- `styles.run`
+- `styles.table`
+
+Paragraph style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `next`
+- `paragraph.list`
+- `paragraph.alignment`
+- `paragraph.spacing_before`
+- `paragraph.spacing_after`
+- `paragraph.keep_next`
+- `paragraph.page_break_before`
+- `run.bold`
+- `run.italic`
+- `run.underline`
+- `run.strikethrough`
+- `run.small_caps`
+- `run.shadow`
+- `run.color`
+- `run.font_family`
+- `run.font_size`
+- `run.vertical_align`
+
+Run style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `properties.bold`
+- `properties.italic`
+- `properties.underline`
+- `properties.strikethrough`
+- `properties.small_caps`
+- `properties.shadow`
+- `properties.color`
+- `properties.font_family`
+- `properties.font_size`
+- `properties.vertical_align`
+
+Table style fields:
+
+- `id`
+- `name`
+- `based_on`
+- `properties.width`
+- `properties.borders`
+
+Units:
+
+- paragraph spacing and table widths use twips
+- run `font_size` uses OOXML half-points, so `24` means `12pt`
 
 ## Simple Block Types
 
@@ -40,6 +262,10 @@ Use these when you want readable documents with strong defaults:
 - `section`
 - `body`
 - `tagline`
+- `image`
+- `logo`
+- `signature`
+- `chart`
 - `spacer`
 
 Example:
@@ -63,6 +289,50 @@ blocks:
 `page_heading` starts a new page before the heading.
 
 `spacer` adds vertical space when you want breathing room between sections.
+
+## Visual Blocks
+
+Use visual blocks when the document needs brand marks, screenshots, signatures, or SVG charts.
+
+Example:
+
+```yaml
+- type: logo
+  path: ../assets/rusdox-mark.svg
+  alt_text: RusDox logo
+  max_width_twips: 2200
+
+- type: image
+  path: ../assets/template-gallery.png
+  alt_text: RusDox template gallery
+  max_width_twips: 7200
+
+- type: chart
+  path: ../assets/benchmark-stress-1000-pages.svg
+  alt_text: RusDox benchmark chart
+  max_width_twips: 7200
+
+- type: signature
+  path: ../assets/signature-demo.svg
+  alt_text: Automated approval signature
+  max_width_twips: 2800
+```
+
+Supported visual fields:
+
+- `path`
+- `alt_text`
+- `alignment`: `left`, `center`, `right`, `justified`
+- `width_twips`
+- `height_twips`
+- `max_width_twips`
+- `max_height_twips`
+
+Supported file formats:
+
+- PNG
+- JPEG
+- SVG
 
 ## List Blocks
 
@@ -132,6 +402,7 @@ Example:
 ```yaml
 - type: table
   spec:
+    style_id: grid
     columns:
       - label: Category
         width: 2800
@@ -178,6 +449,7 @@ Example:
 Supported paragraph fields:
 
 - `runs`
+- `style_id`
 - `alignment`: `left`, `center`, `right`, `justified`
 - `spacing_before_twips`
 - `spacing_after_twips`
@@ -186,6 +458,7 @@ Supported paragraph fields:
 Supported run fields:
 
 - `text`
+- `style_id`
 - `bold`
 - `italic`
 - `underline`
@@ -215,7 +488,8 @@ Vertical align values:
 
 ## Best Practices
 
-- Keep content in variables only if you are in Rust. In YAML, keep it in document order.
+- Use variables for repeated values, not for every sentence in the document.
+- Reach for `include` and `repeat` before moving to Rust if the workflow is still mostly static content.
 - Prefer `title`, `section`, `body`, `bullets`, `metrics`, and `table` before reaching for custom paragraphs.
 - Let config control styling instead of repeating style values everywhere.
 - Copy a close example and edit the content.
@@ -225,3 +499,5 @@ Vertical align values:
 - [../examples/board_report.yaml](../examples/board_report.yaml)
 - [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
 - [../examples/formatting_showcase.yaml](../examples/formatting_showcase.yaml)
+- [../examples/named_styles_showcase.yaml](../examples/named_styles_showcase.yaml)
+- [../examples/yaml_composition_showcase.yaml](../examples/yaml_composition_showcase.yaml)

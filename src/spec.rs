@@ -1,9 +1,11 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result};
+use crate::spec_expand::expand_yaml_document_spec;
+use crate::DocumentMetadata;
+use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result, Stylesheet};
 
 /// A high-level, serializable document specification.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -11,6 +13,8 @@ use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result};
 pub struct DocumentSpec {
     /// Optional logical output name. Falls back to the spec file stem when absent.
     pub output_name: Option<String>,
+    /// Optional core and custom document metadata written into the DOCX package.
+    pub metadata: DocumentMetadata,
     /// Optional page size and margin overrides for the document section.
     pub page_setup: Option<PageSetup>,
     /// Optional default header template.
@@ -19,7 +23,11 @@ pub struct DocumentSpec {
     pub footer: Option<HeaderFooter>,
     /// Optional page numbering format and restart control.
     pub page_numbering: Option<PageNumbering>,
+    /// Reusable named styles available to blocks and runs in this document.
+    pub styles: Stylesheet,
     pub blocks: Vec<BlockSpec>,
+    #[serde(skip)]
+    asset_base_dir: Option<PathBuf>,
 }
 
 impl DocumentSpec {
@@ -39,20 +47,21 @@ impl DocumentSpec {
             .unwrap_or_default()
             .to_ascii_lowercase();
 
-        match extension.as_str() {
-            "yaml" | "yml" | "" => Self::from_yaml_str(&content),
+        let mut spec = match extension.as_str() {
+            "yaml" | "yml" | "" => Self::from_yaml_path(&content, Some(path)),
             "json" => Self::from_json_str(&content),
             "toml" => Self::from_toml_str(&content),
             other => Err(DocxError::parse(format!(
                 "unsupported document spec extension '{other}', expected .yaml, .yml, .json, or .toml"
             ))),
-        }
+        }?;
+        spec.asset_base_dir = path.parent().map(Path::to_path_buf);
+        Ok(spec)
     }
 
     /// Parses a YAML document specification string.
     pub fn from_yaml_str(content: &str) -> Result<Self> {
-        serde_yaml::from_str(content)
-            .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
+        Self::from_yaml_path(content, None)
     }
 
     /// Parses a JSON document specification string.
@@ -130,27 +139,96 @@ impl DocumentSpec {
     pub fn default_yaml_template() -> &'static str {
         DEFAULT_YAML_TEMPLATE
     }
+
+    /// Returns the base directory used to resolve relative asset paths.
+    pub fn asset_base_dir(&self) -> Option<&Path> {
+        self.asset_base_dir.as_deref()
+    }
+
+    /// Sets the base directory used to resolve relative asset paths.
+    pub fn set_asset_base_dir(&mut self, base_dir: Option<PathBuf>) -> &mut Self {
+        self.asset_base_dir = base_dir;
+        self
+    }
+
+    /// Sets the base directory used to resolve relative asset paths in builder style.
+    pub fn with_asset_base_dir(mut self, base_dir: impl Into<PathBuf>) -> Self {
+        self.asset_base_dir = Some(base_dir.into());
+        self
+    }
+
+    fn from_yaml_path(content: &str, source_path: Option<&Path>) -> Result<Self> {
+        let expanded = expand_yaml_document_spec(content, source_path)?;
+        serde_yaml::from_value(expanded)
+            .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
+    }
 }
 
 /// A high-level document block.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlockSpec {
-    CoverTitle { text: String },
-    Title { text: String },
-    Subtitle { text: String },
-    Hero { text: String },
-    CenteredNote { text: String },
-    PageHeading { text: String },
-    Section { text: String },
-    Body { text: String },
-    Tagline { text: String },
-    Paragraph { spec: ParagraphSpec },
-    Bullets { items: Vec<String> },
-    Numbered { items: Vec<String> },
-    LabelValues { items: Vec<LabelValueSpec> },
-    Metrics { items: Vec<MetricSpec> },
-    Table { spec: TableSpec },
+    CoverTitle {
+        text: String,
+    },
+    Title {
+        text: String,
+    },
+    Subtitle {
+        text: String,
+    },
+    Hero {
+        text: String,
+    },
+    CenteredNote {
+        text: String,
+    },
+    PageHeading {
+        text: String,
+    },
+    Section {
+        text: String,
+    },
+    Body {
+        text: String,
+    },
+    Tagline {
+        text: String,
+    },
+    Paragraph {
+        spec: ParagraphSpec,
+    },
+    Bullets {
+        items: Vec<String>,
+    },
+    Numbered {
+        items: Vec<String>,
+    },
+    LabelValues {
+        items: Vec<LabelValueSpec>,
+    },
+    Metrics {
+        items: Vec<MetricSpec>,
+    },
+    Table {
+        spec: TableSpec,
+    },
+    Image {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Logo {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Signature {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
+    Chart {
+        #[serde(flatten)]
+        spec: VisualSpec,
+    },
     Spacer,
 }
 
@@ -159,6 +237,7 @@ pub enum BlockSpec {
 #[serde(default)]
 pub struct ParagraphSpec {
     pub runs: Vec<RunSpec>,
+    pub style_id: Option<String>,
     pub alignment: Option<ParagraphAlignmentSpec>,
     pub spacing_before_twips: Option<u32>,
     pub spacing_after_twips: Option<u32>,
@@ -192,6 +271,7 @@ pub enum ParagraphAlignmentSpec {
 #[serde(default)]
 pub struct RunSpec {
     pub text: String,
+    pub style_id: Option<String>,
     pub bold: bool,
     pub italic: bool,
     pub underline: Option<UnderlineStyleSpec>,
@@ -202,6 +282,28 @@ pub struct RunSpec {
     pub font_family: Option<String>,
     pub size_pt: Option<f32>,
     pub vertical_align: Option<VerticalAlignSpec>,
+}
+
+/// A fully specified visual/image block.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct VisualSpec {
+    pub path: String,
+    pub alt_text: Option<String>,
+    pub alignment: Option<ParagraphAlignmentSpec>,
+    pub width_twips: Option<u32>,
+    pub height_twips: Option<u32>,
+    pub max_width_twips: Option<u32>,
+    pub max_height_twips: Option<u32>,
+}
+
+impl VisualSpec {
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            ..Self::default()
+        }
+    }
 }
 
 impl RunSpec {
@@ -263,6 +365,7 @@ pub enum Tone {
 /// A grid table specification.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TableSpec {
+    pub style_id: Option<String>,
     pub columns: Vec<ColumnSpec>,
     pub rows: Vec<RowSpec>,
 }
@@ -301,11 +404,14 @@ where
 {
     DocumentSpec {
         output_name: None,
+        metadata: DocumentMetadata::default(),
         page_setup: None,
         header: None,
         footer: None,
         page_numbering: None,
+        styles: Stylesheet::default(),
         blocks: blocks.into_iter().collect(),
+        asset_base_dir: None,
     }
 }
 
@@ -435,9 +541,34 @@ where
 {
     BlockSpec::Table {
         spec: TableSpec {
+            style_id: None,
             columns: columns.into_iter().collect(),
             rows: rows.into_iter().collect(),
         },
+    }
+}
+
+pub fn image(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Image {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn logo(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Logo {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn signature(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Signature {
+        spec: VisualSpec::new(path),
+    }
+}
+
+pub fn chart(path: impl Into<String>) -> BlockSpec {
+    BlockSpec::Chart {
+        spec: VisualSpec::new(path),
     }
 }
 
@@ -495,6 +626,16 @@ const DEFAULT_YAML_TEMPLATE: &str = r#"# RusDox document spec template
 #   rusdox mydoc.yaml
 
 output_name: my-document
+# Optional core and custom metadata:
+# metadata:
+#   title: My Document
+#   author: RusDox
+#   subject: Quarterly review
+#   keywords:
+#     - planning
+#     - board
+#   custom_properties:
+#     Client: Acme Corp
 # Optional layout controls:
 # page_setup:
 #   width_twips: 12240
@@ -512,6 +653,31 @@ output_name: my-document
 # page_numbering:
 #   start_at: 1
 #   format: decimal
+# Optional reusable named styles:
+# styles:
+#   paragraph:
+#     - id: lead
+#       based_on: Normal
+#       paragraph:
+#         alignment: center
+#         spacing_after: 180
+#       run:
+#         bold: true
+#         color: "0F172A"
+#   run:
+#     - id: accent
+#       based_on: DefaultParagraphFont
+#       properties:
+#         italic: true
+#         color: "AA5500"
+# Optional YAML composition helpers:
+# variables:
+#   company: Acme Corp
+#   regions:
+#     - name: North America
+#       owner: Maya
+#     - name: EMEA
+#       owner: Leon
 blocks:
   - type: title
     text: My Document
@@ -535,11 +701,15 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        body, bullets, col, document, label_values, metric, metrics, numbered, paragraph, row,
-        section, status, table, title, ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone,
-        UnderlineStyleSpec,
+        body, bullets, chart, col, document, image, label_values, logo, metric, metrics, numbered,
+        paragraph, row, section, signature, status, table, title, BlockSpec,
+        ParagraphAlignmentSpec, ParagraphSpec, RunSpec, Tone, UnderlineStyleSpec, VisualSpec,
     };
-    use crate::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup, ParagraphAlignment};
+    use crate::{
+        Border, BorderStyle, DocumentMetadata, HeaderFooter, PageNumberFormat, PageNumbering,
+        PageSetup, ParagraphAlignment, ParagraphList, ParagraphStyle, ParagraphStyleProperties,
+        RunStyle, RunStyleProperties, Stylesheet, TableBorders, TableStyle, TableStyleProperties,
+    };
 
     #[test]
     fn spec_round_trips_through_json() {
@@ -555,6 +725,17 @@ mod tests {
                 [col("Item", 4_000), col("Status", 2_000)],
                 [row(("Pipeline", status("Watch", Tone::Warning)))],
             ),
+            BlockSpec::Image {
+                spec: VisualSpec {
+                    path: "assets/template-gallery.png".to_string(),
+                    alt_text: Some("Gallery".to_string()),
+                    max_width_twips: Some(7_200),
+                    ..VisualSpec::default()
+                },
+            },
+            logo("assets/rusdox-mark.svg"),
+            chart("assets/benchmark-stress-1000-pages.svg"),
+            signature("assets/signature-demo.svg"),
         ]);
 
         let json = serde_json::to_string_pretty(&spec).expect("serialize spec");
@@ -568,6 +749,10 @@ mod tests {
     fn spec_round_trips_through_yaml() {
         let spec = super::DocumentSpec {
             output_name: Some("hello-world".to_string()),
+            metadata: DocumentMetadata::new()
+                .title("Hello World")
+                .author("RusDox")
+                .subject("Round-trip"),
             page_setup: Some(PageSetup::new(11_880, 16_380).margins(900, 1_000, 1_100, 1_200)),
             header: Some(
                 HeaderFooter::new("Board Report").with_alignment(ParagraphAlignment::Center),
@@ -577,6 +762,7 @@ mod tests {
                     .with_alignment(ParagraphAlignment::Right),
             ),
             page_numbering: Some(PageNumbering::new(PageNumberFormat::UpperRoman).start_at(3)),
+            styles: crate::Stylesheet::default(),
             blocks: vec![
                 title("Hello"),
                 paragraph(ParagraphSpec {
@@ -599,12 +785,103 @@ mod tests {
                     alignment: Some(ParagraphAlignmentSpec::Center),
                     ..ParagraphSpec::default()
                 }),
+                image("assets/template-gallery.png"),
             ],
+            asset_base_dir: None,
         };
 
         let yaml = spec.to_yaml_string().expect("serialize yaml");
         let round_trip = super::DocumentSpec::from_yaml_str(&yaml).expect("deserialize yaml");
 
+        assert_eq!(round_trip, spec);
+    }
+
+    #[test]
+    fn spec_round_trips_named_styles_and_style_references() {
+        let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+        let spec = super::DocumentSpec {
+            output_name: Some("styled-spec".to_string()),
+            metadata: DocumentMetadata::default(),
+            page_setup: None,
+            header: None,
+            footer: None,
+            page_numbering: None,
+            styles: Stylesheet::new()
+                .add_paragraph_style(
+                    ParagraphStyle::new("lead")
+                        .based_on("Normal")
+                        .next("body")
+                        .paragraph(ParagraphStyleProperties {
+                            list: Some(ParagraphList::bullet_with_id(7)),
+                            alignment: Some(ParagraphAlignment::Center),
+                            spacing_before: Some(120),
+                            spacing_after: Some(240),
+                            keep_next: Some(true),
+                            page_break_before: Some(false),
+                        })
+                        .run(RunStyleProperties::new().bold().color("0F172A")),
+                )
+                .add_run_style(
+                    RunStyle::new("accent")
+                        .based_on("DefaultParagraphFont")
+                        .properties(RunStyleProperties::new().italic().color("AA5500")),
+                )
+                .add_table_style(
+                    TableStyle::new("grid").based_on("TableNormal").properties(
+                        TableStyleProperties::new()
+                            .width(9_360)
+                            .borders(TableBorders::new().top(border)),
+                    ),
+                ),
+            blocks: vec![
+                paragraph(ParagraphSpec {
+                    style_id: Some("lead".to_string()),
+                    runs: vec![RunSpec {
+                        text: "Styled".to_string(),
+                        style_id: Some("accent".to_string()),
+                        ..RunSpec::default()
+                    }],
+                    ..ParagraphSpec::default()
+                }),
+                BlockSpec::Table {
+                    spec: super::TableSpec {
+                        style_id: Some("grid".to_string()),
+                        columns: vec![
+                            super::ColumnSpec {
+                                label: "Metric".to_string(),
+                                width: 4_680,
+                            },
+                            super::ColumnSpec {
+                                label: "Value".to_string(),
+                                width: 4_680,
+                            },
+                        ],
+                        rows: vec![super::RowSpec {
+                            cells: vec![
+                                super::CellSpec::Text {
+                                    text: "ARR".to_string(),
+                                },
+                                super::CellSpec::Text {
+                                    text: "$18.7M".to_string(),
+                                },
+                            ],
+                        }],
+                    },
+                },
+            ],
+            asset_base_dir: None,
+        };
+
+        let yaml = spec.to_yaml_string().expect("serialize yaml");
+        assert!(yaml.contains("styles:"));
+        assert!(yaml.contains("style_id: lead"));
+        assert!(yaml.contains("style_id: accent"));
+        assert!(yaml.contains("style_id: grid"));
+        assert!(yaml.contains("based_on: Normal"));
+        assert!(yaml.contains("based_on: DefaultParagraphFont"));
+        assert!(yaml.contains("based_on: TableNormal"));
+
+        let round_trip = super::DocumentSpec::from_yaml_str(&yaml).expect("deserialize yaml");
         assert_eq!(round_trip, spec);
     }
 
@@ -636,6 +913,72 @@ blocks:
         assert_eq!(yaml_spec.output_name.as_deref(), Some("hello-world"));
         assert_eq!(yaml_spec.blocks.len(), 1);
         assert_eq!(json_spec.blocks.len(), 1);
+    }
+
+    #[test]
+    fn load_from_path_expands_yaml_variables_includes_repeaters_and_metadata() {
+        let temp = tempdir().expect("temp dir");
+        let fragment_path = temp.path().join("summary.yaml");
+        let spec_path = temp.path().join("spec.yaml");
+        fs::write(
+            &fragment_path,
+            r#"variables:
+  intro: Summary for {{client}}
+blocks:
+  - type: body
+    text: "{{intro}}"
+"#,
+        )
+        .expect("write fragment");
+        fs::write(
+            &spec_path,
+            r#"output_name: regional-plan
+metadata:
+  title: "{{client}} Regional Plan"
+  author: Strategy Team
+  subject: "{{quarter}} rollout"
+  keywords:
+    - "{{quarter}}"
+    - planning
+  custom_properties:
+    Client: "{{client}}"
+variables:
+  client: Acme
+  quarter: Q2
+  regions:
+    - name: North America
+      owner: Maya
+    - name: EMEA
+      owner: Leon
+blocks:
+  - type: title
+    text: "{{client}} Regional Plan"
+  - type: include
+    path: summary.yaml
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: "{{region.name}}"
+      - type: body
+        text: "Owner: {{region.owner}}"
+"#,
+        )
+        .expect("write spec");
+
+        let spec = super::DocumentSpec::load_from_path(&spec_path).expect("load expanded yaml");
+        assert_eq!(spec.metadata.title.as_deref(), Some("Acme Regional Plan"));
+        assert_eq!(spec.metadata.subject.as_deref(), Some("Q2 rollout"));
+        assert_eq!(spec.metadata.keywords, vec!["Q2", "planning"]);
+        assert_eq!(
+            spec.metadata
+                .custom_properties
+                .get("Client")
+                .map(String::as_str),
+            Some("Acme")
+        );
+        assert_eq!(spec.blocks.len(), 6);
     }
 
     #[test]

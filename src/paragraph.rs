@@ -45,7 +45,8 @@ impl ParagraphAlignment {
 }
 
 /// Semantic paragraph list kinds supported by the DOCX writer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ParagraphListKind {
     /// Bulleted list formatting.
     Bullet,
@@ -71,7 +72,7 @@ impl ParagraphListKind {
 }
 
 /// Semantic DOCX numbering metadata for a paragraph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParagraphList {
     kind: ParagraphListKind,
     level: u8,
@@ -145,10 +146,12 @@ fn sanitize_list_id(id: u32) -> u32 {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Paragraph {
     runs: Vec<Run>,
+    style_id: Option<String>,
     list: Option<ParagraphList>,
     alignment: Option<ParagraphAlignment>,
     spacing_before: Option<u32>,
     spacing_after: Option<u32>,
+    keep_next: bool,
     page_break_before: bool,
 }
 
@@ -185,6 +188,23 @@ impl Paragraph {
     /// Returns mutable access to the paragraph runs.
     pub fn runs_mut(&mut self) -> std::slice::IterMut<'_, Run> {
         self.runs.iter_mut()
+    }
+
+    /// Returns the referenced named paragraph style id, if present.
+    pub fn style_id(&self) -> Option<&str> {
+        self.style_id.as_deref()
+    }
+
+    /// Applies a named paragraph style.
+    pub fn with_style(mut self, style_id: impl Into<String>) -> Self {
+        self.style_id = Some(style_id.into());
+        self
+    }
+
+    /// Sets the named paragraph style in place.
+    pub fn set_style(&mut self, style_id: impl Into<String>) -> &mut Self {
+        self.style_id = Some(style_id.into());
+        self
     }
 
     /// Returns the semantic list metadata, if present.
@@ -250,6 +270,12 @@ impl Paragraph {
         self
     }
 
+    /// Keeps the paragraph on the same page as the following block when possible.
+    pub fn keep_next(mut self) -> Self {
+        self.keep_next = true;
+        self
+    }
+
     /// Returns spacing before the paragraph, if present.
     pub fn spacing_before_value(&self) -> Option<u32> {
         self.spacing_before
@@ -265,29 +291,41 @@ impl Paragraph {
         self.page_break_before
     }
 
+    /// Returns whether the paragraph should stay with the following block.
+    pub fn has_keep_next(&self) -> bool {
+        self.keep_next
+    }
+
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn from_parts(
         runs: Vec<Run>,
+        style_id: Option<String>,
         list: Option<ParagraphList>,
         alignment: Option<ParagraphAlignment>,
         spacing_before: Option<u32>,
         spacing_after: Option<u32>,
+        keep_next: bool,
         page_break_before: bool,
     ) -> Self {
         Self {
             runs,
+            style_id,
             list,
             alignment,
             spacing_before,
             spacing_after,
+            keep_next,
             page_break_before,
         }
     }
 
     pub(crate) fn has_properties(&self) -> bool {
         self.list.is_some()
+            || self.style_id.is_some()
             || self.alignment.is_some()
             || self.spacing_before.is_some()
             || self.spacing_after.is_some()
+            || self.keep_next
             || self.page_break_before
     }
 }
@@ -354,6 +392,7 @@ mod tests {
             .with_alignment(ParagraphAlignment::Center)
             .spacing_before(120)
             .spacing_after(240)
+            .keep_next()
             .page_break_before()
             .add_run(Run::from_text("x"));
 
@@ -364,6 +403,7 @@ mod tests {
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Center));
         assert_eq!(paragraph.spacing_before_value(), Some(120));
         assert_eq!(paragraph.spacing_after_value(), Some(240));
+        assert!(paragraph.has_keep_next());
         assert!(paragraph.has_page_break_before());
     }
 
@@ -385,6 +425,7 @@ mod tests {
             .has_properties());
         assert!(Paragraph::new().spacing_before(100).has_properties());
         assert!(Paragraph::new().spacing_after(100).has_properties());
+        assert!(Paragraph::new().keep_next().has_properties());
         assert!(Paragraph::new().page_break_before().has_properties());
     }
 
@@ -393,10 +434,12 @@ mod tests {
         let runs = vec![Run::from_text("one"), Run::from_text("two")];
         let paragraph = Paragraph::from_parts(
             runs,
+            None,
             Some(ParagraphList::numbered_with_id(9).with_level(1)),
             Some(ParagraphAlignment::Justified),
             Some(160),
             Some(180),
+            true,
             true,
         );
 
@@ -408,6 +451,7 @@ mod tests {
         assert_eq!(paragraph.alignment(), Some(&ParagraphAlignment::Justified));
         assert_eq!(paragraph.spacing_before_value(), Some(160));
         assert_eq!(paragraph.spacing_after_value(), Some(180));
+        assert!(paragraph.has_keep_next());
         assert!(paragraph.has_page_break_before());
     }
 

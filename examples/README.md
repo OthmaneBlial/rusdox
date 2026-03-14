@@ -53,10 +53,13 @@ Example files:
 - `hello_world.yaml`
 - `invoice.yaml`
 - `meeting_notes.yaml`
+- `named_styles_showcase.yaml`
 - `product_launch_brief.yaml`
 - `project_brief.yaml`
 - `table_report.yaml`
 - `talent_profile.yaml`
+- `visual_assets_showcase.yaml`
+- `yaml_composition_showcase.yaml`
 
 Showcase examples:
 
@@ -65,6 +68,9 @@ Showcase examples:
 - `client_proposal.yaml`: styled proposal with phases, pricing, and delivery plan
 - `product_launch_brief.yaml`: launch narrative, milestones, readiness checks, and metrics
 - `talent_profile.yaml`: polished resume/profile style document with experience and skills sections
+- `named_styles_showcase.yaml`: reusable paragraph, run, and table styles with inheritance and stable style ids
+- `visual_assets_showcase.yaml`: focused regression example for logos, raster images, signatures, and SVG chart assets
+- `yaml_composition_showcase.yaml`: variables, fragment includes, repeat blocks, and first-class document metadata in one example
 
 Benchmark note:
 

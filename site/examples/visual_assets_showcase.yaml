@@ -1,0 +1,35 @@
+output_name: visual-assets-showcase
+blocks:
+  - type: title
+    text: Visual Assets Showcase
+  - type: subtitle
+    text: Images, logos, signatures, and SVG charts rendered by RusDox
+  - type: logo
+    path: ../assets/rusdox-mark.svg
+    alt_text: RusDox logo
+    alignment: center
+    max_width_twips: 1800
+  - type: section
+    text: Context
+  - type: body
+    text: This example exercises the new visual block support with both raster and SVG assets.
+  - type: image
+    path: ../assets/template-gallery.png
+    alt_text: RusDox template gallery montage
+    max_width_twips: 5600
+  - type: section
+    text: Benchmark Chart
+  - type: body
+    text: SVG chart assets now render cleanly in both DOCX and PDF outputs.
+  - type: chart
+    path: ../assets/benchmark-stress-1000-pages.svg
+    alt_text: RusDox 1000-page benchmark chart
+    max_width_twips: 4800
+  - type: section
+    text: Sign-Off
+  - type: body
+    text: Signatures and approval marks can be embedded directly as SVG assets.
+  - type: signature
+    path: ../assets/signature-demo.svg
+    alt_text: Automated approval signature
+    max_width_twips: 2200

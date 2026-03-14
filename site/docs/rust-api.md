@@ -7,6 +7,7 @@ Use Rust when you need:
 - document content generated from live data
 - loops, conditions, or reusable functions
 - integration inside a Rust service or CLI
+- direct control over document metadata and custom properties
 - lower-level formatting beyond the YAML surface
 
 ## Choose The Right Layer
@@ -21,7 +22,7 @@ For advanced users:
 
 - use `spec::DocumentSpec` from Rust when you still want a data-shaped document model
 - use `studio::Studio` helpers when you want config-driven paragraphs and tables
-- use `Document`, `Paragraph`, `Run`, and `Table` directly when you need full control
+- use `Document`, `Paragraph`, `Run`, `Table`, and `Visual` directly when you need full control
 
 ## Install
 
@@ -66,19 +67,18 @@ use rusdox::studio::Studio;
 fn main() -> rusdox::Result<()> {
     let studio = Studio::from_default_file_or_default()?;
 
-    let spec = DocumentSpec {
-        output_name: Some("weekly-brief".to_string()),
-        blocks: vec![
-            title("Weekly Brief"),
-            section("Summary"),
-            body("Pipeline grew 14% week over week."),
-            bullets([
-                "Security review closed",
-                "Support handoff approved",
-                "Launch remains on schedule",
-            ]),
-        ],
-    };
+    let mut spec = DocumentSpec::new();
+    spec.output_name = Some("weekly-brief".to_string());
+    spec.blocks = vec![
+        title("Weekly Brief"),
+        section("Summary"),
+        body("Pipeline grew 14% week over week."),
+        bullets([
+            "Security review closed",
+            "Support handoff approved",
+            "Launch remains on schedule",
+        ]),
+    ];
 
     studio.save_spec_named(&spec, "weekly-brief")?;
     Ok(())
@@ -90,6 +90,26 @@ This is the best Rust path when:
 - the document is mostly standard sections
 - content comes from code, not a static YAML file
 - you still want the document to stay easy to reason about
+
+`DocumentSpec` also exposes `metadata` and `styles`, so document properties and reusable named styles can be defined once and reused consistently.
+
+```rust
+use rusdox::spec::{body, section, title, DocumentSpec};
+use rusdox::{DocumentMetadata};
+
+let mut spec = DocumentSpec::new();
+spec.metadata = DocumentMetadata::new()
+    .title("Weekly Brief")
+    .author("RusDox Studio")
+    .subject("Executive update")
+    .keyword("weekly")
+    .custom_property("Audience", "Leadership");
+spec.blocks = vec![
+    title("Weekly Brief"),
+    section("Summary"),
+    body("Pipeline grew 14% week over week."),
+];
+```
 
 ## Hybrid Rust: Start With A Spec, Then Add Custom Pieces
 
@@ -103,14 +123,12 @@ use rusdox::{Paragraph, Run};
 fn main() -> rusdox::Result<()> {
     let studio = Studio::from_default_file_or_default()?;
 
-    let spec = DocumentSpec {
-        output_name: None,
-        blocks: vec![
-            title("Launch Packet"),
-            section("Summary"),
-            body("Core rollout is approved."),
-        ],
-    };
+    let mut spec = DocumentSpec::new();
+    spec.blocks = vec![
+        title("Launch Packet"),
+        section("Summary"),
+        body("Core rollout is approved."),
+    ];
 
     let mut document = studio.compose(&spec);
     document.push_paragraph(
@@ -125,6 +143,96 @@ fn main() -> rusdox::Result<()> {
 ```
 
 This is a good middle ground when 90% of the document fits the high-level API and only a few sections need special handling.
+
+## Reusable Named Styles
+
+Named styles are available in both the spec layer and the low-level document model.
+
+Built-in fallback ids:
+
+- paragraph: `Normal`
+- run: `DefaultParagraphFont`
+- table: `TableNormal`
+
+```rust
+use rusdox::{
+    Border, BorderStyle, Document, Paragraph, ParagraphAlignment, ParagraphStyle,
+    ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
+    TableCell, TableRow, TableStyle, TableStyleProperties,
+};
+
+fn main() -> rusdox::Result<()> {
+    let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
+    let styles = Stylesheet::new()
+        .add_paragraph_style(
+            ParagraphStyle::new("lead")
+                .based_on("Normal")
+                .paragraph(
+                    ParagraphStyleProperties::new()
+                        .alignment(ParagraphAlignment::Center)
+                        .spacing_after(180),
+                )
+                .run(RunStyleProperties::new().bold().color("0F172A")),
+        )
+        .add_run_style(
+            RunStyle::new("accent")
+                .based_on("DefaultParagraphFont")
+                .properties(RunStyleProperties::new().italic().color("AA5500")),
+        )
+        .add_table_style(
+            TableStyle::new("grid")
+                .based_on("TableNormal")
+                .properties(
+                    TableStyleProperties::new()
+                        .width(9_360)
+                        .borders(TableBorders::new().top(border.clone()).bottom(border)),
+                ),
+        );
+
+    let mut document = Document::new().with_styles(styles);
+    document.push_paragraph(
+        Paragraph::new()
+            .with_style("lead")
+            .add_run(Run::from_text("Quarterly ").with_style("accent"))
+            .add_run(Run::from_text("review")),
+    );
+    document.push_table(
+        Table::new().style("grid").add_row(
+            TableRow::new().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("ARR"))),
+            ),
+        ),
+    );
+
+    document.save("styled-output.docx")?;
+    Ok(())
+}
+```
+
+Use these APIs when:
+
+- multiple paragraphs should share the same typography and spacing rules
+- run-level emphasis should stay stable across documents
+- table framing should be reusable instead of copied as direct borders and widths
+
+## First-Class Metadata
+
+Use `DocumentMetadata` when the generated DOCX should carry clean package properties.
+
+```rust
+use rusdox::{Document, DocumentMetadata};
+
+let metadata = DocumentMetadata::new()
+    .title("Board Report")
+    .author("Finance")
+    .subject("Q4 review")
+    .keyword("board")
+    .custom_property("Client", "Northwind Health");
+
+let document = Document::new().with_metadata(metadata);
+```
+
+Metadata works through both `DocumentSpec` and `Document`, and RusDox writes it into `docProps/core.xml` plus `docProps/custom.xml`.
 
 ## Config-Driven Builders With `Studio`
 
@@ -163,7 +271,7 @@ When you need full control, use the core document model directly.
 ```rust
 use rusdox::{
     Border, BorderStyle, Document, Paragraph, Run, Table, TableBorders, TableCell, TableRow,
-    UnderlineStyle,
+    UnderlineStyle, Visual,
 };
 
 fn main() -> rusdox::Result<()> {
@@ -195,6 +303,12 @@ fn main() -> rusdox::Result<()> {
             ),
     );
 
+    doc.push_visual(
+        Visual::logo("assets/rusdox-mark.svg")
+            .alt_text_text("RusDox logo")
+            .max_width_twips(2_200),
+    );
+
     doc.save("output.docx")?;
     Ok(())
 }
@@ -203,6 +317,7 @@ fn main() -> rusdox::Result<()> {
 Use this layer when:
 
 - you need exact run-level formatting
+- you want reusable styles through `Document::with_styles(...)`
 - you want to open and modify existing DOCX files
 - you are building custom abstractions on top of RusDox
 

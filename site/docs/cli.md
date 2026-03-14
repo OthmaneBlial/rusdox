@@ -1,6 +1,6 @@
 # CLI Guide
 
-RusDox has one main job: render document specs into `.docx` and `.pdf`.
+RusDox renders document specs into `.docx` and `.pdf`, validates them before render, can rebuild while you edit, and can benchmark the full pipeline.
 
 ## Most Common Commands
 
@@ -21,6 +21,88 @@ Create a starter YAML document:
 ```bash
 rusdox init-doc mydoc.yaml
 ```
+
+Validate a file before render:
+
+```bash
+rusdox validate mydoc.yaml
+```
+
+Watch a file and rebuild on change:
+
+```bash
+rusdox watch mydoc.yaml
+```
+
+Benchmark a spec:
+
+```bash
+rusdox bench mydoc.yaml --iterations 5 --warmup 1
+```
+
+## Validation
+
+Check one file:
+
+```bash
+rusdox validate mydoc.yaml
+```
+
+Check every spec in a folder and emit JSON for CI:
+
+```bash
+rusdox validate examples --format json
+```
+
+Validation catches semantic issues before render, including invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets.
+
+Render commands also run the same semantic validation before they write output.
+
+## Watch Mode
+
+Watch one file with the default poller:
+
+```bash
+rusdox watch mydoc.yaml
+```
+
+Watch a file with faster polling and DOCX-only output:
+
+```bash
+rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250
+```
+
+Watch a whole folder and keep PDF generation enabled:
+
+```bash
+rusdox watch examples --with-pdf
+```
+
+Use `--max-builds 2` or another small number when you want the watcher to stop automatically, which is useful for tests and scripted workflows.
+
+RusDox watches the spec input plus the active config path. Without `--config`, it tracks `./rusdox.toml` and the user config fallback automatically.
+
+## Benchmarking
+
+Benchmark one spec:
+
+```bash
+rusdox bench mydoc.yaml --iterations 5 --warmup 1
+```
+
+Benchmark a folder and emit machine-readable output:
+
+```bash
+rusdox bench examples --format json
+```
+
+Keep the generated artifacts instead of using a temporary output workspace:
+
+```bash
+rusdox bench mydoc.yaml --keep-output
+```
+
+Bench reports parse, validation, compose, DOCX write, PDF render, total runtime, and output byte sizes.
 
 ## Output Control
 

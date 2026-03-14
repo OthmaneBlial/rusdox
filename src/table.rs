@@ -1,7 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use crate::paragraph::Paragraph;
 
 /// A supported border style.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum BorderStyle {
     /// No visible border.
     None,
@@ -42,7 +45,7 @@ impl BorderStyle {
 }
 
 /// A single table or cell border.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Border {
     /// The border style.
     pub style: BorderStyle,
@@ -76,7 +79,8 @@ impl Border {
 }
 
 /// Border collection for tables and table cells.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TableBorders {
     /// Top border.
     pub top: Option<Border>,
@@ -147,6 +151,8 @@ impl TableBorders {
 /// Properties attached to a table.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TableProperties {
+    /// Optional named table style id.
+    pub style_id: Option<String>,
     /// Optional table width in DXA units.
     pub width: Option<u32>,
     /// Optional table borders.
@@ -382,6 +388,12 @@ impl Table {
         self
     }
 
+    /// Applies a named table style.
+    pub fn style(mut self, style_id: impl Into<String>) -> Self {
+        self.properties.style_id = Some(style_id.into());
+        self
+    }
+
     /// Returns immutable access to rows.
     pub fn rows(&self) -> std::slice::Iter<'_, TableRow> {
         self.rows.iter()
@@ -400,6 +412,11 @@ impl Table {
     /// Returns mutable access to table properties.
     pub fn properties_mut(&mut self) -> &mut TableProperties {
         &mut self.properties
+    }
+
+    /// Returns the referenced named table style id, if present.
+    pub fn style_id(&self) -> Option<&str> {
+        self.properties.style_id.as_deref()
     }
 
     /// Extracts plain text from the table.
@@ -590,6 +607,7 @@ mod tests {
         assert_eq!(row.properties(), &row_properties);
 
         let table_properties = TableProperties {
+            style_id: None,
             width: Some(7777),
             borders: Some(TableBorders::new().right(Border::new(BorderStyle::Dashed))),
         };

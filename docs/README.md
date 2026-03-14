@@ -18,12 +18,14 @@ If you want the simplest path:
 
 - Start with [Getting Started](getting-started.md)
 - Use YAML files
+- Run `rusdox validate mydoc.yaml` before big renders or CI
 - Use `rusdox config wizard --level basic`
 
 If you want more control:
 
 - Read [YAML Guide](yaml-guide.md)
 - Read [Configuration](configuration.md)
+- Use variables, includes, and repeaters when static YAML starts getting repetitive
 - Use local `./rusdox.toml` overrides per project
 
 If you are a developer and want full power:
@@ -38,8 +40,11 @@ If you are a developer and want full power:
 - how to create your first YAML document
 - how output folders work
 - how DOCX and PDF generation works
-- how to style documents with config
+- how to style documents with config and named styles
+- how to reuse YAML with variables, includes, and repeaters
+- how to set document metadata and custom properties
 - how to render one file or a whole folder
+- how to validate, watch, and benchmark from the CLI
 - how to use the Rust layer for advanced cases
 - how to present the repository well on GitHub
 

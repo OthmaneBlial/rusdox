@@ -24,6 +24,11 @@ RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Th
 - Generate a 1000-page DOCX and PDF pair in under a second in release mode.
 - Create large files without Word, LibreOffice, or an external office runtime.
 - Keep authoring readable with YAML while the heavy lifting stays in Rust.
+- Validate specs before render so semantic issues fail early in CI and local workflows.
+- Rebuild documents automatically while editing specs or config files.
+- Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
+- Keep simple authoring in YAML longer with variables, includes, and repeaters.
+- Set document metadata such as title, author, subject, keywords, and custom properties directly from specs or Rust.
 - Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.
 
 ## Real-World Use Cases
@@ -99,6 +104,25 @@ Render a whole folder of YAML docs:
 rusdox examples
 ```
 
+Validate before rendering:
+
+```bash
+rusdox validate mydoc.yaml
+rusdox validate examples --format json
+```
+
+Watch a spec while editing:
+
+```bash
+rusdox watch mydoc.yaml
+```
+
+Benchmark a render path:
+
+```bash
+rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
+```
+
 ## What Makes It Different
 
 - Pure Rust `.docx` generation
@@ -107,6 +131,10 @@ rusdox examples
 - No LibreOffice dependency
 - Human-readable YAML examples
 - Config-driven styling through `rusdox.toml`
+- Reusable named paragraph, run, and table styles with inheritance
+- YAML composition features for variables, includes, and repeaters
+- First-class document metadata in specs and the Rust API
+- First-class `validate`, `watch`, and `bench` CLI workflows
 
 ## Examples
 
@@ -119,6 +147,9 @@ Highlights:
 - `examples/product_launch_brief.yaml`
 - `examples/talent_profile.yaml`
 - `examples/formatting_showcase.yaml`
+- `examples/named_styles_showcase.yaml`
+- `examples/visual_assets_showcase.yaml`
+- `examples/yaml_composition_showcase.yaml`
 - `examples/stress/stress_1000_pages.yaml`
 
 More detail is in [examples/README.md](examples/README.md).
@@ -219,11 +250,13 @@ The current foundation focuses on fast, typed support for:
 - paragraphs
 - runs and common text formatting
 - tables, rows, and cells
+- named paragraph, run, and table styles with inheritance
+- image, logo, signature, and SVG/chart blocks
 - plain-text extraction
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Deferred areas include images, headers and footers, comments, tracked changes, and advanced style inheritance.
+Deferred areas include comments, tracked changes, richer metadata, and broader table-style coverage.
 
 ## Development
 

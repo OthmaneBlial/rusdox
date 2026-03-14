@@ -1,0 +1,50 @@
+output_name: yaml-composition-showcase
+metadata:
+  title: "{{client}} Rollout Plan"
+  author: RusDox Studio
+  subject: "{{quarter}} regional rollout"
+  keywords:
+    - yaml
+    - composition
+    - "{{quarter}}"
+  custom_properties:
+    Client: "{{client}}"
+    Sponsor: "{{owner}}"
+variables:
+  client: Northwind Health
+  quarter: Q4 2026
+  owner: Maya Chen
+  regions:
+    - name: North America
+      focus: Expand enterprise pilots across the existing hospital network.
+      owner: Maya Chen
+      target: 14 active pilots by the end of the quarter
+    - name: EMEA
+      focus: Consolidate implementation templates for the first reseller launch.
+      owner: Leon Meyer
+      target: 6 reseller-backed launches
+    - name: APAC
+      focus: Finalize onboarding operations for the distributor-led rollout.
+      owner: Priya Raman
+      target: 3 distribution agreements signed
+blocks:
+  - type: title
+    text: "{{client}} Rollout Plan"
+  - type: subtitle
+    text: "{{quarter}} program snapshot"
+  - type: include
+    path: fragments/yaml_composition_summary.yaml
+    variables:
+      sponsor: "{{owner}}"
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: "{{region.name}}"
+      - type: body
+        text: "{{region.focus}}"
+      - type: bullets
+        items:
+          - "Owner: {{region.owner}}"
+          - "Target: {{region.target}}"
