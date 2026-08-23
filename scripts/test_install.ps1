@@ -9,7 +9,8 @@ if (-not (Test-Path $BinaryPath)) {
     throw "Missing RusDox binary: $BinaryPath"
 }
 
-$version = "v0.1.0"
+$packageVersion = (Get-Content "Cargo.toml" | Select-String '^version = "([^"]+)"' | Select-Object -First 1).Matches.Groups[1].Value
+$version = "v$packageVersion"
 $target = "x86_64-pc-windows-msvc"
 $asset = "rusdox-$target.zip"
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("rusdox-installer-test-" + [Guid]::NewGuid().ToString("N"))
@@ -49,7 +50,7 @@ try {
     ./scripts/install.ps1 -Version $version -InstallDir $installDir -DownloadBase "http://127.0.0.1:$Port"
 
     $output = & (Join-Path $installDir "rusdox.exe") --version
-    if ($output -notmatch "0\.1\.0") {
+    if ($output -notmatch [regex]::Escape($packageVersion)) {
         throw "Installed binary reported unexpected version: $output"
     }
     Write-Host "Windows installer fixture passed for $target."

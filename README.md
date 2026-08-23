@@ -4,7 +4,7 @@
 ![Tests](https://img.shields.io/github/actions/workflow/status/OthmaneBlial/rusdox/rust.yml?branch=main&style=flat-square&label=tests)
 ![License](https://img.shields.io/github/license/OthmaneBlial/rusdox?style=flat-square)
 ![OOXML](https://img.shields.io/badge/OOXML-.docx-2563eb?style=flat-square)
-![Version](https://img.shields.io/badge/version-0.1.0-b85c30?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.1-b85c30?style=flat-square)
 
 **One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
 

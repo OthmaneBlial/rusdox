@@ -2,7 +2,8 @@
 set -eu
 
 BINARY_PATH="${1:-target/release/rusdox}"
-VERSION="v0.1.0"
+PACKAGE_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)"
+VERSION="v$PACKAGE_VERSION"
 PORT="${RUSDOX_TEST_PORT:-18731}"
 
 if [ ! -x "$BINARY_PATH" ]; then
@@ -73,5 +74,5 @@ RUSDOX_DOWNLOAD_BASE="http://127.0.0.1:$PORT" \
 RUSDOX_INSTALL_DIR="$TEST_ROOT/bin" \
   sh scripts/install.sh
 
-"$TEST_ROOT/bin/rusdox" --version | grep "0.1.0"
+"$TEST_ROOT/bin/rusdox" --version | grep "$PACKAGE_VERSION"
 echo "Unix installer fixture passed for $TARGET."
