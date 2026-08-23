@@ -19,6 +19,7 @@ const pages = [
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
+  ["docs/parity.md", "docs/parity.html", "Parity verification", "Trust", "Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.", "Trust & operations"],
   ["docs/troubleshooting.md", "docs/troubleshooting.html", "Troubleshooting", "Operations", "Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.", "Trust & operations"],
   ["docs/gallery.md", "docs/gallery.html", "Template gallery", "Examples", "Browse real YAML inputs and generated DOCX/PDF output previews.", "Examples"],
   ["examples/README.md", "docs/examples.html", "Examples guide", "Examples", "Understand every bundled document fixture and how to render it.", "Examples"],
@@ -53,6 +54,14 @@ generated.set("llms.txt", renderLlmsIndex());
 generated.set("llms-full.txt", renderLlmsFull());
 generated.set("assets/quick-demo.svg", fs.readFileSync(path.join(root, "assets/quick-demo.svg"), "utf8"));
 
+const paritySource = path.join(root, "reports", "gallery");
+if (fs.existsSync(paritySource)) {
+  for (const file of walkFiles(paritySource)) {
+    const relative = normalize(path.relative(paritySource, file));
+    generated.set(`parity/${relative}`, fs.readFileSync(file));
+  }
+}
+
 const sourceCopies = [
   "README.md",
   "ROADMAP.md",
@@ -73,13 +82,22 @@ const stale = [];
 for (const [relativePath, content] of generated) {
   const destination = path.join(siteRoot, relativePath);
   if (checkOnly) {
-    if (!fs.existsSync(destination) || fs.readFileSync(destination, "utf8") !== content) {
+    const current = fs.existsSync(destination) ? fs.readFileSync(destination) : null;
+    const expected = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+    if (!current || !current.equals(expected)) {
       stale.push(relativePath);
     }
   } else {
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     fs.writeFileSync(destination, content);
   }
+}
+
+function walkFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(directory, entry.name);
+    return entry.isDirectory() ? walkFiles(fullPath) : [fullPath];
+  });
 }
 
 if (checkOnly && stale.length) {

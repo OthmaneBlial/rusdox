@@ -633,6 +633,83 @@ fn bench_keep_output_writes_artifacts_when_requested() {
 }
 
 #[test]
+fn verify_writes_docx_pdf_html_json_and_page_evidence() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    let output_root = temp.path().join("evidence");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let output = run_cli(
+        &[
+            "verify",
+            spec_path.to_string_lossy().as_ref(),
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let summary: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("valid verify summary");
+    assert_eq!(summary["passed"], true);
+    assert_eq!(summary["specs"], 1);
+
+    let docx = output_root.join("generated/mydoc.docx");
+    let pdf = output_root.join("rendered/mydoc.pdf");
+    let html = output_root.join("reports/mydoc-parity.html");
+    let json = output_root.join("reports/mydoc-parity.json");
+    let page = output_root.join("reports/mydoc-pages/page-001.png");
+    for path in [&docx, &pdf, &html, &json, &page] {
+        assert!(path.exists(), "expected {}", path.display());
+    }
+
+    let report: serde_json::Value =
+        serde_json::from_slice(&fs::read(json).expect("read report")).expect("valid report json");
+    assert_eq!(report["report_version"], "1");
+    assert_eq!(report["passed"], true);
+    assert_eq!(report["pdf"]["page_count"], 1);
+    assert!(report["checks"]
+        .as_array()
+        .is_some_and(|checks| !checks.is_empty()));
+    assert!(fs::read_to_string(html)
+        .expect("read html")
+        .contains("RusDox parity contract v1"));
+}
+
+#[test]
+fn verify_uses_exit_code_two_for_a_completed_parity_failure() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    let output_root = temp.path().join("evidence");
+    let empty_baseline = temp.path().join("empty-baseline");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+    fs::create_dir_all(&empty_baseline).expect("create baseline dir");
+
+    let output = run_cli(
+        &[
+            "verify",
+            spec_path.to_string_lossy().as_ref(),
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--visual-baseline",
+            empty_baseline.to_string_lossy().as_ref(),
+        ],
+        temp.path(),
+    );
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("parity verification failed"));
+    assert!(output_root.join("reports/mydoc-parity.html").exists());
+    assert!(output_root.join("reports/mydoc-parity.json").exists());
+}
+
+#[test]
 fn watch_rebuilds_after_spec_changes() {
     let temp = tempdir().expect("temp dir");
     let spec_path = temp.path().join("mydoc.yaml");

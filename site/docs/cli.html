@@ -47,11 +47,11 @@
         <div class="docs-static-layout">
           <aside class="docs-static-nav" aria-label="Documentation navigation">
     <p class="docs-nav-label">Field guide</p>
-    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#watch-mode">Watch Mode</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#parity-verification">Parity Verification</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#watch-mode">Watch Mode</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox renders document specs into <code>.docx</code> and <code>.pdf</code>, validates them before render, can rebuild while you edit, and can benchmark the full pipeline.</p>
 <h2 id="most-common-commands">Most Common Commands</h2>
 <p>Render one document:</p>
@@ -66,6 +66,18 @@
 <pre><code class="language-bash">rusdox watch mydoc.yaml</code></pre>
 <p>Benchmark a spec:</p>
 <pre><code class="language-bash">rusdox bench mydoc.yaml --iterations 5 --warmup 1</code></pre>
+<p>Generate DOCX, PDF, and parity evidence:</p>
+<pre><code class="language-bash">rusdox verify mydoc.yaml</code></pre>
+<h2 id="parity-verification">Parity Verification</h2>
+<p>Verify one file:</p>
+<pre><code class="language-bash">rusdox verify mydoc.yaml</code></pre>
+<p>Verify every top-level spec in a directory and write all artifacts under a CI workspace:</p>
+<pre><code class="language-bash">rusdox verify examples --output-root target/parity --format json</code></pre>
+<p>Add a deterministic rendered-page comparison:</p>
+<pre><code class="language-bash">rusdox verify mydoc.yaml \
+  --visual-baseline tests/visual-baselines/mydoc \
+  --visual-threshold 0.002</code></pre>
+<p>The command always writes versioned JSON and standalone HTML reports. Exit code <code>0</code> means parity passed, <code>1</code> means verification could not complete, and <code>2</code> means generated outputs failed one or more parity checks. See <a href="parity.html">Parity verification</a> for the complete contract and visual-diff boundary.</p>
 <h2 id="validation">Validation</h2>
 <p>Check one file:</p>
 <pre><code class="language-bash">rusdox validate mydoc.yaml</code></pre>

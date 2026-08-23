@@ -1,5 +1,6 @@
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::thread;
@@ -8,6 +9,7 @@ use std::time::{Duration, Instant};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use dialoguer::{Confirm, Input, Select};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
+use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection, ParityReport};
 use rusdox::spec::DocumentSpec;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
 use rusdox::{
@@ -63,6 +65,8 @@ enum Commands {
     Watch(WatchArgs),
     /// Measure parse, validate, compose, DOCX, and PDF timings for a spec or spec directory.
     Bench(BenchArgs),
+    /// Generate DOCX, native PDF, deterministic page snapshots, and parity evidence.
+    Verify(VerifyArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -244,6 +248,27 @@ struct BenchArgs {
     keep_output: bool,
 }
 
+#[derive(Debug, Args)]
+struct VerifyArgs {
+    /// Spec file or directory to render and verify.
+    input: PathBuf,
+    /// Optional config path used while rendering.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Root for generated/, rendered/, and reports/ artifacts.
+    #[arg(long, default_value = ".")]
+    output_root: PathBuf,
+    /// Optional page-snapshot baseline directory. For directory inputs, use one subdirectory per spec stem.
+    #[arg(long)]
+    visual_baseline: Option<PathBuf>,
+    /// Maximum fraction of pixels that may differ on each deterministic page snapshot.
+    #[arg(long, default_value_t = 0.0)]
+    visual_threshold: f64,
+    /// Command summary format. HTML and JSON report files are always written.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
 #[derive(Debug)]
 struct SpecInspection {
     spec: DocumentSpec,
@@ -318,6 +343,27 @@ struct BenchCommandResult {
     pdf_bytes: NumericSummary,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct VerifyFileResult {
+    source: String,
+    passed: bool,
+    docx: String,
+    pdf: String,
+    html_report: String,
+    json_report: String,
+    page_snapshots: String,
+    checks: usize,
+    failed_checks: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct VerifyCommandResult {
+    target: String,
+    passed: bool,
+    specs: usize,
+    files: Vec<VerifyFileResult>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct WatchSnapshot {
     states: Vec<(PathBuf, u64)>,
@@ -326,7 +372,11 @@ struct WatchSnapshot {
 fn main() {
     if let Err(error) = run() {
         eprintln!("error: {error}");
-        std::process::exit(1);
+        std::process::exit(if matches!(error, DocxError::Parity(_)) {
+            2
+        } else {
+            1
+        });
     }
 }
 
@@ -340,6 +390,7 @@ fn run() -> Result<()> {
             Commands::Validate(args) => run_validate(args),
             Commands::Watch(args) => run_watch(args),
             Commands::Bench(args) => run_bench(args),
+            Commands::Verify(args) => run_verify(args),
         };
     }
 
@@ -680,6 +731,193 @@ fn run_bench(args: BenchArgs) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn run_verify(args: VerifyArgs) -> Result<()> {
+    if !args.visual_threshold.is_finite() || !(0.0..=1.0).contains(&args.visual_threshold) {
+        return Err(DocxError::Parse(
+            "--visual-threshold must be a finite value between 0 and 1".to_string(),
+        ));
+    }
+
+    let spec_paths = collect_spec_inputs(&args.input)?;
+    let input_is_directory = args.input.is_dir();
+    let output_root = to_absolute_path(&args.output_root)?;
+    let generated_dir = output_root.join("generated");
+    let rendered_dir = output_root.join("rendered");
+    let reports_dir = output_root.join("reports");
+    fs::create_dir_all(&generated_dir)?;
+    fs::create_dir_all(&rendered_dir)?;
+    fs::create_dir_all(&reports_dir)?;
+
+    let mut config = load_runtime_config(args.config.as_deref())?;
+    config.output.emit_pdf_preview = true;
+    handle_validation_issues(
+        "config",
+        &validate_config(&config),
+        true,
+        "verification aborted because the active config has validation errors",
+    )?;
+
+    let mut files = Vec::with_capacity(spec_paths.len());
+    for spec_path in &spec_paths {
+        let inspection = inspect_spec(spec_path)?;
+        handle_validation_issues(
+            &spec_path.display().to_string(),
+            &inspection.report,
+            true,
+            "verification aborted because the spec has validation errors",
+        )?;
+
+        let output_name = inspection
+            .spec
+            .output_name
+            .as_deref()
+            .map(safe_output_name)
+            .filter(|name| !name.is_empty())
+            .unwrap_or_else(|| default_output_name_for_spec(spec_path));
+        let docx_path = generated_dir.join(format!("{output_name}.docx"));
+        let pdf_path = rendered_dir.join(format!("{output_name}.pdf"));
+        let page_snapshots_dir = reports_dir.join(format!("{output_name}-pages"));
+        let html_report_path = reports_dir.join(format!("{output_name}-parity.html"));
+        let json_report_path = reports_dir.join(format!("{output_name}-parity.json"));
+
+        let studio = Studio::new(config.clone());
+        let document = studio.compose(&inspection.spec);
+        let expected = DocumentProjection::from_document(&document);
+        document.save(&docx_path)?;
+        let pdf =
+            studio.render_pdf_with_evidence(&document, &pdf_path, Some(&page_snapshots_dir))?;
+
+        let reopened = rusdox::Document::open_read_only(&docx_path)?;
+        let docx = DocumentProjection::from_document(&reopened);
+        let visual_baseline = args.visual_baseline.as_deref().map(|root| {
+            if input_is_directory {
+                root.join(&output_name)
+            } else {
+                root.to_path_buf()
+            }
+        });
+        let mut visual_diff = compare_visual_pages(
+            &page_snapshots_dir,
+            visual_baseline.as_deref(),
+            args.visual_threshold,
+        )?;
+        for page in &mut visual_diff.pages {
+            page.current = format!("reports/{output_name}-pages/page-{:03}.png", page.page);
+        }
+        let mut docx_artifact = ArtifactEvidence::from_path(&docx_path)?;
+        docx_artifact.path = format!("generated/{output_name}.docx");
+        let mut pdf_artifact = ArtifactEvidence::from_path(&pdf_path)?;
+        pdf_artifact.path = format!("rendered/{output_name}.pdf");
+        let artifacts = vec![docx_artifact, pdf_artifact];
+        let report = ParityReport::compare(
+            spec_path.display().to_string(),
+            expected,
+            docx,
+            pdf,
+            visual_diff,
+            artifacts,
+            verify_docx_package(&docx_path)?,
+            verify_pdf_file(&pdf_path)?,
+        );
+
+        fs::write(&json_report_path, report.to_json_pretty()?)?;
+        let canonical =
+            format!("https://othmaneblial.github.io/rusdox/parity/{output_name}-parity.html");
+        fs::write(&html_report_path, report.to_html(&canonical))?;
+
+        let failed_checks = report
+            .checks
+            .iter()
+            .filter(|check| check.status == rusdox::parity::CheckStatus::Failed)
+            .count();
+        files.push(VerifyFileResult {
+            source: spec_path.display().to_string(),
+            passed: report.passed,
+            docx: docx_path.display().to_string(),
+            pdf: pdf_path.display().to_string(),
+            html_report: html_report_path.display().to_string(),
+            json_report: json_report_path.display().to_string(),
+            page_snapshots: page_snapshots_dir.display().to_string(),
+            checks: report.checks.len(),
+            failed_checks,
+        });
+    }
+
+    let result = VerifyCommandResult {
+        target: args.input.display().to_string(),
+        passed: files.iter().all(|file| file.passed),
+        specs: files.len(),
+        files,
+    };
+    match args.format {
+        ReportFormat::Text => println!("{}", format_verify_result_text(&result)),
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&result).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize verification summary: {error}"))
+            })?
+        ),
+    }
+
+    if result.passed {
+        Ok(())
+    } else {
+        Err(DocxError::Parity(format!(
+            "{} of {} generated document(s) failed; inspect the HTML/JSON reports",
+            result.files.iter().filter(|file| !file.passed).count(),
+            result.specs
+        )))
+    }
+}
+
+fn safe_output_name(value: &str) -> String {
+    value
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') {
+                character
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>()
+        .trim_matches('-')
+        .to_string()
+}
+
+fn verify_docx_package(path: &Path) -> Result<bool> {
+    let file = fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    let required = [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "word/document.xml",
+        "word/_rels/document.xml.rels",
+        "word/styles.xml",
+    ];
+    if required.iter().any(|name| archive.by_name(name).is_err()) {
+        return Ok(false);
+    }
+
+    let mut relationships = String::new();
+    archive
+        .by_name("_rels/.rels")?
+        .read_to_string(&mut relationships)?;
+    Ok(relationships.contains("officeDocument") && relationships.contains("word/document.xml"))
+}
+
+fn verify_pdf_file(path: &Path) -> Result<bool> {
+    let bytes = fs::read(path)?;
+    let has_page = bytes
+        .windows(b"/Type /Page".len())
+        .any(|window| window == b"/Type /Page");
+    Ok(bytes.starts_with(b"%PDF-")
+        && bytes
+            .windows(b"%%EOF".len())
+            .any(|window| window == b"%%EOF")
+        && has_page)
 }
 
 fn inspect_spec(spec_path: &Path) -> Result<SpecInspection> {
@@ -1090,6 +1328,30 @@ fn format_bench_result_text(result: &BenchCommandResult) -> String {
         ),
     ]
     .join("\n")
+}
+
+fn format_verify_result_text(result: &VerifyCommandResult) -> String {
+    let mut lines = vec![format!(
+        "parity verification {}: {} spec(s) under {}",
+        if result.passed { "passed" } else { "failed" },
+        result.specs,
+        result.target
+    )];
+    for file in &result.files {
+        lines.push(format!(
+            "  [{}] {} ({} checks, {} failed)",
+            if file.passed { "pass" } else { "fail" },
+            file.source,
+            file.checks,
+            file.failed_checks
+        ));
+        lines.push(format!("    DOCX: {}", file.docx));
+        lines.push(format!("    PDF: {}", file.pdf));
+        lines.push(format!("    HTML: {}", file.html_report));
+        lines.push(format!("    JSON: {}", file.json_report));
+        lines.push(format!("    pages: {}", file.page_snapshots));
+    }
+    lines.join("\n")
 }
 
 fn duration_ms(duration: Duration) -> f64 {

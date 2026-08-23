@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parity verification | RusDox Documentation</title>
+    <meta name="description" content="Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/parity.html" />
+    <meta property="og:title" content="Parity verification | RusDox" />
+    <meta property="og:description" content="Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/parity.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Parity verification","description":"Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.","url":"https://othmaneblial.github.io/rusdox/docs/parity.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Trust</p>
+            <h1>Parity verification</h1>
+            <p class="lede">Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/parity.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a class="is-active" aria-current="page" href="parity.html">Parity verification</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#what-is-compared">What is compared</a></li><li class="toc-level-2"><a href="#visual-regression-thresholds">Visual regression thresholds</a></li><li class="toc-level-2"><a href="#machine-readable-output-and-exit-codes">Machine-readable output and exit codes</a></li><li class="toc-level-2"><a href="#privacy-boundary">Privacy boundary</a></li></ol></nav>
+            <div class="docs-content prose"><p><code>rusdox verify</code> turns the dual-output promise into a CI contract:</p>
+<pre><code class="language-bash">rusdox verify board-report.yaml</code></pre>
+<p>It writes:</p>
+<pre><code class="language-text">generated/board-report.docx
+rendered/board-report.pdf
+reports/board-report-parity.html
+reports/board-report-parity.json
+reports/board-report-pages/page-001.png</code></pre>
+<p>The HTML report is standalone and requires no JavaScript. The JSON report uses the versioned parity report contract and is suitable for CI, release evidence, or downstream tooling.</p>
+<h2 id="what-is-compared">What is compared</h2>
+<p>RusDox compares three views:</p>
+<ol><li>the typed document composed from the source spec;</li><li>the generated DOCX reopened through the RusDox OOXML reader;</li><li>the semantic projection actually consumed by the native PDF layout path.</li></ol>
+<p>The current contract checks:</p>
+<ul><li>normalized text and heading sequence;</li><li>top-level block order;</li><li>every table row and cell;</li><li>image count, semantic kind, and alt text;</li><li>explicit page-break positions;</li><li>document metadata;</li><li>page setup, headers, footers, and numbering settings;</li><li>required DOCX parts and package relationships;</li><li>PDF header, trailer, and page evidence;</li><li>optional deterministic rendered-page visual thresholds.</li></ul>
+<p>Each generated DOCX and PDF also receives a SHA-256 digest in the report.</p>
+<h2 id="visual-regression-thresholds">Visual regression thresholds</h2>
+<p>Every verification emits deterministic PNG snapshots from the PDF renderer&#39;s real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.</p>
+<p>Compare a single spec to an approved baseline:</p>
+<pre><code class="language-bash">rusdox verify report.yaml \
+  --visual-baseline tests/visual-baselines/report \
+  --visual-threshold 0.002</code></pre>
+<p>For a directory input, the baseline root must contain one subdirectory per output name:</p>
+<pre><code class="language-text">tests/visual-baselines/
+  board-report/page-001.png
+  invoice/page-001.png</code></pre>
+<p>The threshold is the maximum fraction of pixels that may differ on each page. <code>0</code> is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.</p>
+<p>Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.</p>
+<h2 id="machine-readable-output-and-exit-codes">Machine-readable output and exit codes</h2>
+<p>Print a compact JSON command summary while still writing the full HTML and JSON reports:</p>
+<pre><code class="language-bash">rusdox verify examples --output-root target/parity --format json</code></pre>
+<p>Exit codes are stable:</p>
+<div class="table-scroll"><table><thead><tr><th>Code</th><th>Meaning</th></tr></thead><tbody><tr><td><code>0</code></td><td>All enabled parity checks passed.</td></tr><tr><td><code>1</code></td><td>Verification could not complete because input, config, validation, I/O, or rendering failed.</td></tr><tr><td><code>2</code></td><td>Outputs were generated and at least one parity check failed.</td></tr></tbody></table></div>
+<p>This distinction lets CI separate a broken build from a real document regression.</p>
+<h2 id="privacy-boundary">Privacy boundary</h2>
+<p>Verification is local. RusDox does not upload the source, output documents, report, or snapshots. Uploading reports as CI artifacts is an explicit repository workflow decision; treat reports as sensitive whenever their normalized text or metadata is sensitive.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="compatibility.html"><span>Previous</span><strong>Compatibility matrix</strong></a>
+    <a class="docs-pager-next" href="troubleshooting.html"><span>Next</span><strong>Troubleshooting</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

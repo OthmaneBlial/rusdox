@@ -1,0 +1,436 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/product_launch_brief.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Product Launch Brief\nAnalytics Module\nInternal launch packet for GTM, support, and leadership\nLaunch Narrative\nThe analytics module turns weekly CSV exports into a live dashboard experience with trend summaries, cohort breakdowns, and alerting. The launch goal is to convert analyst-heavy workflows into a daily operating surface used by customer success and finance leads.\nWhat Changes For Customers\nTime-to-insight drops from hours to minutes for weekly reviews.\nAccount health indicators move from static exports to live views.\nOps leaders can spot expansion or churn signals before QBRs.\nReadiness Checklist\nArea\nOwner\nStatus\nNote\nPricing and packaging\nGTM\nReady\nApproved by finance and legal.\nIn-app onboarding\nProduct\nReady\nWalkthrough complete and QA signed off.\nSupport macros\nSupport\nWatch\nTwo edge-case answers still need final screenshots.\nSecurity FAQ\nSecurity\nRisk\nPending sign-off on data residency wording.\nMilestones\nMilestone\nDate\nOutcome\nPilot complete\nMarch 18\n10 design partners expanded usage\nLaunch training\nMarch 22\nGTM and support enabled\nCommercial release\nApril 7\nOpen to all Growth and Enterprise tiers\nSuccess Metrics\n30-day adoption: 35% of eligible customers\nExpansion signal: 15 pipeline opportunities influenced\nSupport health: First-response SLA above 95%\nNarrative: Styling is inherited from rusdox.toml, not hardcoded in the document.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Area",
+          "Owner",
+          "Status",
+          "Note"
+        ],
+        [
+          "Pricing and packaging",
+          "GTM",
+          "Ready",
+          "Approved by finance and legal."
+        ],
+        [
+          "In-app onboarding",
+          "Product",
+          "Ready",
+          "Walkthrough complete and QA signed off."
+        ],
+        [
+          "Support macros",
+          "Support",
+          "Watch",
+          "Two edge-case answers still need final screenshots."
+        ],
+        [
+          "Security FAQ",
+          "Security",
+          "Risk",
+          "Pending sign-off on data residency wording."
+        ]
+      ],
+      [
+        [
+          "Milestone",
+          "Date",
+          "Outcome"
+        ],
+        [
+          "Pilot complete",
+          "March 18",
+          "10 design partners expanded usage"
+        ],
+        [
+          "Launch training",
+          "March 22",
+          "GTM and support enabled"
+        ],
+        [
+          "Commercial release",
+          "April 7",
+          "Open to all Growth and Enterprise tiers"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Product Launch Brief\nAnalytics Module\nInternal launch packet for GTM, support, and leadership\nLaunch Narrative\nThe analytics module turns weekly CSV exports into a live dashboard experience with trend summaries, cohort breakdowns, and alerting. The launch goal is to convert analyst-heavy workflows into a daily operating surface used by customer success and finance leads.\nWhat Changes For Customers\nTime-to-insight drops from hours to minutes for weekly reviews.\nAccount health indicators move from static exports to live views.\nOps leaders can spot expansion or churn signals before QBRs.\nReadiness Checklist\nArea\nOwner\nStatus\nNote\nPricing and packaging\nGTM\nReady\nApproved by finance and legal.\nIn-app onboarding\nProduct\nReady\nWalkthrough complete and QA signed off.\nSupport macros\nSupport\nWatch\nTwo edge-case answers still need final screenshots.\nSecurity FAQ\nSecurity\nRisk\nPending sign-off on data residency wording.\nMilestones\nMilestone\nDate\nOutcome\nPilot complete\nMarch 18\n10 design partners expanded usage\nLaunch training\nMarch 22\nGTM and support enabled\nCommercial release\nApril 7\nOpen to all Growth and Enterprise tiers\nSuccess Metrics\n30-day adoption: 35% of eligible customers\nExpansion signal: 15 pipeline opportunities influenced\nSupport health: First-response SLA above 95%\nNarrative: Styling is inherited from rusdox.toml, not hardcoded in the document.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Area",
+          "Owner",
+          "Status",
+          "Note"
+        ],
+        [
+          "Pricing and packaging",
+          "GTM",
+          "Ready",
+          "Approved by finance and legal."
+        ],
+        [
+          "In-app onboarding",
+          "Product",
+          "Ready",
+          "Walkthrough complete and QA signed off."
+        ],
+        [
+          "Support macros",
+          "Support",
+          "Watch",
+          "Two edge-case answers still need final screenshots."
+        ],
+        [
+          "Security FAQ",
+          "Security",
+          "Risk",
+          "Pending sign-off on data residency wording."
+        ]
+      ],
+      [
+        [
+          "Milestone",
+          "Date",
+          "Outcome"
+        ],
+        [
+          "Pilot complete",
+          "March 18",
+          "10 design partners expanded usage"
+        ],
+        [
+          "Launch training",
+          "March 22",
+          "GTM and support enabled"
+        ],
+        [
+          "Commercial release",
+          "April 7",
+          "Open to all Growth and Enterprise tiers"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Product Launch Brief\nAnalytics Module\nInternal launch packet for GTM, support, and leadership\nLaunch Narrative\nThe analytics module turns weekly CSV exports into a live dashboard experience with trend summaries, cohort breakdowns, and alerting. The launch goal is to convert analyst-heavy workflows into a daily operating surface used by customer success and finance leads.\nWhat Changes For Customers\nTime-to-insight drops from hours to minutes for weekly reviews.\nAccount health indicators move from static exports to live views.\nOps leaders can spot expansion or churn signals before QBRs.\nReadiness Checklist\nArea\nOwner\nStatus\nNote\nPricing and packaging\nGTM\nReady\nApproved by finance and legal.\nIn-app onboarding\nProduct\nReady\nWalkthrough complete and QA signed off.\nSupport macros\nSupport\nWatch\nTwo edge-case answers still need final screenshots.\nSecurity FAQ\nSecurity\nRisk\nPending sign-off on data residency wording.\nMilestones\nMilestone\nDate\nOutcome\nPilot complete\nMarch 18\n10 design partners expanded usage\nLaunch training\nMarch 22\nGTM and support enabled\nCommercial release\nApril 7\nOpen to all Growth and Enterprise tiers\nSuccess Metrics\n30-day adoption: 35% of eligible customers\nExpansion signal: 15 pipeline opportunities influenced\nSupport health: First-response SLA above 95%\nNarrative: Styling is inherited from rusdox.toml, not hardcoded in the document.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [
+        [
+          [
+            "Area",
+            "Owner",
+            "Status",
+            "Note"
+          ],
+          [
+            "Pricing and packaging",
+            "GTM",
+            "Ready",
+            "Approved by finance and legal."
+          ],
+          [
+            "In-app onboarding",
+            "Product",
+            "Ready",
+            "Walkthrough complete and QA signed off."
+          ],
+          [
+            "Support macros",
+            "Support",
+            "Watch",
+            "Two edge-case answers still need final screenshots."
+          ],
+          [
+            "Security FAQ",
+            "Security",
+            "Risk",
+            "Pending sign-off on data residency wording."
+          ]
+        ],
+        [
+          [
+            "Milestone",
+            "Date",
+            "Outcome"
+          ],
+          [
+            "Pilot complete",
+            "March 18",
+            "10 design partners expanded usage"
+          ],
+          [
+            "Launch training",
+            "March 22",
+            "GTM and support enabled"
+          ],
+          [
+            "Commercial release",
+            "April 7",
+            "Open to all Growth and Enterprise tiers"
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 2,
+    "draw_operations": 94,
+    "text_lines": 59,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/product-launch-brief-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/product-launch-brief-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/product-launch-brief.docx",
+      "bytes": 5517,
+      "sha256": "aeea903fda2cf14ff00480a07397f3a1bc31b9aef9bd36a63d93dc766bb854bc"
+    },
+    {
+      "path": "rendered/product-launch-brief.pdf",
+      "bytes": 1551017,
+      "sha256": "f38865167192b2e1baf66f91f388cd2c59079f0e85ada4bfcccfccd1df0c34da"
+    }
+  ]
+}

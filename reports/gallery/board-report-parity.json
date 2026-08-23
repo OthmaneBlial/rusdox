@@ -1,0 +1,445 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/board_report.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Board Report\nMarch 2026\nPrepared automatically with RusDox\nARR $18.7M\nNRR 117%\nCash Runway 24 mo\nPage two starts with a forced page break to simulate a proper leadership packet.\nBoard Narrative\nThe company entered the quarter with stronger retention than forecast, a healthier sales mix, and lower infrastructure variance. The major concern remains hiring compression in customer operations and security review lead time for larger deals.\nManagement recommends holding the current burn posture, leaning further into enterprise expansion, and continuing to delay lower-signal speculative projects until activation efficiency stabilizes.\nBoard-Level Scorecard\nCategory\nCurrent\nStatus\nBoard Note\nARR\n$18.7M\nStrong\nExpansion revenue now carries 44% of net new ARR.\nNet Revenue Retention\n117%\nStrong\nChurn held below forecast and large accounts expanded earlier than expected.\nSecurity review cycle time\n31 days\nWatch\nCycle time is manageable but still gating two seven-figure opportunities.\nSupport leadership hiring\n1 open role\nRisk\nBackfill delay puts pressure on response-time targets for the next quarter.\nCapital Allocation\nBucket\nInvestment\nExpected Outcome\nCore product\n$1.2M\nAccelerate analytics adoption and improve expansion leverage.\nSecurity and compliance\n$420k\nShorten procurement cycles and reduce late-stage deal risk.\nCustomer operations\n$310k\nProtect response SLAs and absorb enterprise account growth.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "ARR $18.7M",
+          "NRR 117%",
+          "Cash Runway 24 mo"
+        ]
+      ],
+      [
+        [
+          "Category",
+          "Current",
+          "Status",
+          "Board Note"
+        ],
+        [
+          "ARR",
+          "$18.7M",
+          "Strong",
+          "Expansion revenue now carries 44% of net new ARR."
+        ],
+        [
+          "Net Revenue Retention",
+          "117%",
+          "Strong",
+          "Churn held below forecast and large accounts expanded earlier than expected."
+        ],
+        [
+          "Security review cycle time",
+          "31 days",
+          "Watch",
+          "Cycle time is manageable but still gating two seven-figure opportunities."
+        ],
+        [
+          "Support leadership hiring",
+          "1 open role",
+          "Risk",
+          "Backfill delay puts pressure on response-time targets for the next quarter."
+        ]
+      ],
+      [
+        [
+          "Bucket",
+          "Investment",
+          "Expected Outcome"
+        ],
+        [
+          "Core product",
+          "$1.2M",
+          "Accelerate analytics adoption and improve expansion leverage."
+        ],
+        [
+          "Security and compliance",
+          "$420k",
+          "Shorten procurement cycles and reduce late-stage deal risk."
+        ],
+        [
+          "Customer operations",
+          "$310k",
+          "Protect response SLAs and absorb enterprise account growth."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [
+      5
+    ],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Board Report\nMarch 2026\nPrepared automatically with RusDox\nARR $18.7M\nNRR 117%\nCash Runway 24 mo\nPage two starts with a forced page break to simulate a proper leadership packet.\nBoard Narrative\nThe company entered the quarter with stronger retention than forecast, a healthier sales mix, and lower infrastructure variance. The major concern remains hiring compression in customer operations and security review lead time for larger deals.\nManagement recommends holding the current burn posture, leaning further into enterprise expansion, and continuing to delay lower-signal speculative projects until activation efficiency stabilizes.\nBoard-Level Scorecard\nCategory\nCurrent\nStatus\nBoard Note\nARR\n$18.7M\nStrong\nExpansion revenue now carries 44% of net new ARR.\nNet Revenue Retention\n117%\nStrong\nChurn held below forecast and large accounts expanded earlier than expected.\nSecurity review cycle time\n31 days\nWatch\nCycle time is manageable but still gating two seven-figure opportunities.\nSupport leadership hiring\n1 open role\nRisk\nBackfill delay puts pressure on response-time targets for the next quarter.\nCapital Allocation\nBucket\nInvestment\nExpected Outcome\nCore product\n$1.2M\nAccelerate analytics adoption and improve expansion leverage.\nSecurity and compliance\n$420k\nShorten procurement cycles and reduce late-stage deal risk.\nCustomer operations\n$310k\nProtect response SLAs and absorb enterprise account growth.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "ARR $18.7M",
+          "NRR 117%",
+          "Cash Runway 24 mo"
+        ]
+      ],
+      [
+        [
+          "Category",
+          "Current",
+          "Status",
+          "Board Note"
+        ],
+        [
+          "ARR",
+          "$18.7M",
+          "Strong",
+          "Expansion revenue now carries 44% of net new ARR."
+        ],
+        [
+          "Net Revenue Retention",
+          "117%",
+          "Strong",
+          "Churn held below forecast and large accounts expanded earlier than expected."
+        ],
+        [
+          "Security review cycle time",
+          "31 days",
+          "Watch",
+          "Cycle time is manageable but still gating two seven-figure opportunities."
+        ],
+        [
+          "Support leadership hiring",
+          "1 open role",
+          "Risk",
+          "Backfill delay puts pressure on response-time targets for the next quarter."
+        ]
+      ],
+      [
+        [
+          "Bucket",
+          "Investment",
+          "Expected Outcome"
+        ],
+        [
+          "Core product",
+          "$1.2M",
+          "Accelerate analytics adoption and improve expansion leverage."
+        ],
+        [
+          "Security and compliance",
+          "$420k",
+          "Shorten procurement cycles and reduce late-stage deal risk."
+        ],
+        [
+          "Customer operations",
+          "$310k",
+          "Protect response SLAs and absorb enterprise account growth."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [
+      5
+    ],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Board Report\nMarch 2026\nPrepared automatically with RusDox\nARR $18.7M\nNRR 117%\nCash Runway 24 mo\nPage two starts with a forced page break to simulate a proper leadership packet.\nBoard Narrative\nThe company entered the quarter with stronger retention than forecast, a healthier sales mix, and lower infrastructure variance. The major concern remains hiring compression in customer operations and security review lead time for larger deals.\nManagement recommends holding the current burn posture, leaning further into enterprise expansion, and continuing to delay lower-signal speculative projects until activation efficiency stabilizes.\nBoard-Level Scorecard\nCategory\nCurrent\nStatus\nBoard Note\nARR\n$18.7M\nStrong\nExpansion revenue now carries 44% of net new ARR.\nNet Revenue Retention\n117%\nStrong\nChurn held below forecast and large accounts expanded earlier than expected.\nSecurity review cycle time\n31 days\nWatch\nCycle time is manageable but still gating two seven-figure opportunities.\nSupport leadership hiring\n1 open role\nRisk\nBackfill delay puts pressure on response-time targets for the next quarter.\nCapital Allocation\nBucket\nInvestment\nExpected Outcome\nCore product\n$1.2M\nAccelerate analytics adoption and improve expansion leverage.\nSecurity and compliance\n$420k\nShorten procurement cycles and reduce late-stage deal risk.\nCustomer operations\n$310k\nProtect response SLAs and absorb enterprise account growth.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "table"
+      ],
+      "headings": [],
+      "tables": [
+        [
+          [
+            "ARR $18.7M",
+            "NRR 117%",
+            "Cash Runway 24 mo"
+          ]
+        ],
+        [
+          [
+            "Category",
+            "Current",
+            "Status",
+            "Board Note"
+          ],
+          [
+            "ARR",
+            "$18.7M",
+            "Strong",
+            "Expansion revenue now carries 44% of net new ARR."
+          ],
+          [
+            "Net Revenue Retention",
+            "117%",
+            "Strong",
+            "Churn held below forecast and large accounts expanded earlier than expected."
+          ],
+          [
+            "Security review cycle time",
+            "31 days",
+            "Watch",
+            "Cycle time is manageable but still gating two seven-figure opportunities."
+          ],
+          [
+            "Support leadership hiring",
+            "1 open role",
+            "Risk",
+            "Backfill delay puts pressure on response-time targets for the next quarter."
+          ]
+        ],
+        [
+          [
+            "Bucket",
+            "Investment",
+            "Expected Outcome"
+          ],
+          [
+            "Core product",
+            "$1.2M",
+            "Accelerate analytics adoption and improve expansion leverage."
+          ],
+          [
+            "Security and compliance",
+            "$420k",
+            "Shorten procurement cycles and reduce late-stage deal risk."
+          ],
+          [
+            "Customer operations",
+            "$310k",
+            "Protect response SLAs and absorb enterprise account growth."
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [
+        5
+      ],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 2,
+    "draw_operations": 95,
+    "text_lines": 60,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/board-report-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/board-report-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/board-report.docx",
+      "bytes": 5522,
+      "sha256": "88a76b680436ca92ea5919a5c681bcd75a10286b7974646944027b44cd52514a"
+    },
+    {
+      "path": "rendered/board-report.pdf",
+      "bytes": 2106865,
+      "sha256": "c8bcc9b84fae68d76471afc242461e8fa15aa47ed12f17568ee69391fd00d424"
+    }
+  ]
+}

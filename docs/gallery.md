@@ -11,6 +11,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Board Report preview](../assets/gallery/board-report.png)
 
 - Spec: [../examples/board_report.yaml](../examples/board_report.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/board-report-parity.html)
 - Output: board-style packet with cover page, metrics, and scorecard tables
 
 ## Executive Dashboard
@@ -18,6 +19,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Executive Dashboard preview](../assets/gallery/executive-dashboard.png)
 
 - Spec: [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/executive-dashboard-parity.html)
 - Output: dashboard-style summary with metrics and status tables
 
 ## Product Launch Brief
@@ -25,6 +27,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Product Launch Brief preview](../assets/gallery/product-launch-brief.png)
 
 - Spec: [../examples/product_launch_brief.yaml](../examples/product_launch_brief.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/product-launch-brief-parity.html)
 - Output: launch narrative with milestones and readiness checks
 
 ## Talent Profile
@@ -32,6 +35,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Talent Profile preview](../assets/gallery/talent-profile.png)
 
 - Spec: [../examples/talent_profile.yaml](../examples/talent_profile.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/talent-profile-parity.html)
 - Output: profile or resume-style document
 
 ## Invoice
@@ -39,6 +43,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Invoice preview](../assets/gallery/invoice.png)
 
 - Spec: [../examples/invoice.yaml](../examples/invoice.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/invoice-parity.html)
 - Output: invoice layout with line items and totals
 
 ## Meeting Notes
@@ -46,10 +51,12 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Meeting Notes preview](../assets/gallery/meeting-notes.png)
 
 - Spec: [../examples/meeting_notes.yaml](../examples/meeting_notes.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/meeting-notes-parity.html)
 - Output: compact notes with metadata, agenda, and decisions
 
 ## Regenerate Gallery Assets
 
 ```bash
 ./scripts/generate_gallery_assets.sh
+./scripts/generate_parity_reports.sh
 ```

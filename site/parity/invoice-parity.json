@@ -1,0 +1,278 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/invoice.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Invoice\nInvoice #: INV-2026-001\nClient: ACME Industries\nService\nHours\nAmount\nArchitecture Review\n12\n$2,400\nImplementation\n30\n$6,000\nTotal: $8,400",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Service",
+          "Hours",
+          "Amount"
+        ],
+        [
+          "Architecture Review",
+          "12",
+          "$2,400"
+        ],
+        [
+          "Implementation",
+          "30",
+          "$6,000"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Invoice\nInvoice #: INV-2026-001\nClient: ACME Industries\nService\nHours\nAmount\nArchitecture Review\n12\n$2,400\nImplementation\n30\n$6,000\nTotal: $8,400",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Service",
+          "Hours",
+          "Amount"
+        ],
+        [
+          "Architecture Review",
+          "12",
+          "$2,400"
+        ],
+        [
+          "Implementation",
+          "30",
+          "$6,000"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Invoice\nInvoice #: INV-2026-001\nClient: ACME Industries\nService\nHours\nAmount\nArchitecture Review\n12\n$2,400\nImplementation\n30\n$6,000\nTotal: $8,400",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [
+        [
+          [
+            "Service",
+            "Hours",
+            "Amount"
+          ],
+          [
+            "Architecture Review",
+            "12",
+            "$2,400"
+          ],
+          [
+            "Implementation",
+            "30",
+            "$6,000"
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 1,
+    "draw_operations": 22,
+    "text_lines": 13,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/invoice-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/invoice.docx",
+      "bytes": 4176,
+      "sha256": "41eb5f0ee94fb0e8514569243aba4588369073285dc68e17fe3347fddc160d77"
+    },
+    {
+      "path": "rendered/invoice.pdf",
+      "bytes": 1532401,
+      "sha256": "0a1f8abfefef6be069b3b4d163edad3694c9ef51d1254a71ae28daad0bc61190"
+    }
+  ]
+}

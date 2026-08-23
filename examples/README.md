@@ -37,6 +37,12 @@ Render every example in the folder:
 cargo run -- examples
 ```
 
+Verify every example and generate DOCX/PDF parity evidence:
+
+```bash
+cargo run -- verify examples --output-root target/parity
+```
+
 Create your own starter document file:
 
 ```bash

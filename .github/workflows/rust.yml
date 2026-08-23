@@ -36,6 +36,22 @@ jobs:
       - name: Run tests
         run: cargo test --locked
 
+      - name: Verify gallery DOCX/PDF parity
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          mkdir -p target/parity
+          cargo run --locked -- verify examples --output-root target/parity --format json > target/parity/summary.json
+
+      - name: Upload gallery parity reports and rendered diffs
+        if: matrix.os == 'ubuntu-latest' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-parity-${{ github.sha }}
+          path: target/parity/
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Verify generated static documentation
         if: matrix.os == 'ubuntu-latest'
         run: |

@@ -40,6 +40,36 @@ Benchmark a spec:
 rusdox bench mydoc.yaml --iterations 5 --warmup 1
 ```
 
+Generate DOCX, PDF, and parity evidence:
+
+```bash
+rusdox verify mydoc.yaml
+```
+
+## Parity Verification
+
+Verify one file:
+
+```bash
+rusdox verify mydoc.yaml
+```
+
+Verify every top-level spec in a directory and write all artifacts under a CI workspace:
+
+```bash
+rusdox verify examples --output-root target/parity --format json
+```
+
+Add a deterministic rendered-page comparison:
+
+```bash
+rusdox verify mydoc.yaml \
+  --visual-baseline tests/visual-baselines/mydoc \
+  --visual-threshold 0.002
+```
+
+The command always writes versioned JSON and standalone HTML reports. Exit code `0` means parity passed, `1` means verification could not complete, and `2` means generated outputs failed one or more parity checks. See [Parity verification](parity.md) for the complete contract and visual-diff boundary.
+
 ## Validation
 
 Check one file:

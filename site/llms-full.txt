@@ -1236,6 +1236,36 @@ Benchmark a spec:
 rusdox bench mydoc.yaml --iterations 5 --warmup 1
 ```
 
+Generate DOCX, PDF, and parity evidence:
+
+```bash
+rusdox verify mydoc.yaml
+```
+
+## Parity Verification
+
+Verify one file:
+
+```bash
+rusdox verify mydoc.yaml
+```
+
+Verify every top-level spec in a directory and write all artifacts under a CI workspace:
+
+```bash
+rusdox verify examples --output-root target/parity --format json
+```
+
+Add a deterministic rendered-page comparison:
+
+```bash
+rusdox verify mydoc.yaml \
+  --visual-baseline tests/visual-baselines/mydoc \
+  --visual-threshold 0.002
+```
+
+The command always writes versioned JSON and standalone HTML reports. Exit code `0` means parity passed, `1` means verification could not complete, and `2` means generated outputs failed one or more parity checks. See [Parity verification](parity.md) for the complete contract and visual-diff boundary.
+
 ## Validation
 
 Check one file:
@@ -1782,12 +1812,14 @@ Source: https://othmaneblial.github.io/rusdox/docs/compatibility.html
 
 This page is the public RusDox support contract. It distinguishes implemented behavior from parity-tested behavior and planned work.
 
-Status meanings:
+The document feature matrix exposes four independent states instead of hiding nuance behind one label:
 
-- **Supported**: implemented and covered by automated tests.
-- **Partial**: useful behavior exists, but the documented edge cases or DOCX/PDF parity are incomplete.
-- **Not supported**: RusDox rejects, ignores, or does not expose the feature today.
-- **Planned**: accepted roadmap work, not a current capability.
+- **DOCX**: the feature has an implemented DOCX path.
+- **PDF**: the feature has an implemented native PDF path.
+- **Parity-tested**: the source, reopened DOCX, and PDF projection are covered by the published parity contract.
+- **Intentionally unsupported**: RusDox deliberately excludes the feature from its current product contract. A blank value means planned or incomplete, not silently supported.
+
+Within a supported column, **Partial** or **Experimental** identifies a narrower boundary that must be read with the notes.
 
 ## Input formats and composition
 
@@ -1805,31 +1837,31 @@ Status meanings:
 
 ## Document features
 
-| Feature | DOCX | PDF | Parity-tested | Notes |
-|---|---:|---:|---:|---|
-| Paragraphs and multiple runs | Supported | Supported | Partial | Text order is tested; visual parity reporting is planned. |
-| Bold, italic, underline, strike, size, color | Supported | Supported | Partial | PDF maps the common supported run properties. |
-| Paragraph alignment and spacing | Supported | Supported | Partial | Viewer-level snapshots are not yet a release gate. |
-| Bulleted and numbered lists | Supported | Supported | Partial | Semantic OOXML numbering is emitted for DOCX. |
-| Named paragraph/run/table styles | Supported | Supported | Partial | Style inheritance is tested; viewer matrix is pending. |
-| Tables and repeating header rows | Supported | Supported | Partial | Long-row and complex overflow behavior is still being hardened. |
-| Rich paragraphs inside table cells | Supported in Rust API | Partial | No | High-level YAML cells are currently text/status-oriented. |
-| Merged cells | Partial in Rust API | Partial | No | Grid-span parsing/layout exists internally; no stable high-level contract yet. |
-| Nested tables | Not supported | Not supported | No | Planned only after common table parity is stable. |
-| PNG and JPEG images | Supported | Supported | Partial | Path and embedded-byte Rust APIs are covered. |
-| SVG visuals | Supported | Supported | Partial | Rasterized for output; complex SVG compatibility varies. |
-| Image alt text | Supported | Partial | No | Preserved in DOCX; tagged-PDF semantics are not implemented. |
-| Document metadata | Supported | Not supported | No | DOCX core/custom properties are implemented. |
-| Page size and margins | Supported | Partial | No | PDF currently reads PDF config rather than the document page setup. |
-| Headers and footers | Supported | Not supported | No | DOCX supports one default header/footer template. |
-| Page number fields | Supported | Not supported | No | DOCX supports page and total-page fields. |
-| Explicit page breaks | Supported in Rust API | Supported | Partial | A dedicated high-level block is planned. |
-| Multiple sections / section breaks | Not supported | Not supported | No | A document currently has one section property set. |
-| Hyperlinks and bookmarks | Not supported | Not supported | No | Planned for the parity milestone. |
-| Automatic table of contents | Not supported | Not supported | No | Planned with an explicit field/update contract. |
-| Footnotes | Not supported | Not supported | No | Planned before comments/tracked changes. |
-| Comments and tracked changes | Not supported | Not supported | No | Explicitly deferred beyond the common report feature set. |
-| Word-native placeholders | Not supported | Not supported | No | Existing DOCX packages can be opened in Rust; template rendering is planned. |
+| Feature | DOCX | PDF | Parity-tested | Intentionally unsupported | Notes |
+|---|---:|---:|---:|---:|---|
+| Paragraphs and multiple runs | Supported | Supported | Yes |  | Semantic order plus deterministic page snapshots. |
+| Bold, italic, underline, strike, size, color | Supported | Supported | Yes |  | PDF maps the common supported run properties. |
+| Paragraph alignment and spacing | Supported | Supported | Yes |  | Viewer scorecard remains separate from renderer parity. |
+| Bulleted and numbered lists | Supported | Supported | Yes |  | Semantic OOXML numbering is emitted for DOCX. |
+| Named paragraph/run/table styles | Supported | Supported | Yes |  | Style inheritance is tested; viewer matrix remains separate. |
+| Tables and repeating header rows | Supported | Supported | Yes |  | Complex overflow hardening continues under the same contract. |
+| Rich paragraphs inside table cells | Supported in Rust API | Partial | Partial |  | High-level YAML cells remain text/status-oriented. |
+| Merged cells | Partial in Rust API | Partial | Partial |  | Grid-span parsing/layout exists; the high-level contract is not stable. |
+| Nested tables | No | No | No |  | Planned only after common table parity is stable. |
+| PNG and JPEG images | Supported | Supported | Yes |  | Count, semantic kind, and alt text are compared. |
+| SVG visuals | Supported | Supported | Yes |  | Rasterized for output; complex SVG compatibility varies. |
+| Image alt text | Supported | Semantic projection | Yes |  | Tagged-PDF accessibility semantics are not yet advertised. |
+| Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords are emitted. |
+| Page size and margins | Supported | Partial | Yes |  | Semantic settings match; the PDF physical-layout gap remains tracked. |
+| Headers and footers | Supported | No | Yes |  | Semantic projection is checked; visible PDF rendering is pending. |
+| Page number fields | Supported | No | Yes |  | Semantic projection is checked; visible PDF rendering is pending. |
+| Explicit page breaks | Supported in Rust API | Supported | Yes |  | A dedicated high-level block remains planned. |
+| Multiple sections / section breaks | No | No | No |  | A document currently has one section property set. |
+| Hyperlinks and bookmarks | No | No | No |  | Planned for the parity milestone. |
+| Automatic table of contents | No | No | No |  | Planned with an explicit field/update contract. |
+| Footnotes | No | No | No |  | Planned before comments or tracked changes. |
+| Comments and tracked changes | No | No | No | Yes | Deliberately deferred beyond common generated-report features. |
+| Word-native placeholders | No | No | No |  | Existing DOCX packages can be opened; template rendering is planned. |
 
 ## Existing DOCX packages
 
@@ -1867,6 +1899,99 @@ Open a [bug report](https://github.com/OthmaneBlial/rusdox/issues/new?template=b
 - sanitized screenshots or generated files when safe to share.
 
 See [Troubleshooting](troubleshooting.md) before attaching private business documents.
+
+---
+
+# Parity verification
+
+Source: https://othmaneblial.github.io/rusdox/docs/parity.html
+
+`rusdox verify` turns the dual-output promise into a CI contract:
+
+```bash
+rusdox verify board-report.yaml
+```
+
+It writes:
+
+```text
+generated/board-report.docx
+rendered/board-report.pdf
+reports/board-report-parity.html
+reports/board-report-parity.json
+reports/board-report-pages/page-001.png
+```
+
+The HTML report is standalone and requires no JavaScript. The JSON report uses the versioned parity report contract and is suitable for CI, release evidence, or downstream tooling.
+
+## What is compared
+
+RusDox compares three views:
+
+1. the typed document composed from the source spec;
+2. the generated DOCX reopened through the RusDox OOXML reader;
+3. the semantic projection actually consumed by the native PDF layout path.
+
+The current contract checks:
+
+- normalized text and heading sequence;
+- top-level block order;
+- every table row and cell;
+- image count, semantic kind, and alt text;
+- explicit page-break positions;
+- document metadata;
+- page setup, headers, footers, and numbering settings;
+- required DOCX parts and package relationships;
+- PDF header, trailer, and page evidence;
+- optional deterministic rendered-page visual thresholds.
+
+Each generated DOCX and PDF also receives a SHA-256 digest in the report.
+
+## Visual regression thresholds
+
+Every verification emits deterministic PNG snapshots from the PDF renderer's real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.
+
+Compare a single spec to an approved baseline:
+
+```bash
+rusdox verify report.yaml \
+  --visual-baseline tests/visual-baselines/report \
+  --visual-threshold 0.002
+```
+
+For a directory input, the baseline root must contain one subdirectory per output name:
+
+```text
+tests/visual-baselines/
+  board-report/page-001.png
+  invoice/page-001.png
+```
+
+The threshold is the maximum fraction of pixels that may differ on each page. `0` is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.
+
+Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.
+
+## Machine-readable output and exit codes
+
+Print a compact JSON command summary while still writing the full HTML and JSON reports:
+
+```bash
+rusdox verify examples --output-root target/parity --format json
+```
+
+Exit codes are stable:
+
+| Code | Meaning |
+|---:|---|
+| `0` | All enabled parity checks passed. |
+| `1` | Verification could not complete because input, config, validation, I/O, or rendering failed. |
+| `2` | Outputs were generated and at least one parity check failed. |
+
+This distinction lets CI separate a broken build from a real document regression.
+
+## Privacy boundary
+
+Verification is local. RusDox does not upload the source, output documents, report, or snapshots. Uploading reports as CI artifacts is an explicit repository workflow decision; treat reports as sensitive whenever their normalized text or metadata is sensitive.
 
 ---
 
@@ -2025,6 +2150,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Board Report preview](../assets/gallery/board-report.png)
 
 - Spec: [../examples/board_report.yaml](../examples/board_report.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/board-report-parity.html)
 - Output: board-style packet with cover page, metrics, and scorecard tables
 
 ## Executive Dashboard
@@ -2032,6 +2158,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Executive Dashboard preview](../assets/gallery/executive-dashboard.png)
 
 - Spec: [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/executive-dashboard-parity.html)
 - Output: dashboard-style summary with metrics and status tables
 
 ## Product Launch Brief
@@ -2039,6 +2166,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Product Launch Brief preview](../assets/gallery/product-launch-brief.png)
 
 - Spec: [../examples/product_launch_brief.yaml](../examples/product_launch_brief.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/product-launch-brief-parity.html)
 - Output: launch narrative with milestones and readiness checks
 
 ## Talent Profile
@@ -2046,6 +2174,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Talent Profile preview](../assets/gallery/talent-profile.png)
 
 - Spec: [../examples/talent_profile.yaml](../examples/talent_profile.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/talent-profile-parity.html)
 - Output: profile or resume-style document
 
 ## Invoice
@@ -2053,6 +2182,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Invoice preview](../assets/gallery/invoice.png)
 
 - Spec: [../examples/invoice.yaml](../examples/invoice.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/invoice-parity.html)
 - Output: invoice layout with line items and totals
 
 ## Meeting Notes
@@ -2060,12 +2190,14 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Meeting Notes preview](../assets/gallery/meeting-notes.png)
 
 - Spec: [../examples/meeting_notes.yaml](../examples/meeting_notes.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/meeting-notes-parity.html)
 - Output: compact notes with metadata, agenda, and decisions
 
 ## Regenerate Gallery Assets
 
 ```bash
 ./scripts/generate_gallery_assets.sh
+./scripts/generate_parity_reports.sh
 ```
 
 ---
@@ -2109,6 +2241,12 @@ Render every example in the folder:
 
 ```bash
 cargo run -- examples
+```
+
+Verify every example and generate DOCX/PDF parity evidence:
+
+```bash
+cargo run -- verify examples --output-root target/parity
 ```
 
 Create your own starter document file:
@@ -2323,13 +2461,15 @@ Theme: parity, compatibility, and quality.
 
 ### Define the parity contract
 
-- [ ] Publish a feature matrix with four states: supported in DOCX, supported in PDF, parity-tested, and intentionally unsupported.
-- [ ] Introduce `rusdox verify <spec>`.
-- [ ] Generate an HTML parity report for every gallery example.
-- [ ] Compare normalized text, block order, table content, image count/alt text, page breaks, and document metadata.
-- [ ] Add optional rendered-page visual diffs with documented thresholds.
-- [ ] Make parity failures machine-readable through JSON and meaningful exit codes.
-- [ ] Upload parity reports and rendered diffs as CI artifacts.
+- [x] Publish a feature matrix with four states: supported in DOCX, supported in PDF, parity-tested, and intentionally unsupported.
+- [x] Introduce `rusdox verify <spec>`.
+- [x] Generate an HTML parity report for every gallery example.
+- [x] Compare normalized text, block order, table content, image count/alt text, page breaks, and document metadata.
+- [x] Add optional rendered-page visual diffs with documented thresholds.
+- [x] Make parity failures machine-readable through JSON and meaningful exit codes.
+- [x] Upload parity reports and rendered diffs as CI artifacts.
+
+Section evidence: `rusdox verify examples` passes all 15 top-level examples and emits 15 HTML/JSON reports plus 20 deterministic page snapshots. The six visual gallery reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 

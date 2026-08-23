@@ -18,6 +18,9 @@ pub enum DocxError {
     /// Logical parsing or OOXML validation failures.
     #[error("parse error: {0}")]
     Parse(String),
+    /// A completed verification whose generated outputs failed the parity contract.
+    #[error("parity verification failed: {0}")]
+    Parity(String),
 }
 
 impl DocxError {

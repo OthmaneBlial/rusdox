@@ -25,6 +25,7 @@ mod error;
 mod layout;
 mod metadata;
 mod paragraph;
+pub mod parity;
 mod run;
 pub mod spec;
 mod spec_expand;

@@ -12,6 +12,7 @@
 - [CLI reference](https://othmaneblial.github.io/rusdox/docs/cli.html): Render, validate, watch, benchmark, initialize, and configure documents.
 - [Rust API](https://othmaneblial.github.io/rusdox/docs/rust-api.html): Choose between DocumentSpec, Studio, and the low-level typed document model.
 - [Compatibility matrix](https://othmaneblial.github.io/rusdox/docs/compatibility.html): See exactly what works in DOCX, PDF, both outputs, or not yet.
+- [Parity verification](https://othmaneblial.github.io/rusdox/docs/parity.html): Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.
 - [Troubleshooting](https://othmaneblial.github.io/rusdox/docs/troubleshooting.html): Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.
 - [Template gallery](https://othmaneblial.github.io/rusdox/docs/gallery.html): Browse real YAML inputs and generated DOCX/PDF output previews.
 - [Examples guide](https://othmaneblial.github.io/rusdox/docs/examples.html): Understand every bundled document fixture and how to render it.

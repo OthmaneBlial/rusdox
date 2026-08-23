@@ -165,13 +165,15 @@ Theme: parity, compatibility, and quality.
 
 ### Define the parity contract
 
-- [ ] Publish a feature matrix with four states: supported in DOCX, supported in PDF, parity-tested, and intentionally unsupported.
-- [ ] Introduce `rusdox verify <spec>`.
-- [ ] Generate an HTML parity report for every gallery example.
-- [ ] Compare normalized text, block order, table content, image count/alt text, page breaks, and document metadata.
-- [ ] Add optional rendered-page visual diffs with documented thresholds.
-- [ ] Make parity failures machine-readable through JSON and meaningful exit codes.
-- [ ] Upload parity reports and rendered diffs as CI artifacts.
+- [x] Publish a feature matrix with four states: supported in DOCX, supported in PDF, parity-tested, and intentionally unsupported.
+- [x] Introduce `rusdox verify <spec>`.
+- [x] Generate an HTML parity report for every gallery example.
+- [x] Compare normalized text, block order, table content, image count/alt text, page breaks, and document metadata.
+- [x] Add optional rendered-page visual diffs with documented thresholds.
+- [x] Make parity failures machine-readable through JSON and meaningful exit codes.
+- [x] Upload parity reports and rendered diffs as CI artifacts.
+
+Section evidence: `rusdox verify examples` passes all 15 top-level examples and emits 15 HTML/JSON reports plus 20 deterministic page snapshots. The six visual gallery reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 

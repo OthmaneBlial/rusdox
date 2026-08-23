@@ -1,0 +1,433 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/executive_dashboard.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Executive Dashboard\nQ2 performance summary generated entirely with RusDox\nRevenue up. Delivery stable. Hiring pressure contained.\nThis document combines formatted narrative, metric cards, and board-ready tables.\nNet Revenue $4.8M\nGross Margin 68%\nNPS 61\nExecutive Summary\nThe operating model held under increased demand. Enterprise expansion offset a slower mid-market pipeline, and the support backlog stayed below the target threshold through the quarter.\nLeadership focus for the next 60 days is disciplined staffing, launch readiness for the analytics module, and reducing the onboarding drop-off rate in the first two weeks.\nBusiness Highlights\nClosed the largest annual contract in company history with a three-year term.\nReduced incident volume by 27% after the infrastructure hardening sprint.\nLifted activation by 11 points after simplifying the first-run setup path.\nDelivery Health\nWorkstream\nOwner\nStatus\nCommentary\nAnalytics launch\nProduct\nOn Track\nPilot complete, commercial launch planned for April 7.\nSecurity review\nPlatform\nWatch\nVendor evidence pack outstanding on two medium-risk controls.\nSupport tooling\nOperations\nOn Track\nMacro automation reduced average handling time by 14%.\nRisk Register\nRisk\nImpact\nMitigation\nLate enterprise security approvals\nMedium\nPre-stage evidence packs and assign a named escalation owner per account.\nHiring delay for senior support lead\nHigh\nUse interim contractor coverage and compress interview loop to five business days.\nNext 30 Days\nPriority 1: Launch analytics module to the first 25 production customers\nPriority 2: Close support lead hire and finalize the on-call operating model\nPriority 3: Publish activation funnel dashboard to all functional leads",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Net Revenue $4.8M",
+          "Gross Margin 68%",
+          "NPS 61"
+        ]
+      ],
+      [
+        [
+          "Workstream",
+          "Owner",
+          "Status",
+          "Commentary"
+        ],
+        [
+          "Analytics launch",
+          "Product",
+          "On Track",
+          "Pilot complete, commercial launch planned for April 7."
+        ],
+        [
+          "Security review",
+          "Platform",
+          "Watch",
+          "Vendor evidence pack outstanding on two medium-risk controls."
+        ],
+        [
+          "Support tooling",
+          "Operations",
+          "On Track",
+          "Macro automation reduced average handling time by 14%."
+        ]
+      ],
+      [
+        [
+          "Risk",
+          "Impact",
+          "Mitigation"
+        ],
+        [
+          "Late enterprise security approvals",
+          "Medium",
+          "Pre-stage evidence packs and assign a named escalation owner per account."
+        ],
+        [
+          "Hiring delay for senior support lead",
+          "High",
+          "Use interim contractor coverage and compress interview loop to five business days."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Executive Dashboard\nQ2 performance summary generated entirely with RusDox\nRevenue up. Delivery stable. Hiring pressure contained.\nThis document combines formatted narrative, metric cards, and board-ready tables.\nNet Revenue $4.8M\nGross Margin 68%\nNPS 61\nExecutive Summary\nThe operating model held under increased demand. Enterprise expansion offset a slower mid-market pipeline, and the support backlog stayed below the target threshold through the quarter.\nLeadership focus for the next 60 days is disciplined staffing, launch readiness for the analytics module, and reducing the onboarding drop-off rate in the first two weeks.\nBusiness Highlights\nClosed the largest annual contract in company history with a three-year term.\nReduced incident volume by 27% after the infrastructure hardening sprint.\nLifted activation by 11 points after simplifying the first-run setup path.\nDelivery Health\nWorkstream\nOwner\nStatus\nCommentary\nAnalytics launch\nProduct\nOn Track\nPilot complete, commercial launch planned for April 7.\nSecurity review\nPlatform\nWatch\nVendor evidence pack outstanding on two medium-risk controls.\nSupport tooling\nOperations\nOn Track\nMacro automation reduced average handling time by 14%.\nRisk Register\nRisk\nImpact\nMitigation\nLate enterprise security approvals\nMedium\nPre-stage evidence packs and assign a named escalation owner per account.\nHiring delay for senior support lead\nHigh\nUse interim contractor coverage and compress interview loop to five business days.\nNext 30 Days\nPriority 1: Launch analytics module to the first 25 production customers\nPriority 2: Close support lead hire and finalize the on-call operating model\nPriority 3: Publish activation funnel dashboard to all functional leads",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Net Revenue $4.8M",
+          "Gross Margin 68%",
+          "NPS 61"
+        ]
+      ],
+      [
+        [
+          "Workstream",
+          "Owner",
+          "Status",
+          "Commentary"
+        ],
+        [
+          "Analytics launch",
+          "Product",
+          "On Track",
+          "Pilot complete, commercial launch planned for April 7."
+        ],
+        [
+          "Security review",
+          "Platform",
+          "Watch",
+          "Vendor evidence pack outstanding on two medium-risk controls."
+        ],
+        [
+          "Support tooling",
+          "Operations",
+          "On Track",
+          "Macro automation reduced average handling time by 14%."
+        ]
+      ],
+      [
+        [
+          "Risk",
+          "Impact",
+          "Mitigation"
+        ],
+        [
+          "Late enterprise security approvals",
+          "Medium",
+          "Pre-stage evidence packs and assign a named escalation owner per account."
+        ],
+        [
+          "Hiring delay for senior support lead",
+          "High",
+          "Use interim contractor coverage and compress interview loop to five business days."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Executive Dashboard\nQ2 performance summary generated entirely with RusDox\nRevenue up. Delivery stable. Hiring pressure contained.\nThis document combines formatted narrative, metric cards, and board-ready tables.\nNet Revenue $4.8M\nGross Margin 68%\nNPS 61\nExecutive Summary\nThe operating model held under increased demand. Enterprise expansion offset a slower mid-market pipeline, and the support backlog stayed below the target threshold through the quarter.\nLeadership focus for the next 60 days is disciplined staffing, launch readiness for the analytics module, and reducing the onboarding drop-off rate in the first two weeks.\nBusiness Highlights\nClosed the largest annual contract in company history with a three-year term.\nReduced incident volume by 27% after the infrastructure hardening sprint.\nLifted activation by 11 points after simplifying the first-run setup path.\nDelivery Health\nWorkstream\nOwner\nStatus\nCommentary\nAnalytics launch\nProduct\nOn Track\nPilot complete, commercial launch planned for April 7.\nSecurity review\nPlatform\nWatch\nVendor evidence pack outstanding on two medium-risk controls.\nSupport tooling\nOperations\nOn Track\nMacro automation reduced average handling time by 14%.\nRisk Register\nRisk\nImpact\nMitigation\nLate enterprise security approvals\nMedium\nPre-stage evidence packs and assign a named escalation owner per account.\nHiring delay for senior support lead\nHigh\nUse interim contractor coverage and compress interview loop to five business days.\nNext 30 Days\nPriority 1: Launch analytics module to the first 25 production customers\nPriority 2: Close support lead hire and finalize the on-call operating model\nPriority 3: Publish activation funnel dashboard to all functional leads",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [
+        [
+          [
+            "Net Revenue $4.8M",
+            "Gross Margin 68%",
+            "NPS 61"
+          ]
+        ],
+        [
+          [
+            "Workstream",
+            "Owner",
+            "Status",
+            "Commentary"
+          ],
+          [
+            "Analytics launch",
+            "Product",
+            "On Track",
+            "Pilot complete, commercial launch planned for April 7."
+          ],
+          [
+            "Security review",
+            "Platform",
+            "Watch",
+            "Vendor evidence pack outstanding on two medium-risk controls."
+          ],
+          [
+            "Support tooling",
+            "Operations",
+            "On Track",
+            "Macro automation reduced average handling time by 14%."
+          ]
+        ],
+        [
+          [
+            "Risk",
+            "Impact",
+            "Mitigation"
+          ],
+          [
+            "Late enterprise security approvals",
+            "Medium",
+            "Pre-stage evidence packs and assign a named escalation owner per account."
+          ],
+          [
+            "Hiring delay for senior support lead",
+            "High",
+            "Use interim contractor coverage and compress interview loop to five business days."
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 2,
+    "draw_operations": 93,
+    "text_lines": 62,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/executive-dashboard-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/executive-dashboard-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/executive-dashboard.docx",
+      "bytes": 5711,
+      "sha256": "ddf29f03b7b00989c773471c17ed67996085c507750843a58a93f9e384aa11fd"
+    },
+    {
+      "path": "rendered/executive-dashboard.pdf",
+      "bytes": 2111056,
+      "sha256": "89f145edd2294192bcdab08f64b57de55a5a1d81ccc14115f8559fd01fd245d2"
+    }
+  ]
+}

@@ -1,0 +1,394 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/talent_profile.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Claire Delaunay\nHead of Product Operations\nParis, France | claire.delaunay@example.com | +33 6 12 34 56 78\nProfile\nOperator with nine years of experience scaling post-sales systems, launch readiness, executive reporting, and cross-functional process design across B2B SaaS teams from Series A to public-company scale.\nCore Strengths\nArea\nDepth\nEvidence\nLaunch operations\nExpert\nBuilt launch control rooms and readiness reviews for 14 major releases.\nExecutive reporting\nExpert\nOwned weekly operating packs for CEO, CRO, and board observers.\nSystems design\nAdvanced\nConnected CRM, support, and product telemetry into a unified review workflow.\nExperience Highlights\nLed the operating cadence for a revenue organization growing from $12M to $48M ARR while reducing manual reporting effort by more than 70%.\nPartnered with product, finance, and success leadership to establish a single launch readiness score used in weekly executive reviews.\nSelected Deliverables\nDeliverable\nImpact\nDetail\nExecutive operating pack\nWeekly\nAligned revenue, support, and launch signals in one document.\nReadiness dashboard\nLaunch quality\nReduced release-day surprises by making blockers visible early.\nAutomation playbooks\nScale\nTurned recurring document work into reusable systems.\nSignature\nCalm under load. Strong operator. Excellent writer.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Area",
+          "Depth",
+          "Evidence"
+        ],
+        [
+          "Launch operations",
+          "Expert",
+          "Built launch control rooms and readiness reviews for 14 major releases."
+        ],
+        [
+          "Executive reporting",
+          "Expert",
+          "Owned weekly operating packs for CEO, CRO, and board observers."
+        ],
+        [
+          "Systems design",
+          "Advanced",
+          "Connected CRM, support, and product telemetry into a unified review workflow."
+        ]
+      ],
+      [
+        [
+          "Deliverable",
+          "Impact",
+          "Detail"
+        ],
+        [
+          "Executive operating pack",
+          "Weekly",
+          "Aligned revenue, support, and launch signals in one document."
+        ],
+        [
+          "Readiness dashboard",
+          "Launch quality",
+          "Reduced release-day surprises by making blockers visible early."
+        ],
+        [
+          "Automation playbooks",
+          "Scale",
+          "Turned recurring document work into reusable systems."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Claire Delaunay\nHead of Product Operations\nParis, France | claire.delaunay@example.com | +33 6 12 34 56 78\nProfile\nOperator with nine years of experience scaling post-sales systems, launch readiness, executive reporting, and cross-functional process design across B2B SaaS teams from Series A to public-company scale.\nCore Strengths\nArea\nDepth\nEvidence\nLaunch operations\nExpert\nBuilt launch control rooms and readiness reviews for 14 major releases.\nExecutive reporting\nExpert\nOwned weekly operating packs for CEO, CRO, and board observers.\nSystems design\nAdvanced\nConnected CRM, support, and product telemetry into a unified review workflow.\nExperience Highlights\nLed the operating cadence for a revenue organization growing from $12M to $48M ARR while reducing manual reporting effort by more than 70%.\nPartnered with product, finance, and success leadership to establish a single launch readiness score used in weekly executive reviews.\nSelected Deliverables\nDeliverable\nImpact\nDetail\nExecutive operating pack\nWeekly\nAligned revenue, support, and launch signals in one document.\nReadiness dashboard\nLaunch quality\nReduced release-day surprises by making blockers visible early.\nAutomation playbooks\nScale\nTurned recurring document work into reusable systems.\nSignature\nCalm under load. Strong operator. Excellent writer.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [
+      [
+        [
+          "Area",
+          "Depth",
+          "Evidence"
+        ],
+        [
+          "Launch operations",
+          "Expert",
+          "Built launch control rooms and readiness reviews for 14 major releases."
+        ],
+        [
+          "Executive reporting",
+          "Expert",
+          "Owned weekly operating packs for CEO, CRO, and board observers."
+        ],
+        [
+          "Systems design",
+          "Advanced",
+          "Connected CRM, support, and product telemetry into a unified review workflow."
+        ]
+      ],
+      [
+        [
+          "Deliverable",
+          "Impact",
+          "Detail"
+        ],
+        [
+          "Executive operating pack",
+          "Weekly",
+          "Aligned revenue, support, and launch signals in one document."
+        ],
+        [
+          "Readiness dashboard",
+          "Launch quality",
+          "Reduced release-day surprises by making blockers visible early."
+        ],
+        [
+          "Automation playbooks",
+          "Scale",
+          "Turned recurring document work into reusable systems."
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Claire Delaunay\nHead of Product Operations\nParis, France | claire.delaunay@example.com | +33 6 12 34 56 78\nProfile\nOperator with nine years of experience scaling post-sales systems, launch readiness, executive reporting, and cross-functional process design across B2B SaaS teams from Series A to public-company scale.\nCore Strengths\nArea\nDepth\nEvidence\nLaunch operations\nExpert\nBuilt launch control rooms and readiness reviews for 14 major releases.\nExecutive reporting\nExpert\nOwned weekly operating packs for CEO, CRO, and board observers.\nSystems design\nAdvanced\nConnected CRM, support, and product telemetry into a unified review workflow.\nExperience Highlights\nLed the operating cadence for a revenue organization growing from $12M to $48M ARR while reducing manual reporting effort by more than 70%.\nPartnered with product, finance, and success leadership to establish a single launch readiness score used in weekly executive reviews.\nSelected Deliverables\nDeliverable\nImpact\nDetail\nExecutive operating pack\nWeekly\nAligned revenue, support, and launch signals in one document.\nReadiness dashboard\nLaunch quality\nReduced release-day surprises by making blockers visible early.\nAutomation playbooks\nScale\nTurned recurring document work into reusable systems.\nSignature\nCalm under load. Strong operator. Excellent writer.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [
+        [
+          [
+            "Area",
+            "Depth",
+            "Evidence"
+          ],
+          [
+            "Launch operations",
+            "Expert",
+            "Built launch control rooms and readiness reviews for 14 major releases."
+          ],
+          [
+            "Executive reporting",
+            "Expert",
+            "Owned weekly operating packs for CEO, CRO, and board observers."
+          ],
+          [
+            "Systems design",
+            "Advanced",
+            "Connected CRM, support, and product telemetry into a unified review workflow."
+          ]
+        ],
+        [
+          [
+            "Deliverable",
+            "Impact",
+            "Detail"
+          ],
+          [
+            "Executive operating pack",
+            "Weekly",
+            "Aligned revenue, support, and launch signals in one document."
+          ],
+          [
+            "Readiness dashboard",
+            "Launch quality",
+            "Reduced release-day surprises by making blockers visible early."
+          ],
+          [
+            "Automation playbooks",
+            "Scale",
+            "Turned recurring document work into reusable systems."
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 2,
+    "draw_operations": 79,
+    "text_lines": 49,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/talent-profile-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/talent-profile-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/talent-profile.docx",
+      "bytes": 5146,
+      "sha256": "9ef17d8d04f496b1a76637c411ecd9340a305252d47789451be2a8aebccc9a38"
+    },
+    {
+      "path": "rendered/talent-profile.pdf",
+      "bytes": 2105260,
+      "sha256": "41cb19f3054ff45829275800160534f2bf4248fecd4a5fd6a855d07c2295428d"
+    }
+  ]
+}

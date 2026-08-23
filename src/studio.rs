@@ -14,10 +14,11 @@ use std::time::{Duration, Instant};
 use fontdb::{Database as FontDatabase, Family as FontFamily, Query as FontQuery};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
-use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str};
+use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str, TextStr};
 
 use crate::{
     config::RusdoxConfig,
+    parity::{DocumentProjection, PdfRenderEvidence},
     spec::{
         BlockSpec, CellSpec, DocumentSpec, ParagraphAlignmentSpec,
         ParagraphSpec as BlockParagraphSpec, RunSpec as BlockRunSpec, TableSpec as BlockTableSpec,
@@ -210,6 +211,23 @@ impl Studio {
         self.save_with_pdf_stats_impl(document, docx_path, false)
     }
 
+    /// Renders a PDF and returns the semantic/layout evidence consumed by
+    /// [`crate::parity::ParityReport`]. When `page_snapshots_dir` is supplied,
+    /// deterministic PNG geometry snapshots are emitted for visual regression
+    /// comparisons.
+    pub fn render_pdf_with_evidence(
+        &self,
+        document: &Document,
+        pdf_path: impl AsRef<Path>,
+        page_snapshots_dir: Option<&Path>,
+    ) -> crate::Result<PdfRenderEvidence> {
+        let pdf_path = pdf_path.as_ref();
+        if let Some(parent) = pdf_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        render_pdf(document, pdf_path, &self.config, page_snapshots_dir)
+    }
+
     fn save_with_pdf_stats_impl(
         &self,
         document: &Document,
@@ -237,7 +255,7 @@ impl Studio {
             let mut pdf_path = rendered_dir.join(stem);
             pdf_path.set_extension("pdf");
             let pdf_start = Instant::now();
-            render_pdf(document, &pdf_path, &self.config)?;
+            let _evidence = render_pdf(document, &pdf_path, &self.config, None)?;
             pdf_render = pdf_start.elapsed();
             pdf_bytes = fs::metadata(&pdf_path)?.len();
             if announce_outputs {
@@ -1826,10 +1844,35 @@ struct PdfImageObjectIds {
     alpha_id: Option<Ref>,
 }
 
-fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> crate::Result<()> {
+fn render_pdf(
+    document: &Document,
+    pdf_path: &Path,
+    config: &RusdoxConfig,
+    page_snapshots_dir: Option<&Path>,
+) -> crate::Result<PdfRenderEvidence> {
     let settings = PdfRenderSettings::from_config(config);
     let mut font_system = PdfFontSystem::new(config, settings);
     let layout = layout_document(document, settings, &mut font_system)?;
+    let evidence = PdfRenderEvidence {
+        projection: DocumentProjection::from_document(document),
+        page_count: layout.pages.len(),
+        draw_operations: layout.pages.iter().map(|page| page.ops.len()).sum(),
+        text_lines: layout
+            .pages
+            .iter()
+            .flat_map(|page| &page.ops)
+            .filter(|op| matches!(op, DrawOp::TextLine { .. }))
+            .count(),
+        image_operations: layout
+            .pages
+            .iter()
+            .flat_map(|page| &page.ops)
+            .filter(|op| matches!(op, DrawOp::Image { .. }))
+            .count(),
+    };
+    if let Some(directory) = page_snapshots_dir {
+        write_layout_snapshots(&layout, directory, settings)?;
+    }
     let catalog_id = Ref::new(1);
     let page_tree_id = Ref::new(2);
     let mut next_id = 3;
@@ -1869,6 +1912,7 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
         });
         image_object_ids.push(PdfImageObjectIds { image_id, alpha_id });
     }
+    let document_info_id = Ref::new(next_id);
 
     let estimated_capacity = layout
         .pages
@@ -1878,6 +1922,23 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
         .max(64 * 1024);
     let mut pdf = Pdf::with_capacity(estimated_capacity);
     pdf.catalog(catalog_id).pages(page_tree_id);
+    {
+        let metadata = document.metadata();
+        let mut info = pdf.document_info(document_info_id);
+        info.title(TextStr(
+            metadata.title.as_deref().unwrap_or("RusDox Document"),
+        ))
+        .author(TextStr(metadata.author.as_deref().unwrap_or("RusDox")))
+        .creator(TextStr("RusDox"))
+        .producer(TextStr("RusDox native PDF renderer"));
+        if let Some(subject) = metadata.subject.as_deref() {
+            info.subject(TextStr(subject));
+        }
+        if !metadata.keywords.is_empty() {
+            let keywords = metadata.keywords.join(", ");
+            info.keywords(TextStr(&keywords));
+        }
+    }
     pdf.pages(page_tree_id)
         .kids(page_ids.iter().copied())
         .count(i32::try_from(page_ids.len()).unwrap_or(i32::MAX));
@@ -1994,7 +2055,157 @@ fn render_pdf(document: &Document, pdf_path: &Path, config: &RusdoxConfig) -> cr
     }
 
     fs::write(pdf_path, pdf.finish())?;
+    Ok(evidence)
+}
+
+fn write_layout_snapshots(
+    layout: &PdfDocumentLayout,
+    directory: &Path,
+    settings: PdfRenderSettings,
+) -> crate::Result<()> {
+    fs::create_dir_all(directory)?;
+    for entry in fs::read_dir(directory)? {
+        let path = entry?.path();
+        let is_page_snapshot = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with("page-") && name.ends_with(".png"));
+        if is_page_snapshot {
+            fs::remove_file(path)?;
+        }
+    }
+
+    let width = settings.page_width.ceil().max(1.0) as u32;
+    let height = settings.page_height.ceil().max(1.0) as u32;
+    for (index, page) in layout.pages.iter().enumerate() {
+        let mut image =
+            image::RgbaImage::from_pixel(width, height, image::Rgba([255, 252, 246, 255]));
+        for op in &page.ops {
+            match op {
+                DrawOp::Rect {
+                    x,
+                    y_top,
+                    width,
+                    height,
+                    fill,
+                    stroke,
+                } => {
+                    if let Some(color) = fill {
+                        paint_snapshot_rect(&mut image, *x, *y_top, *width, *height, *color);
+                    }
+                    if let Some((color, stroke_width)) = stroke {
+                        paint_snapshot_border(
+                            &mut image,
+                            *x,
+                            *y_top,
+                            *width,
+                            *height,
+                            (*stroke_width).max(1.0),
+                            *color,
+                        );
+                    }
+                }
+                DrawOp::TextLine {
+                    x,
+                    y_top,
+                    line,
+                    max_width,
+                } => {
+                    let mut cursor_x = *x;
+                    for span in &line.spans {
+                        let bar_width = span.width.min((*max_width - (cursor_x - *x)).max(0.0));
+                        if bar_width > 0.0 {
+                            paint_snapshot_rect(
+                                &mut image,
+                                cursor_x,
+                                *y_top + (line.line_height * 0.34),
+                                bar_width,
+                                (line.line_height * 0.42).max(1.0),
+                                span.style.color,
+                            );
+                        }
+                        cursor_x += span.width;
+                    }
+                }
+                DrawOp::Image {
+                    x,
+                    y_top,
+                    width,
+                    height,
+                    ..
+                } => {
+                    paint_snapshot_rect(
+                        &mut image,
+                        *x,
+                        *y_top,
+                        *width,
+                        *height,
+                        Rgb(205, 222, 218),
+                    );
+                    paint_snapshot_border(
+                        &mut image,
+                        *x,
+                        *y_top,
+                        *width,
+                        *height,
+                        1.0,
+                        Rgb(15, 118, 110),
+                    );
+                }
+            }
+        }
+        image.save(directory.join(format!("page-{:03}.png", index + 1)))?;
+    }
     Ok(())
+}
+
+fn paint_snapshot_rect(
+    image: &mut image::RgbaImage,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    color: Rgb,
+) {
+    let left = x.max(0.0).floor() as u32;
+    let top = y.max(0.0).floor() as u32;
+    let right = (x + width).max(0.0).ceil().min(image.width() as f32) as u32;
+    let bottom = (y + height).max(0.0).ceil().min(image.height() as f32) as u32;
+    let pixel = image::Rgba([color.0, color.1, color.2, 255]);
+    for row in top..bottom {
+        for column in left..right {
+            image.put_pixel(column, row, pixel);
+        }
+    }
+}
+
+fn paint_snapshot_border(
+    image: &mut image::RgbaImage,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    stroke_width: f32,
+    color: Rgb,
+) {
+    paint_snapshot_rect(image, x, y, width, stroke_width, color);
+    paint_snapshot_rect(
+        image,
+        x,
+        y + height - stroke_width,
+        width,
+        stroke_width,
+        color,
+    );
+    paint_snapshot_rect(image, x, y, stroke_width, height, color);
+    paint_snapshot_rect(
+        image,
+        x + width - stroke_width,
+        y,
+        stroke_width,
+        height,
+        color,
+    );
 }
 
 fn layout_document(
