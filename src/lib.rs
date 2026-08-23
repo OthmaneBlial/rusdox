@@ -22,8 +22,11 @@
 pub mod config;
 mod document;
 mod error;
+mod io_utils;
 mod layout;
+mod limits;
 mod metadata;
+mod package_validate;
 mod paragraph;
 pub mod parity;
 mod run;
@@ -38,8 +41,14 @@ mod xml_utils;
 
 pub use document::{Document, DocumentBlockRef, DocumentMode};
 pub use error::{DocxError, Result};
+pub use io_utils::atomic_write as atomic_write_file;
 pub use layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageOrientation, PageSetup};
+pub use limits::InputLimits;
 pub use metadata::DocumentMetadata;
+pub use package_validate::{
+    validate_docx_package, validate_docx_package_with_limits, validate_docx_reader_with_limits,
+    PackageValidationReport,
+};
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 pub use run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
 pub use style::{

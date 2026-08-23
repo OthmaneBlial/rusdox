@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "tested_at": "2026-08-24",
+  "host": {
+    "os": "macOS 26.6 (25G72)",
+    "architecture": "arm64",
+    "rustc": "1.95.0 (59807616e 2026-04-14)"
+  },
+  "fixtures": {
+    "docx": {
+      "path": "compatibility/fixtures/dual-output-contract.docx",
+      "sha256": "5737623721ed3bf0c79b87f803bd5311e86dfffac691af5d8ef1b91cfac5aa52"
+    },
+    "pdf": {
+      "path": "compatibility/fixtures/dual-output-contract.pdf",
+      "sha256": "39f5f283195fddadc223e444972490d096c6c637d68507dcb63ca050a24eea25"
+    }
+  },
+  "results": [
+    {
+      "viewer": "RusDox OOXML validator",
+      "version": "0.1.1+unreleased",
+      "artifact": "DOCX",
+      "status": "passed",
+      "scope": "XML well-formedness, content types, internal relationship targets, reopen and modify"
+    },
+    {
+      "viewer": "Apple Pages",
+      "version": "13.1 (7037.0.101)",
+      "artifact": "DOCX",
+      "status": "open_smoke_passed",
+      "scope": "Application held the exact fixture open; visual fidelity was not asserted"
+    },
+    {
+      "viewer": "Apple Preview and Quick Look",
+      "version": "Preview 11.0 / macOS 26.6",
+      "artifact": "PDF",
+      "status": "open_and_first_page_raster_passed",
+      "scope": "Preview held the exact fixture open and Quick Look rendered the inspected first-page evidence PNG"
+    },
+    {
+      "viewer": "Microsoft Word for Mac",
+      "version": "16.112 (16.112.26081010)",
+      "artifact": "DOCX",
+      "status": "blocked_environment",
+      "scope": "Installed application returned AppleScript -1708 and never held the fixture open; no fidelity claim"
+    },
+    {
+      "viewer": "Microsoft Word for Windows",
+      "version": null,
+      "artifact": "DOCX",
+      "status": "not_run",
+      "scope": "No licensed Windows Word environment was available"
+    },
+    {
+      "viewer": "LibreOffice",
+      "version": null,
+      "artifact": "DOCX and PDF",
+      "status": "not_run",
+      "scope": "LibreOffice was not installed on the evidence host"
+    },
+    {
+      "viewer": "Adobe Acrobat",
+      "version": null,
+      "artifact": "PDF",
+      "status": "not_run",
+      "scope": "Adobe Acrobat was not installed on the evidence host"
+    }
+  ]
+}

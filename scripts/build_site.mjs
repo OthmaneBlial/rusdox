@@ -19,6 +19,8 @@ const pages = [
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
+  ["docs/compatibility-scorecard.md", "docs/compatibility-scorecard.html", "Viewer compatibility scorecard", "Trust", "Review dated, hash-pinned evidence from real document viewers without universal claims.", "Trust & operations"],
+  ["docs/input-safety.md", "docs/input-safety.html", "Input safety and limits", "Security", "Understand resource ceilings, fuzz targets, and atomic output recovery for untrusted inputs.", "Trust & operations"],
   ["docs/parity.md", "docs/parity.html", "Parity verification", "Trust", "Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.", "Trust & operations"],
   ["docs/troubleshooting.md", "docs/troubleshooting.html", "Troubleshooting", "Operations", "Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.", "Trust & operations"],
   ["docs/gallery.md", "docs/gallery.html", "Template gallery", "Examples", "Browse real YAML inputs and generated DOCX/PDF output previews.", "Examples"],
@@ -62,6 +64,14 @@ if (fs.existsSync(paritySource)) {
   }
 }
 
+const compatibilitySource = path.join(root, "compatibility");
+if (fs.existsSync(compatibilitySource)) {
+  for (const file of walkFiles(compatibilitySource)) {
+    const relative = normalize(path.relative(compatibilitySource, file));
+    generated.set(`compatibility/${relative}`, fs.readFileSync(file));
+  }
+}
+
 const sourceCopies = [
   "README.md",
   "ROADMAP.md",
@@ -71,7 +81,10 @@ const sourceCopies = [
   "SECURITY.md",
   "CODE_OF_CONDUCT.md",
   ...fs.readdirSync(path.join(root, "docs")).filter((name) => name.endsWith(".md")).map((name) => `docs/${name}`),
-  "examples/README.md",
+  ...walkFiles(path.join(root, "examples"))
+    .filter((file) => file.endsWith(".md") || file.endsWith(".yaml"))
+    .map((file) => normalize(path.relative(root, file))),
+  "fuzz/README.md",
 ];
 
 for (const source of sourceCopies) {

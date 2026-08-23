@@ -1,14 +1,16 @@
 use std::fs;
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 
 use image::codecs::png::PngEncoder;
 use image::imageops::FilterType;
-use image::{ColorType, GenericImageView, ImageEncoder};
+use image::{ColorType, ImageEncoder};
 use resvg::tiny_skia::{Pixmap, Transform};
 use resvg::usvg;
 
 use crate::error::{DocxError, Result};
 use crate::paragraph::ParagraphAlignment;
+use crate::InputLimits;
 
 const VISUAL_RASTER_DPI: u32 = 192;
 const TWIPS_PER_PIXEL_AT_96_DPI: u32 = 15;
@@ -181,6 +183,7 @@ pub struct Visual {
     alt_text: Option<String>,
     alignment: ParagraphAlignment,
     sizing: VisualSizing,
+    input_limits: InputLimits,
 }
 
 impl Visual {
@@ -192,6 +195,7 @@ impl Visual {
             alt_text: None,
             alignment: VisualKind::Image.default_alignment(),
             sizing: VisualSizing::default(),
+            input_limits: InputLimits::default(),
         }
     }
 
@@ -203,7 +207,22 @@ impl Visual {
             alt_text: None,
             alignment: VisualKind::Image.default_alignment(),
             sizing: VisualSizing::default(),
+            input_limits: InputLimits::default(),
         }
+    }
+
+    /// Creates a generic path-backed image with explicit resource ceilings.
+    pub fn from_path_with_limits(path: impl Into<PathBuf>, input_limits: InputLimits) -> Self {
+        Self::from_path(path).with_input_limits(input_limits)
+    }
+
+    /// Creates an embedded image with explicit resource ceilings.
+    pub fn from_bytes_with_limits(
+        bytes: Vec<u8>,
+        format: VisualFormat,
+        input_limits: InputLimits,
+    ) -> Self {
+        Self::from_bytes(bytes, format).with_input_limits(input_limits)
     }
 
     /// Creates a semantic logo block from a path.
@@ -295,6 +314,17 @@ impl Visual {
         &self.sizing
     }
 
+    /// Returns the resource ceilings used while loading and rasterizing this visual.
+    pub fn input_limits(&self) -> InputLimits {
+        self.input_limits
+    }
+
+    /// Replaces the resource ceilings used while loading and rasterizing this visual.
+    pub fn with_input_limits(mut self, input_limits: InputLimits) -> Self {
+        self.input_limits = input_limits;
+        self
+    }
+
     /// Returns the current source path when the visual is path-backed.
     pub fn source_path(&self) -> Option<&Path> {
         match &self.source {
@@ -323,8 +353,8 @@ impl Visual {
     }
 
     pub(crate) fn intrinsic_dimensions(&self) -> Result<(u32, u32)> {
-        let loaded = load_visual_source(&self.source)?;
-        intrinsic_dimensions_for_source(&loaded)
+        let loaded = load_visual_source(&self.source, self.input_limits)?;
+        intrinsic_dimensions_for_source(&loaded, self.input_limits)
     }
 
     pub(crate) fn docx_media(
@@ -332,7 +362,7 @@ impl Visual {
         display_width_twips: u32,
         display_height_twips: u32,
     ) -> Result<(VisualFormat, Vec<u8>)> {
-        let loaded = load_visual_source(&self.source)?;
+        let loaded = load_visual_source(&self.source, self.input_limits)?;
         match loaded.format {
             VisualFormat::Png | VisualFormat::Jpeg => Ok((loaded.format, loaded.bytes)),
             VisualFormat::Svg => {
@@ -341,6 +371,7 @@ impl Visual {
                     loaded.resources_dir.as_deref(),
                     twips_to_pixels_at_dpi(display_width_twips, VISUAL_RASTER_DPI),
                     twips_to_pixels_at_dpi(display_height_twips, VISUAL_RASTER_DPI),
+                    self.input_limits,
                 )?;
                 Ok((VisualFormat::Png, encode_png(&raster)?))
             }
@@ -352,7 +383,7 @@ impl Visual {
         display_width_twips: u32,
         display_height_twips: u32,
     ) -> Result<RasterizedVisual> {
-        let loaded = load_visual_source(&self.source)?;
+        let loaded = load_visual_source(&self.source, self.input_limits)?;
         let target_width = twips_to_pixels_at_dpi(display_width_twips, VISUAL_RASTER_DPI);
         let target_height = twips_to_pixels_at_dpi(display_height_twips, VISUAL_RASTER_DPI);
 
@@ -362,10 +393,14 @@ impl Visual {
                 loaded.resources_dir.as_deref(),
                 target_width,
                 target_height,
+                self.input_limits,
             ),
-            VisualFormat::Png | VisualFormat::Jpeg => {
-                rasterize_raster_image(&loaded.bytes, target_width, target_height)
-            }
+            VisualFormat::Png | VisualFormat::Jpeg => rasterize_raster_image(
+                &loaded.bytes,
+                target_width,
+                target_height,
+                self.input_limits,
+            ),
         }
     }
 }
@@ -384,11 +419,16 @@ struct LoadedVisualSource {
     resources_dir: Option<PathBuf>,
 }
 
-fn load_visual_source(source: &VisualSource) -> Result<LoadedVisualSource> {
+fn load_visual_source(source: &VisualSource, limits: InputLimits) -> Result<LoadedVisualSource> {
     match source {
         VisualSource::Path(path) => {
-            let bytes = fs::read(path)?;
-            let format = VisualFormat::from_path(path)
+            let declared_format = VisualFormat::from_path(path);
+            let read_limit = match declared_format {
+                Some(VisualFormat::Svg) => limits.max_svg_bytes,
+                Some(VisualFormat::Png | VisualFormat::Jpeg) | None => limits.max_image_bytes,
+            };
+            let bytes = read_visual_with_limit(path, read_limit)?;
+            let format = declared_format
                 .or_else(|| VisualFormat::guess(&bytes))
                 .ok_or_else(|| {
                     DocxError::parse(format!(
@@ -396,26 +436,77 @@ fn load_visual_source(source: &VisualSource) -> Result<LoadedVisualSource> {
                         path.display()
                     ))
                 })?;
+            ensure_visual_byte_limit(&bytes, format, limits)?;
             Ok(LoadedVisualSource {
                 format,
                 bytes,
                 resources_dir: path.parent().map(Path::to_path_buf),
             })
         }
-        VisualSource::Embedded { format, bytes } => Ok(LoadedVisualSource {
-            format: *format,
-            bytes: bytes.clone(),
-            resources_dir: None,
-        }),
+        VisualSource::Embedded { format, bytes } => {
+            ensure_visual_byte_limit(bytes, *format, limits)?;
+            Ok(LoadedVisualSource {
+                format: *format,
+                bytes: bytes.clone(),
+                resources_dir: None,
+            })
+        }
     }
 }
 
-fn intrinsic_dimensions_for_source(source: &LoadedVisualSource) -> Result<(u32, u32)> {
+fn read_visual_with_limit(path: &Path, limit: u64) -> Result<Vec<u8>> {
+    let declared = fs::metadata(path)?.len();
+    if declared > limit {
+        return Err(DocxError::resource_limit(format!(
+            "visual '{}' is {declared} bytes; limit is {limit} bytes",
+            path.display()
+        )));
+    }
+    let mut bytes = Vec::new();
+    fs::File::open(path)?
+        .take(limit.saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limit {
+        return Err(DocxError::resource_limit(format!(
+            "visual '{}' exceeded the {limit} byte limit while reading",
+            path.display()
+        )));
+    }
+    Ok(bytes)
+}
+
+fn ensure_visual_byte_limit(bytes: &[u8], format: VisualFormat, limits: InputLimits) -> Result<()> {
+    let size = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
+    let limit = match format {
+        VisualFormat::Svg => limits.max_svg_bytes,
+        VisualFormat::Png | VisualFormat::Jpeg => limits.max_image_bytes,
+    };
+    if size > limit {
+        return Err(DocxError::resource_limit(format!(
+            "{} visual is {size} bytes; limit is {limit} bytes",
+            format.extension().to_ascii_uppercase()
+        )));
+    }
+    Ok(())
+}
+
+fn intrinsic_dimensions_for_source(
+    source: &LoadedVisualSource,
+    limits: InputLimits,
+) -> Result<(u32, u32)> {
     match source.format {
         VisualFormat::Png | VisualFormat::Jpeg => {
-            let image = image::load_from_memory(&source.bytes)
-                .map_err(|error| DocxError::parse(format!("failed to decode visual: {error}")))?;
-            Ok(image.dimensions())
+            let dimensions = image::ImageReader::new(Cursor::new(&source.bytes))
+                .with_guessed_format()
+                .map_err(|error| {
+                    DocxError::parse(format!("failed to inspect visual format: {error}"))
+                })?
+                .into_dimensions()
+                .map_err(|error| {
+                    DocxError::parse(format!("failed to inspect visual dimensions: {error}"))
+                })?;
+            ensure_pixel_budget(dimensions.0, dimensions.1, "decoded visual", limits)?;
+            Ok(dimensions)
         }
         VisualFormat::Svg => {
             let tree = parse_svg_tree(&source.bytes, source.resources_dir.as_deref())?;
@@ -440,10 +531,12 @@ fn rasterize_svg(
     resources_dir: Option<&Path>,
     width_px: u32,
     height_px: u32,
+    limits: InputLimits,
 ) -> Result<RasterizedVisual> {
     let tree = parse_svg_tree(bytes, resources_dir)?;
     let width_px = width_px.max(1);
     let height_px = height_px.max(1);
+    ensure_pixel_budget(width_px, height_px, "SVG render surface", limits)?;
     let mut pixmap = Pixmap::new(width_px, height_px)
         .ok_or_else(|| DocxError::parse("failed to allocate SVG render surface"))?;
     let source_size = tree.size();
@@ -459,11 +552,30 @@ fn rasterize_svg(
     })
 }
 
-fn rasterize_raster_image(bytes: &[u8], width_px: u32, height_px: u32) -> Result<RasterizedVisual> {
+fn rasterize_raster_image(
+    bytes: &[u8],
+    width_px: u32,
+    height_px: u32,
+    limits: InputLimits,
+) -> Result<RasterizedVisual> {
+    let source_dimensions = image::ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|error| DocxError::parse(format!("failed to inspect visual format: {error}")))?
+        .into_dimensions()
+        .map_err(|error| {
+            DocxError::parse(format!("failed to inspect visual dimensions: {error}"))
+        })?;
+    ensure_pixel_budget(
+        source_dimensions.0,
+        source_dimensions.1,
+        "decoded visual",
+        limits,
+    )?;
     let image = image::load_from_memory(bytes)
         .map_err(|error| DocxError::parse(format!("failed to decode visual: {error}")))?;
     let width_px = width_px.max(1);
     let height_px = height_px.max(1);
+    ensure_pixel_budget(width_px, height_px, "visual render surface", limits)?;
     let resized = if image.width() == width_px && image.height() == height_px {
         image
     } else {
@@ -474,6 +586,17 @@ fn rasterize_raster_image(bytes: &[u8], width_px: u32, height_px: u32) -> Result
         height_px,
         rgba: resized.to_rgba8().into_raw(),
     })
+}
+
+fn ensure_pixel_budget(width: u32, height: u32, label: &str, limits: InputLimits) -> Result<()> {
+    let pixels = u64::from(width).saturating_mul(u64::from(height));
+    let limit = limits.max_image_pixels;
+    if pixels > limit {
+        return Err(DocxError::resource_limit(format!(
+            "{label} is {width}x{height} ({pixels} pixels); limit is {limit} pixels"
+        )));
+    }
+    Ok(())
 }
 
 fn encode_png(raster: &RasterizedVisual) -> Result<Vec<u8>> {
@@ -559,16 +682,35 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{
-        pixels_to_twips, resolve_dimensions_from_intrinsic, twips_to_pixels_at_dpi, Visual,
-        VisualFormat, VisualKind,
+        ensure_pixel_budget, ensure_visual_byte_limit, pixels_to_twips,
+        resolve_dimensions_from_intrinsic, twips_to_pixels_at_dpi, Visual, VisualFormat,
+        VisualKind,
     };
-    use crate::ParagraphAlignment;
+    use crate::{InputLimits, ParagraphAlignment};
 
     const SIMPLE_SVG: &str = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
   <rect width="120" height="40" fill="#F8FAFC"/>
   <path d="M12 28 L28 12 L44 28" stroke="#0F766E" stroke-width="6" fill="none" stroke-linecap="round"/>
   <text x="52" y="26" font-size="16" fill="#0F172A">RusDox</text>
 </svg>"##;
+
+    #[test]
+    fn visual_byte_and_pixel_limits_are_enforced_before_rendering() {
+        let byte_error = ensure_visual_byte_limit(
+            b"oversized",
+            VisualFormat::Svg,
+            InputLimits {
+                max_svg_bytes: 4,
+                ..InputLimits::default()
+            },
+        )
+        .expect_err("SVG byte ceiling must fail");
+        assert!(byte_error.to_string().contains("resource limit"));
+
+        let pixel_error = ensure_pixel_budget(8_001, 8_000, "test raster", InputLimits::default())
+            .expect_err("pixel ceiling must fail");
+        assert!(pixel_error.to_string().contains("64008000 pixels"));
+    }
 
     #[test]
     fn visual_kind_defaults_are_stable() {

@@ -136,8 +136,7 @@ impl RusdoxConfig {
             }
         };
 
-        fs::write(path, content)?;
-        Ok(())
+        crate::io_utils::atomic_write(path, content.as_bytes())
     }
 
     /// Writes a commented default TOML template to disk.
@@ -146,8 +145,7 @@ impl RusdoxConfig {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::write(path, Self::default_toml_template())?;
-        Ok(())
+        crate::io_utils::atomic_write(path, Self::default_toml_template().as_bytes())
     }
 
     /// Returns the commented default TOML template.

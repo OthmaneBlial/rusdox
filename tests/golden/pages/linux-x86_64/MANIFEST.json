@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "platform": "ubuntu-latest x86_64",
+  "source_commit": "fe5fbb4abc5119ec1f8fd113cca9de5a4c0952c6",
+  "source_workflow_run": 32670927593,
+  "source_artifact": "gallery-parity-fe5fbb4abc5119ec1f8fd113cca9de5a4c0952c6",
+  "specs": 17,
+  "page_snapshots": 26,
+  "pixel_threshold": 0
+}

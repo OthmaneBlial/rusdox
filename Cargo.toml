@@ -23,6 +23,7 @@ include = [
   "/SECURITY.md",
   "/docs/**",
   "/tests/**",
+  "!/tests/golden/**",
   "/examples/*.yaml",
   "/examples/fragments/**",
   "/examples/README.md",

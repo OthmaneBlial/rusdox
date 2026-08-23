@@ -7,10 +7,11 @@ use rusdox::parity::DocumentProjection;
 use rusdox::spec::DocumentSpec;
 use rusdox::studio::Studio;
 use rusdox::{
-    Border, BorderStyle, Document, DocumentMode, HeaderFooter, PageNumberFormat, PageNumbering,
-    PageOrientation, PageSetup, Paragraph, ParagraphAlignment, ParagraphList, ParagraphStyle,
-    ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
-    TableCell, TableRow, TableStyle, TableStyleProperties, UnderlineStyle, Visual, VisualKind,
+    validate_docx_package, Border, BorderStyle, Document, DocumentMode, HeaderFooter, InputLimits,
+    PageNumberFormat, PageNumbering, PageOrientation, PageSetup, Paragraph, ParagraphAlignment,
+    ParagraphList, ParagraphStyle, ParagraphStyleProperties, Run, RunStyle, RunStyleProperties,
+    Stylesheet, Table, TableBorders, TableCell, TableRow, TableStyle, TableStyleProperties,
+    UnderlineStyle, Visual, VisualKind,
 };
 use tempfile::tempdir;
 use zip::write::SimpleFileOptions;
@@ -840,10 +841,139 @@ fn unsplittable_table_row_overflow_is_diagnostic() {
     ));
 
     let temp = tempdir().expect("temp dir");
+    let pdf_path = temp.path().join("overflow.pdf");
+    fs::write(&pdf_path, b"known-good-pdf").expect("seed recoverable PDF");
     let error = Studio::default()
-        .render_pdf_with_evidence(&document, temp.path().join("overflow.pdf"), None)
+        .render_pdf_with_evidence(&document, &pdf_path, None)
         .expect_err("oversized unsplittable row must fail");
     assert!(
         matches!(error, rusdox::DocxError::Parse(message) if message.contains("table row overflow") && message.contains("allow_split_across_pages=false"))
     );
+    assert_eq!(
+        fs::read(pdf_path).expect("read preserved PDF"),
+        b"known-good-pdf",
+        "a failed render must not replace the previous output"
+    );
+}
+
+#[test]
+fn external_macos_docx_fixture_opens_modifies_and_preserves_package_parts(
+) -> Result<(), rusdox::DocxError> {
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/external-macos-textutil.docx");
+    let initial_report = validate_docx_package(&fixture)?;
+    assert!(
+        initial_report.valid,
+        "external fixture: {}",
+        initial_report.errors.join("; ")
+    );
+
+    let original_theme = {
+        let mut archive = ZipArchive::new(fs::File::open(&fixture)?)?;
+        let mut bytes = Vec::new();
+        archive
+            .by_name("word/theme/theme1.xml")?
+            .read_to_end(&mut bytes)?;
+        bytes
+    };
+    let mut document = Document::open(&fixture)?;
+    assert!(document.text().contains("WORD-MACOS-EXTERNAL-PARTS"));
+    document.push_paragraph(
+        Paragraph::new().add_run(Run::from_text("Modified by RusDox regression lab")),
+    );
+
+    let temp = tempdir().expect("temp dir");
+    let output = temp.path().join("external-roundtrip.docx");
+    document.save(&output)?;
+    let output_report = validate_docx_package(&output)?;
+    assert!(
+        output_report.valid,
+        "round trip: {}",
+        output_report.errors.join("; ")
+    );
+    let reopened = Document::open_read_only(&output)?;
+    assert!(reopened
+        .text()
+        .contains("Modified by RusDox regression lab"));
+
+    let mut archive = ZipArchive::new(fs::File::open(output)?)?;
+    let mut preserved_theme = Vec::new();
+    archive
+        .by_name("word/theme/theme1.xml")?
+        .read_to_end(&mut preserved_theme)?;
+    assert_eq!(preserved_theme, original_theme);
+    assert!(archive.by_name("docProps/meta.xml").is_ok());
+    Ok(())
+}
+
+#[test]
+fn docx_and_pdf_outputs_are_byte_deterministic() -> Result<(), rusdox::DocxError> {
+    let spec = DocumentSpec::load_from_path(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/meeting_notes.yaml"),
+    )?;
+    let studio = Studio::default();
+    let document = studio.compose(&spec);
+    let temp = tempdir().expect("temp dir");
+    let first_docx = temp.path().join("first.docx");
+    let second_docx = temp.path().join("second.docx");
+    let first_pdf = temp.path().join("first.pdf");
+    let second_pdf = temp.path().join("second.pdf");
+
+    document.save(&first_docx)?;
+    document.save(&second_docx)?;
+    studio.render_pdf_with_evidence(&document, &first_pdf, None)?;
+    studio.render_pdf_with_evidence(&document, &second_pdf, None)?;
+
+    assert_eq!(fs::read(first_docx)?, fs::read(second_docx)?);
+    assert_eq!(fs::read(first_pdf)?, fs::read(second_pdf)?);
+    Ok(())
+}
+
+#[test]
+fn docx_and_spec_resource_limits_fail_before_large_allocation() -> Result<(), rusdox::DocxError> {
+    let temp = tempdir().expect("temp dir");
+    let docx = temp.path().join("limited.docx");
+    Document::new()
+        .add_paragraph(Paragraph::new().add_run(Run::from_text("bounded")))
+        .save(&docx)?;
+
+    let archive_error = Document::open_with_limits(
+        &docx,
+        InputLimits {
+            max_docx_archive_bytes: 1,
+            ..InputLimits::default()
+        },
+    )
+    .expect_err("archive size ceiling must fail");
+    assert!(matches!(
+        archive_error,
+        rusdox::DocxError::ResourceLimit(message) if message.contains("archive")
+    ));
+
+    let xml_error = Document::open_with_limits(
+        &docx,
+        InputLimits {
+            max_xml_bytes: 16,
+            ..InputLimits::default()
+        },
+    )
+    .expect_err("XML size ceiling must fail");
+    assert!(matches!(
+        xml_error,
+        rusdox::DocxError::ResourceLimit(message) if message.contains("XML part")
+    ));
+
+    let spec_error = DocumentSpec::from_yaml_str_with_limits(
+        "output_name: too-large\nblocks: []\n",
+        InputLimits {
+            max_spec_bytes: 8,
+            ..InputLimits::default()
+        },
+    )
+    .expect_err("spec size ceiling must fail");
+    assert!(matches!(
+        spec_error,
+        rusdox::DocxError::ResourceLimit(message) if message.contains("YAML document spec")
+    ));
+    Ok(())
 }

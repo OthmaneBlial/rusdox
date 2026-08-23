@@ -48,6 +48,8 @@ Each generated DOCX and PDF also receives a SHA-256 digest in the report.
 
 Every verification emits deterministic PNG snapshots from the PDF renderer's real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.
 
+The repository checks in 26 Linux baselines covering every one of the 17 top-level examples under `tests/golden/pages/linux-x86_64/`. Ubuntu CI compares them at a zero-pixel threshold. Baselines are platform-scoped because installed font files can differ; updating them requires reviewer inspection and `scripts/update_visual_baselines.sh`.
+
 Compare a single spec to an approved baseline:
 
 ```bash
@@ -67,6 +69,19 @@ tests/visual-baselines/
 The threshold is the maximum fraction of pixels that may differ on each page. `0` is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.
 
 Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.
+
+## Deterministic and intentionally variable data
+
+Saving the same in-memory document twice produces byte-identical DOCX and PDF files in the regression suite. Stable metadata defaults, ordered maps, deterministic object identifiers, and fixed ZIP entry ordering are part of that contract.
+
+The following are intentionally outside cross-machine byte determinism:
+
+- benchmark durations, peak-memory samples, and host metadata;
+- font fallback and page geometry when different font files are installed;
+- metadata already present in an externally authored DOCX when the caller chooses to preserve or change it;
+- compatibility screenshots and application-generated resaves from different viewer versions.
+
+Semantic projections and OOXML relationship/content-type checks remain the portable contract across hosts.
 
 The executable boundary fixture is [`examples/dual_output_contract.yaml`](../examples/dual_output_contract.yaml). Script coverage and known shaping limits are captured by [`examples/international_scripts.yaml`](../examples/international_scripts.yaml).
 

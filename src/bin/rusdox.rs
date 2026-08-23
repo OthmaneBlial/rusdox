@@ -1,6 +1,5 @@
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::thread;
@@ -443,7 +442,7 @@ fn init_script(args: InitScriptArgs) -> Result<()> {
             fs::create_dir_all(parent)?;
         }
     }
-    fs::write(&path, default_script_template())?;
+    rusdox::atomic_write_file(&path, default_script_template().as_bytes())?;
     println!("{}", path.display());
     Ok(())
 }
@@ -822,10 +821,10 @@ fn run_verify(args: VerifyArgs) -> Result<()> {
             verify_pdf_file(&pdf_path)?,
         );
 
-        fs::write(&json_report_path, report.to_json_pretty()?)?;
+        rusdox::atomic_write_file(&json_report_path, report.to_json_pretty()?.as_bytes())?;
         let canonical =
             format!("https://othmaneblial.github.io/rusdox/parity/{output_name}-parity.html");
-        fs::write(&html_report_path, report.to_html(&canonical))?;
+        rusdox::atomic_write_file(&html_report_path, report.to_html(&canonical).as_bytes())?;
 
         let failed_checks = report
             .checks
@@ -888,24 +887,7 @@ fn safe_output_name(value: &str) -> String {
 }
 
 fn verify_docx_package(path: &Path) -> Result<bool> {
-    let file = fs::File::open(path)?;
-    let mut archive = zip::ZipArchive::new(file)?;
-    let required = [
-        "[Content_Types].xml",
-        "_rels/.rels",
-        "word/document.xml",
-        "word/_rels/document.xml.rels",
-        "word/styles.xml",
-    ];
-    if required.iter().any(|name| archive.by_name(name).is_err()) {
-        return Ok(false);
-    }
-
-    let mut relationships = String::new();
-    archive
-        .by_name("_rels/.rels")?
-        .read_to_string(&mut relationships)?;
-    Ok(relationships.contains("officeDocument") && relationships.contains("word/document.xml"))
+    Ok(rusdox::validate_docx_package(path)?.valid)
 }
 
 fn verify_pdf_file(path: &Path) -> Result<bool> {

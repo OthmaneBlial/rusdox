@@ -1,14 +1,14 @@
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Seek, Write};
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
-use tempfile::NamedTempFile;
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::error::{DocxError, Result};
 use crate::layout::{HeaderFooter, PageNumbering, PageSetup};
+use crate::limits::InputLimits;
 use crate::metadata::{
     parse_core_properties_xml, parse_custom_properties_xml, render_core_properties_xml,
     render_custom_properties_xml, DocumentMetadata,
@@ -89,6 +89,10 @@ const STYLES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes
   </w:style>
 </w:styles>
 "#;
+
+fn is_xml_part(name: &str) -> bool {
+    name.ends_with(".xml") || name.ends_with(".rels")
+}
 
 /// Controls how a document instance is intended to be used.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -183,19 +187,38 @@ impl Document {
 
     /// Opens a document for reading and writing.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-        Self::open_with_mode(path, DocumentMode::ReadWrite)
+        Self::open_with_mode_and_limits(path, DocumentMode::ReadWrite, InputLimits::default())
     }
 
     /// Opens a document in read-only mode.
     pub fn open_read_only(path: impl AsRef<Path>) -> Result<Self> {
-        Self::open_with_mode(path, DocumentMode::ReadOnly)
+        Self::open_with_mode_and_limits(path, DocumentMode::ReadOnly, InputLimits::default())
+    }
+
+    /// Opens a document for reading and writing with explicit resource ceilings.
+    pub fn open_with_limits(path: impl AsRef<Path>, limits: InputLimits) -> Result<Self> {
+        Self::open_with_mode_and_limits(path, DocumentMode::ReadWrite, limits)
+    }
+
+    /// Opens a read-only document with explicit resource ceilings.
+    pub fn open_read_only_with_limits(path: impl AsRef<Path>, limits: InputLimits) -> Result<Self> {
+        Self::open_with_mode_and_limits(path, DocumentMode::ReadOnly, limits)
     }
 
     /// Opens a document with an explicit mode.
     pub fn open_with_mode(path: impl AsRef<Path>, mode: DocumentMode) -> Result<Self> {
+        Self::open_with_mode_and_limits(path, mode, InputLimits::default())
+    }
+
+    /// Opens a document with an explicit mode and resource ceilings.
+    pub fn open_with_mode_and_limits(
+        path: impl AsRef<Path>,
+        mode: DocumentMode,
+        limits: InputLimits,
+    ) -> Result<Self> {
         let path = path.as_ref();
         let file = File::open(path)?;
-        let mut document = Self::open_from_reader(BufReader::new(file), mode)?;
+        let mut document = Self::open_from_reader_with_limits(BufReader::new(file), mode, limits)?;
         document.source_path = Some(path.to_path_buf());
         Ok(document)
     }
@@ -205,8 +228,38 @@ impl Document {
     where
         R: Read + Seek,
     {
+        Self::open_from_reader_with_limits(reader, mode, InputLimits::default())
+    }
+
+    /// Opens a document reader with explicit resource ceilings.
+    pub fn open_from_reader_with_limits<R>(
+        mut reader: R,
+        mode: DocumentMode,
+        limits: InputLimits,
+    ) -> Result<Self>
+    where
+        R: Read + Seek,
+    {
+        let start = reader.stream_position()?;
+        let archive_bytes = reader.seek(SeekFrom::End(0))?.saturating_sub(start);
+        if archive_bytes > limits.max_docx_archive_bytes {
+            return Err(DocxError::resource_limit(format!(
+                "DOCX archive is {archive_bytes} bytes; limit is {} bytes",
+                limits.max_docx_archive_bytes
+            )));
+        }
+        reader.seek(SeekFrom::Start(start))?;
         let mut archive = ZipArchive::new(reader)?;
+        if archive.len() > limits.max_docx_entries {
+            return Err(DocxError::resource_limit(format!(
+                "DOCX contains {} ZIP entries; limit is {}",
+                archive.len(),
+                limits.max_docx_entries
+            )));
+        }
         let mut package_parts = BTreeMap::new();
+        let mut seen_parts = std::collections::BTreeSet::new();
+        let mut total_uncompressed = 0_u64;
         let mut document_xml = None;
         let mut numbering = None;
         let mut styles_xml = None;
@@ -216,8 +269,56 @@ impl Document {
         for index in 0..archive.len() {
             let mut entry = archive.by_index(index)?;
             let name = entry.name().to_string();
+            if entry.enclosed_name().is_none() || name.contains('\\') {
+                return Err(DocxError::parse(format!(
+                    "unsafe DOCX ZIP entry path: {name}"
+                )));
+            }
+            if !seen_parts.insert(name.clone()) {
+                return Err(DocxError::parse(format!(
+                    "duplicate DOCX ZIP entry: {name}"
+                )));
+            }
+            let uncompressed = entry.size();
+            let compressed = entry.compressed_size();
+            if uncompressed > limits.max_docx_entry_bytes {
+                return Err(DocxError::resource_limit(format!(
+                    "DOCX part '{name}' expands to {uncompressed} bytes; per-entry limit is {} bytes",
+                    limits.max_docx_entry_bytes
+                )));
+            }
+            if is_xml_part(&name) && uncompressed > limits.max_xml_bytes {
+                return Err(DocxError::resource_limit(format!(
+                    "XML part '{name}' is {uncompressed} bytes; limit is {} bytes",
+                    limits.max_xml_bytes
+                )));
+            }
+            if uncompressed > 0
+                && (compressed == 0
+                    || uncompressed > compressed.saturating_mul(limits.max_zip_compression_ratio))
+            {
+                return Err(DocxError::resource_limit(format!(
+                    "DOCX part '{name}' exceeds the {}:1 ZIP compression-ratio limit",
+                    limits.max_zip_compression_ratio
+                )));
+            }
+            total_uncompressed = total_uncompressed.saturating_add(uncompressed);
+            if total_uncompressed > limits.max_docx_total_bytes {
+                return Err(DocxError::resource_limit(format!(
+                    "DOCX expands beyond the {} byte total limit",
+                    limits.max_docx_total_bytes
+                )));
+            }
             let mut bytes = Vec::new();
-            entry.read_to_end(&mut bytes)?;
+            let read_limit = uncompressed
+                .min(limits.max_docx_entry_bytes)
+                .saturating_add(1);
+            (&mut entry).take(read_limit).read_to_end(&mut bytes)?;
+            if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limits.max_docx_entry_bytes {
+                return Err(DocxError::resource_limit(format!(
+                    "DOCX part '{name}' exceeded the per-entry limit while decoding"
+                )));
+            }
             if name == "word/document.xml" {
                 document_xml = Some(bytes);
             } else if name == "docProps/core.xml" {
@@ -500,25 +601,7 @@ impl Document {
             return Err(DocxError::parse("cannot save a read-only document"));
         }
 
-        let destination = path.as_ref();
-        let parent = destination.parent().unwrap_or_else(|| Path::new("."));
-        let mut temporary = NamedTempFile::new_in(parent)?;
-
-        {
-            let mut writer = BufWriter::new(temporary.as_file_mut());
-            self.save_to_writer(&mut writer)?;
-            writer.flush()?;
-        }
-
-        #[cfg(windows)]
-        if destination.exists() {
-            std::fs::remove_file(destination)?;
-        }
-
-        temporary
-            .persist(destination)
-            .map_err(|error| DocxError::Io(error.error))?;
-        Ok(())
+        crate::io_utils::atomic_write_with(path.as_ref(), |file| self.save_to_writer(file))
     }
 
     /// Writes the document archive to any writer implementing `Write + Seek`.

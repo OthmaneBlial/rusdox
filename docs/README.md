@@ -11,7 +11,10 @@ If you are new, read these pages in order:
 5. [Gallery](gallery.md)
 6. [Rust API](rust-api.md)
 7. [Compatibility Matrix](compatibility.md)
-8. [Troubleshooting](troubleshooting.md)
+8. [Dated Viewer Scorecard](compatibility-scorecard.md)
+9. [Input Safety and Limits](input-safety.md)
+10. [Parity Verification](parity.md)
+11. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 

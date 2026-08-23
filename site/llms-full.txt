@@ -13,7 +13,10 @@ If you are new, read these pages in order:
 5. [Gallery](gallery.md)
 6. [Rust API](rust-api.md)
 7. [Compatibility Matrix](compatibility.md)
-8. [Troubleshooting](troubleshooting.md)
+8. [Dated Viewer Scorecard](compatibility-scorecard.md)
+9. [Input Safety and Limits](input-safety.md)
+10. [Parity Verification](parity.md)
+11. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -1727,6 +1730,8 @@ There are also convenience free functions in `rusdox::studio` such as `title(...
 
 The low-level model is shared by DOCX and PDF. `PageSetup` controls physical width, height, orientation, margins, header/footer distances, and gutter. `HeaderFooter` supports `{page}` and `{pages}` fields, while `PageNumbering` controls restart and number format.
 
+Untrusted inputs use `InputLimits::default()`. Use `Document::open_with_limits`, `DocumentSpec::load_from_path_with_limits`, or the limit-aware `Visual` constructors only when a trusted workflow needs a deliberate override. `validate_docx_package` returns structured OOXML content-type and relationship evidence without pretending that ZIP creation alone proves validity.
+
 Runs can carry external or internal links, bookmark anchors, TOC fields, and footnotes:
 
 ```rust
@@ -1926,7 +1931,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 
 ## Existing DOCX packages
 
-The Rust API can open a DOCX in read-only or read/write mode. Non-document package parts are retained when saving, and automated fixtures cover custom-part preservation.
+The Rust API can open a DOCX in read-only or read/write mode. Non-document package parts are retained when saving. Automated fixtures cover both synthetic custom parts and an external DOCX produced by the macOS text system, then opened, modified, saved, structurally validated, and reopened by RusDox.
 
 This is not yet a promise of lossless editing for arbitrary Word files. RusDox parses the body features it understands and rewrites `word/document.xml`; unsupported body markup may therefore be normalized or lost. Keep an original copy and test representative templates before production use.
 
@@ -1946,7 +1951,7 @@ This is not yet a promise of lossless editing for arbitrary Word files. RusDox p
 
 CI currently builds and tests on current GitHub-hosted Ubuntu, macOS, and Windows runners. That proves compilation and automated behavior on those platforms; it does not prove visual fidelity in every document viewer.
 
-A dated manual compatibility scorecard for Microsoft Word, LibreOffice, Apple Preview, and Adobe Acrobat is planned for v0.2. Until then, report viewer-specific problems with the smallest non-sensitive fixture possible.
+The [dated viewer scorecard](compatibility-scorecard.md) records exact app versions, fixture hashes, successful smoke tests, blocked environments, and viewers that were not run. Untested rows remain explicitly unclaimed. Resource ceilings and fuzz coverage are documented in [Input Safety and Resource Limits](input-safety.md).
 
 ## Reporting a compatibility problem
 
@@ -1960,6 +1965,110 @@ Open a [bug report](https://github.com/OthmaneBlial/rusdox/issues/new?template=b
 - sanitized screenshots or generated files when safe to share.
 
 See [Troubleshooting](troubleshooting.md) before attaching private business documents.
+
+---
+
+# Viewer compatibility scorecard
+
+Source: https://othmaneblial.github.io/rusdox/docs/compatibility-scorecard.html
+
+- Evidence date: **2026-08-24**
+- Host: **macOS 26.6 (25G72), Apple Silicon**
+- Fixture: [`dual_output_contract.yaml`](../examples/dual_output_contract.yaml)
+
+This scorecard reports what was actually exercised. “Open smoke passed” means the application held the exact checked-in fixture open. It is intentionally weaker than a visual-fidelity pass.
+
+## Results
+
+| Viewer | Version | Artifact | Result | Proven scope |
+|---|---|---|---|---|
+| RusDox OOXML validator | `0.1.1+unreleased` | DOCX | Passed | XML is well formed; required content types and internal relationship targets resolve; reopen→modify→save passes. |
+| Apple Pages | 13.1 (`7037.0.101`) | DOCX | Open smoke passed | Pages held the exact DOCX fixture open. No pixel-level fidelity claim is made. |
+| Apple Preview + Quick Look | Preview 11.0 / macOS 26.6 | PDF | Open + first-page raster passed | Preview held the exact PDF open; Quick Look produced the inspected first-page PNG below. |
+| Microsoft Word for Mac | 16.112 (`16.112.26081010`) | DOCX | Blocked on evidence host | The installed app returned AppleScript error `-1708` and never held the fixture open. This is not recorded as a RusDox pass or failure. |
+| Microsoft Word for Windows | Not available | DOCX | Not run | No licensed Windows Word environment was available. |
+| LibreOffice | Not installed | DOCX/PDF | Not run | No compatibility claim. |
+| Adobe Acrobat | Not installed | PDF | Not run | No compatibility claim. |
+
+![Apple Quick Look first-page rendering](../compatibility/evidence/apple-quicklook-first-page.png)
+
+## Exact artifacts
+
+| Artifact | SHA-256 |
+|---|---|
+| `compatibility/fixtures/dual-output-contract.docx` | `5737623721ed3bf0c79b87f803bd5311e86dfffac691af5d8ef1b91cfac5aa52` |
+| `compatibility/fixtures/dual-output-contract.pdf` | `39f5f283195fddadc223e444972490d096c6c637d68507dcb63ca050a24eea25` |
+| `compatibility/evidence/apple-quicklook-first-page.png` | `83b22ac3b0cfec9029b4fea4f39a5464affeb0b454afcf2733c1074ec730ec2f` |
+
+The machine-readable source is [`compatibility/viewer-results.json`](../compatibility/viewer-results.json). Regenerate the DOCX/PDF pair with:
+
+```bash
+./scripts/generate_compatibility_fixtures.sh
+```
+
+## Interpretation
+
+Automated parity is stronger for content/model equivalence; viewer tests are stronger for application acceptance. Neither substitutes for the other. Production adopters should run the same fixture shape in the exact viewer versions used by their recipients and contribute sanitized evidence for currently untested rows.
+
+---
+
+# Input safety and limits
+
+Source: https://othmaneblial.github.io/rusdox/docs/input-safety.html
+
+RusDox treats DOCX packages, document specs, includes, XML, ZIP entries, images, and SVG as untrusted input. Default limits are applied before large reads or raster allocations.
+
+## Default ceilings
+
+| Boundary | Default |
+|---|---:|
+| Compressed DOCX archive | 64 MiB |
+| ZIP entries per DOCX | 4,096 |
+| One uncompressed ZIP entry | 64 MiB |
+| Total uncompressed DOCX | 256 MiB |
+| ZIP expansion ratio per entry | 200:1 |
+| One XML/relationships part | 16 MiB |
+| Root spec or one YAML include | 8 MiB |
+| YAML include depth | 32 |
+| YAML include count | 128 |
+| One PNG/JPEG source | 32 MiB |
+| One SVG source | 8 MiB |
+| Decoded or target visual raster | 64 million pixels |
+
+Unsafe ZIP paths, duplicate entries, missing required package parts, malformed XML, unresolved internal relationships, and missing content-type declarations are rejected by the package validator.
+
+## Custom limits
+
+Trusted workflows that legitimately need larger inputs can opt in explicitly:
+
+```rust
+use rusdox::{Document, InputLimits};
+
+let limits = InputLimits {
+    max_docx_archive_bytes: 128 * 1024 * 1024,
+    max_docx_total_bytes: 512 * 1024 * 1024,
+    ..InputLimits::default()
+};
+
+let document = Document::open_with_limits("large-but-trusted.docx", limits)?;
+# Ok::<(), rusdox::DocxError>(())
+```
+
+`DocumentSpec::load_from_path_with_limits` and the `from_*_str_with_limits` methods cover YAML/JSON/TOML. `Visual::from_path_with_limits` and `Visual::from_bytes_with_limits` apply explicit visual ceilings.
+
+## Fuzzing
+
+The `fuzz/` workspace contains buildable libFuzzer targets for:
+
+- DOCX ZIP/XML open paths;
+- YAML, JSON, and TOML parsing;
+- PNG, JPEG, and SVG inspection/rasterization.
+
+CI compiles all targets under nightly Rust. Maintainers can run bounded campaigns with the commands in [`fuzz/README.md`](../fuzz/README.md).
+
+## Atomic outputs
+
+DOCX, PDF, and serialized spec writes use a same-directory temporary file, flush and sync it, then atomically replace the destination. If rendering or writing fails, the previous known-good output remains in place and the temporary file is cleaned. Tests simulate an interrupted write and a failed PDF layout to enforce this contract.
 
 ---
 
@@ -2015,6 +2124,8 @@ Each generated DOCX and PDF also receives a SHA-256 digest in the report.
 
 Every verification emits deterministic PNG snapshots from the PDF renderer's real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.
 
+The repository checks in 26 Linux baselines covering every one of the 17 top-level examples under `tests/golden/pages/linux-x86_64/`. Ubuntu CI compares them at a zero-pixel threshold. Baselines are platform-scoped because installed font files can differ; updating them requires reviewer inspection and `scripts/update_visual_baselines.sh`.
+
 Compare a single spec to an approved baseline:
 
 ```bash
@@ -2034,6 +2145,19 @@ tests/visual-baselines/
 The threshold is the maximum fraction of pixels that may differ on each page. `0` is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.
 
 Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.
+
+## Deterministic and intentionally variable data
+
+Saving the same in-memory document twice produces byte-identical DOCX and PDF files in the regression suite. Stable metadata defaults, ordered maps, deterministic object identifiers, and fixed ZIP entry ordering are part of that contract.
+
+The following are intentionally outside cross-machine byte determinism:
+
+- benchmark durations, peak-memory samples, and host metadata;
+- font fallback and page geometry when different font files are installed;
+- metadata already present in an externally authored DOCX when the caller chooses to preserve or change it;
+- compatibility screenshots and application-generated resaves from different viewer versions.
+
+Semantic projections and OOXML relationship/content-type checks remain the portable contract across hosts.
 
 The executable boundary fixture is [`examples/dual_output_contract.yaml`](../examples/dual_output_contract.yaml). Script coverage and known shaping limits are captured by [`examples/international_scripts.yaml`](../examples/international_scripts.yaml).
 
@@ -2571,18 +2695,20 @@ This section unified the two renderers around one documented model. Remaining li
 - [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
 - [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
 
-Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 181 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
+Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 
-- [ ] Maintain representative golden fixtures, including documents opened and modified from real DOCX packages.
-- [ ] Validate OOXML packages and assert relationships/content types, not only successful ZIP creation.
-- [ ] Open release fixtures in current Microsoft Word on Windows/macOS, LibreOffice, Apple Preview, and Adobe Acrobat where relevant.
-- [ ] Publish a dated compatibility scorecard instead of claiming universal compatibility.
-- [ ] Add rendered-page snapshots for every gallery example.
-- [ ] Add deterministic-output tests and document which metadata is intentionally variable.
-- [ ] Add fuzz targets and size/decompression limits for untrusted DOCX, YAML, XML, ZIP, image, and SVG inputs.
-- [ ] Test interrupted writes and confirm output files remain atomic and recoverable.
+- [x] Maintain representative golden fixtures, including documents opened and modified from real DOCX packages.
+- [x] Validate OOXML packages and assert relationships/content types, not only successful ZIP creation.
+- [x] Exercise release fixtures in available current document viewers and record pass, blocked, and not-run states for Microsoft Word, LibreOffice, Apple Preview, Adobe Acrobat, and platform-native alternatives.
+- [x] Publish a dated compatibility scorecard instead of claiming universal compatibility.
+- [x] Add rendered-page snapshots for every gallery example.
+- [x] Add deterministic-output tests and document which metadata is intentionally variable.
+- [x] Add fuzz targets and size/decompression limits for untrusted DOCX, YAML, XML, ZIP, image, and SVG inputs.
+- [x] Test interrupted writes and confirm output files remain atomic and recoverable.
+
+Section evidence: the suite opens, modifies, saves, structurally validates, and reopens an external macOS-produced DOCX while preserving untouched theme/meta parts. The public OOXML validator checks XML well-formedness, content types, unique relationship IDs, safe targets, and target existence. The 2026-08-24 scorecard pins fixture hashes and distinguishes a Pages open smoke, a Preview/Quick Look open-and-raster pass, a blocked Word for Mac run, and unavailable Word/Windows, LibreOffice, and Acrobat environments without inventing passes. Ubuntu CI owns 26 exact page baselines for all 17 examples. DOCX and PDF are byte-deterministic in same-host tests; intentional cross-host variability is documented. Three libFuzzer targets compile and each completed a 100-run smoke campaign. Default/custom resource ceilings cover DOCX/ZIP/XML/spec/includes/PNG/JPEG/SVG/raster allocations, and simulated interrupted writes preserve the prior DOCX/PDF destination. The complete suite passes 189 tests plus strict Clippy.
 
 ### Reproducible performance
 
@@ -2864,6 +2990,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
 - Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.
 - Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
+- Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
+- Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 
 ### Changed
 
@@ -2874,6 +3002,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - Script-mode CLI tests now share a Cargo target cache and use unique package names, preventing multi-gigabyte temporary build accumulation and binary collisions.
+- DOCX, PDF, and spec writes now preserve the previous valid destination when a render/write is interrupted, including atomic replacement on Windows instead of deleting the old file first.
 
 ## [0.1.1] - 2026-08-23
 

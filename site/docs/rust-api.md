@@ -268,6 +268,8 @@ There are also convenience free functions in `rusdox::studio` such as `title(...
 
 The low-level model is shared by DOCX and PDF. `PageSetup` controls physical width, height, orientation, margins, header/footer distances, and gutter. `HeaderFooter` supports `{page}` and `{pages}` fields, while `PageNumbering` controls restart and number format.
 
+Untrusted inputs use `InputLimits::default()`. Use `Document::open_with_limits`, `DocumentSpec::load_from_path_with_limits`, or the limit-aware `Visual` constructors only when a trusted workflow needs a deliberate override. `validate_docx_package` returns structured OOXML content-type and relationship evidence without pretending that ZIP creation alone proves validity.
+
 Runs can carry external or internal links, bookmark anchors, TOC fields, and footnotes:
 
 ```rust

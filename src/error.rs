@@ -18,6 +18,9 @@ pub enum DocxError {
     /// Logical parsing or OOXML validation failures.
     #[error("parse error: {0}")]
     Parse(String),
+    /// An input exceeded a documented resource ceiling.
+    #[error("resource limit exceeded: {0}")]
+    ResourceLimit(String),
     /// A completed verification whose generated outputs failed the parity contract.
     #[error("parity verification failed: {0}")]
     Parity(String),
@@ -27,6 +30,11 @@ impl DocxError {
     /// Creates a logical parse error with a custom message.
     pub(crate) fn parse(message: impl Into<String>) -> Self {
         Self::Parse(message.into())
+    }
+
+    /// Creates a resource-limit error with a custom explanation.
+    pub(crate) fn resource_limit(message: impl Into<String>) -> Self {
+        Self::ResourceLimit(message.into())
     }
 }
 

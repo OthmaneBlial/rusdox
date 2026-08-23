@@ -55,7 +55,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 
 ## Existing DOCX packages
 
-The Rust API can open a DOCX in read-only or read/write mode. Non-document package parts are retained when saving, and automated fixtures cover custom-part preservation.
+The Rust API can open a DOCX in read-only or read/write mode. Non-document package parts are retained when saving. Automated fixtures cover both synthetic custom parts and an external DOCX produced by the macOS text system, then opened, modified, saved, structurally validated, and reopened by RusDox.
 
 This is not yet a promise of lossless editing for arbitrary Word files. RusDox parses the body features it understands and rewrites `word/document.xml`; unsupported body markup may therefore be normalized or lost. Keep an original copy and test representative templates before production use.
 
@@ -75,7 +75,7 @@ This is not yet a promise of lossless editing for arbitrary Word files. RusDox p
 
 CI currently builds and tests on current GitHub-hosted Ubuntu, macOS, and Windows runners. That proves compilation and automated behavior on those platforms; it does not prove visual fidelity in every document viewer.
 
-A dated manual compatibility scorecard for Microsoft Word, LibreOffice, Apple Preview, and Adobe Acrobat is planned for v0.2. Until then, report viewer-specific problems with the smallest non-sensitive fixture possible.
+The [dated viewer scorecard](compatibility-scorecard.md) records exact app versions, fixture hashes, successful smoke tests, blocked environments, and viewers that were not run. Untested rows remain explicitly unclaimed. Resource ceilings and fuzz coverage are documented in [Input Safety and Resource Limits](input-safety.md).
 
 ## Reporting a compatibility problem
 

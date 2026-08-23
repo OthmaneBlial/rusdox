@@ -1,3 +1,3 @@
-This directory is reserved for `.docx` regression fixtures when a checked-in sample becomes useful.
+`external-macos-textutil.docx` is a small package produced outside RusDox by converting `external-macos-source.rtf` with the macOS text system. The integration suite opens it, modifies the body, saves it, validates content types and relationships, reopens it, and confirms untouched theme/meta parts remain.
 
-The current test suite generates real `.docx` archives in memory and in temporary locations so the repository stays minimal while still exercising end-to-end package reads and writes.
+Other tests generate DOCX archives in memory and in temporary locations. The checked-in external fixture exists specifically to prevent every regression case from sharing RusDox's own writer assumptions.

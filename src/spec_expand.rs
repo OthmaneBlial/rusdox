@@ -1,17 +1,29 @@
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use serde_yaml::{Mapping, Number, Value};
 
-use crate::{DocxError, Result};
+use crate::{DocxError, InputLimits, Result};
 
-pub(crate) fn expand_yaml_document_spec(
+pub(crate) fn expand_yaml_document_spec_with_limits(
     content: &str,
     source_path: Option<&Path>,
+    limits: InputLimits,
 ) -> Result<Value> {
+    if u64::try_from(content.len()).unwrap_or(u64::MAX) > limits.max_spec_bytes {
+        return Err(DocxError::resource_limit(format!(
+            "YAML document spec exceeds the {} byte limit",
+            limits.max_spec_bytes
+        )));
+    }
     let root: Value = serde_yaml::from_str(content)
         .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))?;
-    let mut state = ExpansionState::default();
+    let mut state = ExpansionState {
+        include_stack: Vec::new(),
+        included_files: 0,
+        limits,
+    };
     if let Some(source_path) = source_path {
         state
             .include_stack
@@ -26,9 +38,10 @@ pub(crate) fn expand_yaml_document_spec(
     )
 }
 
-#[derive(Default)]
 struct ExpansionState {
     include_stack: Vec<PathBuf>,
+    included_files: usize,
+    limits: InputLimits,
 }
 
 fn expand_document_root(
@@ -148,7 +161,21 @@ fn expand_include_block(
         )));
     }
 
-    let content = fs::read_to_string(&canonical)?;
+    if state.include_stack.len() >= state.limits.max_include_depth {
+        return Err(DocxError::resource_limit(format!(
+            "YAML include depth exceeds the limit of {} at '{}'",
+            state.limits.max_include_depth,
+            canonical.display()
+        )));
+    }
+    state.included_files = state.included_files.saturating_add(1);
+    if state.included_files > state.limits.max_include_files {
+        return Err(DocxError::resource_limit(format!(
+            "YAML include count exceeds the limit of {}",
+            state.limits.max_include_files
+        )));
+    }
+    let content = read_include_with_limit(&canonical, state.limits.max_spec_bytes)?;
     let root: Value = serde_yaml::from_str(&content).map_err(|error| {
         DocxError::parse(format!(
             "invalid included YAML fragment '{}': {error}",
@@ -160,6 +187,32 @@ fn expand_include_block(
     let result = expand_include_root(root, canonical.parent(), variables, override_vars, state);
     state.include_stack.pop();
     result
+}
+
+fn read_include_with_limit(path: &Path, limit: u64) -> Result<String> {
+    let declared = fs::metadata(path)?.len();
+    if declared > limit {
+        return Err(DocxError::resource_limit(format!(
+            "included YAML fragment '{}' is {declared} bytes; limit is {limit} bytes",
+            path.display()
+        )));
+    }
+    let mut bytes = Vec::new();
+    fs::File::open(path)?
+        .take(limit.saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limit {
+        return Err(DocxError::resource_limit(format!(
+            "included YAML fragment '{}' exceeded the {limit} byte limit while reading",
+            path.display()
+        )));
+    }
+    String::from_utf8(bytes).map_err(|error| {
+        DocxError::parse(format!(
+            "included YAML fragment '{}' is not valid UTF-8: {error}",
+            path.display()
+        ))
+    })
 }
 
 fn expand_include_root(
@@ -450,7 +503,7 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use super::expand_yaml_document_spec;
+    use super::expand_yaml_document_spec_with_limits;
 
     #[test]
     fn expands_variables_repeaters_and_includes() {
@@ -496,7 +549,12 @@ blocks:
                 .unwrap_or("fragment.yaml")
         );
 
-        let expanded = expand_yaml_document_spec(&yaml, Some(&source_path)).expect("expand yaml");
+        let expanded = expand_yaml_document_spec_with_limits(
+            &yaml,
+            Some(&source_path),
+            crate::InputLimits::default(),
+        )
+        .expect("expand yaml");
         let spec: crate::spec::DocumentSpec =
             serde_yaml::from_value(expanded).expect("deserialize expanded spec");
 
@@ -534,9 +592,32 @@ blocks:
         )
         .expect("write b");
 
-        let error =
-            expand_yaml_document_spec(&fs::read_to_string(&a).expect("read a"), Some(a.as_path()))
-                .expect_err("cycle must fail");
+        let error = expand_yaml_document_spec_with_limits(
+            &fs::read_to_string(&a).expect("read a"),
+            Some(a.as_path()),
+            crate::InputLimits::default(),
+        )
+        .expect_err("cycle must fail");
         assert!(error.to_string().contains("include cycle"));
+    }
+
+    #[test]
+    fn rejects_include_count_over_configured_limit() {
+        let temp = tempdir().expect("temp dir");
+        let source = temp.path().join("root.yaml");
+        let fragment = temp.path().join("fragment.yaml");
+        fs::write(&fragment, "- type: body\n  text: bounded\n").expect("write fragment");
+        let yaml = "blocks:\n  - type: include\n    path: fragment.yaml\n";
+
+        let error = expand_yaml_document_spec_with_limits(
+            yaml,
+            Some(&source),
+            crate::InputLimits {
+                max_include_files: 0,
+                ..crate::InputLimits::default()
+            },
+        )
+        .expect_err("include count ceiling must fail");
+        assert!(error.to_string().contains("include count"));
     }
 }

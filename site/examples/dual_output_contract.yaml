@@ -1,0 +1,113 @@
+output_name: dual-output-contract
+metadata:
+  title: RusDox dual-output contract
+  author: RusDox maintainers
+  subject: Executable DOCX and PDF feature parity fixture
+  keywords:
+    - parity
+    - ooxml
+    - pdf
+page_setup:
+  width_twips: 15840
+  height_twips: 12240
+  margin_top_twips: 1080
+  margin_right_twips: 900
+  margin_bottom_twips: 1080
+  margin_left_twips: 900
+  header_twips: 420
+  footer_twips: 420
+  gutter_twips: 120
+  orientation: landscape
+header:
+  text: RusDox parity contract
+  alignment: right
+footer:
+  text: Page {page} of {pages}
+  alignment: center
+page_numbering:
+  start_at: 3
+  format: lower_roman
+blocks:
+  - type: title
+    text: Dual-output contract
+  - type: table_of_contents
+    title: Contents
+  - type: section
+    text: Interactive semantics
+  - type: paragraph
+    spec:
+      spacing_after_twips: 140
+      runs:
+        - text: Overview
+          bookmark: overview
+          bold: true
+        - text: " demonstrates an "
+        - text: external link
+          hyperlink: https://github.com/OthmaneBlial/rusdox
+          underline: single
+          color: "0F766E"
+        - text: " and a generated footnote"
+          footnote: The DOCX uses a real footnotes part; the PDF uses an inline marker and deterministic endnotes page.
+        - text: "."
+  - type: paragraph
+    spec:
+      runs:
+        - text: Jump back to Overview
+          hyperlink: "#overview"
+          underline: single
+          color: "2563EB"
+  - type: page_break
+  - type: section
+    text: Rich and paginated tables
+  - type: table
+    spec:
+      columns:
+        - label: Capability
+          width: 3200
+        - label: Evidence
+          width: 4200
+        - label: State
+          width: 2200
+      rows:
+        - repeat_as_header: true
+          allow_split_across_pages: false
+          cells:
+            - kind: text
+              text: Repeated semantic header
+            - kind: text
+              text: Row properties survive OOXML reopen and PDF pagination.
+            - kind: status
+              text: Verified
+              tone: positive
+        - allow_split_across_pages: false
+          cells:
+            - kind: rich
+              grid_span: 2
+              background_color: "ECFDF5"
+              paragraphs:
+                - runs:
+                    - text: Merged rich cell
+                      bold: true
+                - runs:
+                    - text: Multiple paragraphs, mixed formatting, and a nested table share one typed cell model.
+                      italic: true
+              nested_table:
+                columns:
+                  - label: Nested key
+                    width: 2300
+                  - label: Nested value
+                    width: 3000
+                rows:
+                  - cells:
+                      - kind: text
+                        text: Semantic parity
+                      - kind: text
+                        text: Preserved in DOCX and rendered in PDF
+            - kind: status
+              text: Green
+              tone: positive
+  - type: section_break
+  - type: section
+    text: Next-page section
+  - type: body
+    text: The section break, landscape page model, margins, visible header/footer, and lower-Roman page fields all come from the same document projection.

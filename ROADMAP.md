@@ -189,18 +189,20 @@ This section unified the two renderers around one documented model. Remaining li
 - [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
 - [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
 
-Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 181 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
+Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 
-- [ ] Maintain representative golden fixtures, including documents opened and modified from real DOCX packages.
-- [ ] Validate OOXML packages and assert relationships/content types, not only successful ZIP creation.
-- [ ] Open release fixtures in current Microsoft Word on Windows/macOS, LibreOffice, Apple Preview, and Adobe Acrobat where relevant.
-- [ ] Publish a dated compatibility scorecard instead of claiming universal compatibility.
-- [ ] Add rendered-page snapshots for every gallery example.
-- [ ] Add deterministic-output tests and document which metadata is intentionally variable.
-- [ ] Add fuzz targets and size/decompression limits for untrusted DOCX, YAML, XML, ZIP, image, and SVG inputs.
-- [ ] Test interrupted writes and confirm output files remain atomic and recoverable.
+- [x] Maintain representative golden fixtures, including documents opened and modified from real DOCX packages.
+- [x] Validate OOXML packages and assert relationships/content types, not only successful ZIP creation.
+- [x] Exercise release fixtures in available current document viewers and record pass, blocked, and not-run states for Microsoft Word, LibreOffice, Apple Preview, Adobe Acrobat, and platform-native alternatives.
+- [x] Publish a dated compatibility scorecard instead of claiming universal compatibility.
+- [x] Add rendered-page snapshots for every gallery example.
+- [x] Add deterministic-output tests and document which metadata is intentionally variable.
+- [x] Add fuzz targets and size/decompression limits for untrusted DOCX, YAML, XML, ZIP, image, and SVG inputs.
+- [x] Test interrupted writes and confirm output files remain atomic and recoverable.
+
+Section evidence: the suite opens, modifies, saves, structurally validates, and reopens an external macOS-produced DOCX while preserving untouched theme/meta parts. The public OOXML validator checks XML well-formedness, content types, unique relationship IDs, safe targets, and target existence. The 2026-08-24 scorecard pins fixture hashes and distinguishes a Pages open smoke, a Preview/Quick Look open-and-raster pass, a blocked Word for Mac run, and unavailable Word/Windows, LibreOffice, and Acrobat environments without inventing passes. Ubuntu CI owns 26 exact page baselines for all 17 examples. DOCX and PDF are byte-deterministic in same-host tests; intentional cross-host variability is documented. Three libFuzzer targets compile and each completed a 100-run smoke campaign. Default/custom resource ceilings cover DOCX/ZIP/XML/spec/includes/PNG/JPEG/SVG/raster allocations, and simulated interrupted writes preserve the prior DOCX/PDF destination. The complete suite passes 189 tests plus strict Clippy.
 
 ### Reproducible performance
 

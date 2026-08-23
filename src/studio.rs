@@ -12,6 +12,8 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use fontdb::{Database as FontDatabase, Family as FontFamily, Query as FontQuery};
+use image::codecs::png::PngEncoder;
+use image::ImageEncoder;
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
 use pdf_writer::types::{
     ActionType, AnnotationType, CidFontType, FontFlags, SystemInfo, UnicodeCmap,
@@ -2373,7 +2375,7 @@ fn render_pdf(
         }
     }
 
-    fs::write(pdf_path, pdf.finish())?;
+    crate::io_utils::atomic_write(pdf_path, &pdf.finish())?;
     Ok(evidence)
 }
 
@@ -2473,7 +2475,18 @@ fn write_layout_snapshots(
                 }
             }
         }
-        image.save(directory.join(format!("page-{:03}.png", index + 1)))?;
+        let mut png = Vec::new();
+        PngEncoder::new(&mut png)
+            .write_image(
+                image.as_raw(),
+                image.width(),
+                image.height(),
+                image::ExtendedColorType::Rgba8,
+            )
+            .map_err(|error| {
+                crate::DocxError::parse(format!("failed to encode snapshot: {error}"))
+            })?;
+        crate::io_utils::atomic_write(directory.join(format!("page-{:03}.png", index + 1)), &png)?;
     }
     Ok(())
 }

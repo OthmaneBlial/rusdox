@@ -11,6 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
 - Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.
 - Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
+- Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
+- Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 
 ### Changed
 
@@ -21,6 +23,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Fixed
 
 - Script-mode CLI tests now share a Cargo target cache and use unique package names, preventing multi-gigabyte temporary build accumulation and binary collisions.
+- DOCX, PDF, and spec writes now preserve the previous valid destination when a render/write is interrupted, including atomic replacement on Windows instead of deleting the old file first.
 
 ## [0.1.1] - 2026-08-23
 

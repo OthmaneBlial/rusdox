@@ -1,11 +1,12 @@
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::spec_expand::expand_yaml_document_spec;
+use crate::spec_expand::expand_yaml_document_spec_with_limits;
 use crate::DocumentMetadata;
-use crate::{DocxError, HeaderFooter, PageNumbering, PageSetup, Result, Stylesheet};
+use crate::{DocxError, HeaderFooter, InputLimits, PageNumbering, PageSetup, Result, Stylesheet};
 
 /// A high-level, serializable document specification.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -39,8 +40,13 @@ impl DocumentSpec {
     ///
     /// `.yaml`, `.yml`, `.json`, and `.toml` are supported.
     pub fn load_from_path(path: impl AsRef<Path>) -> Result<Self> {
+        Self::load_from_path_with_limits(path, InputLimits::default())
+    }
+
+    /// Loads a document specification with explicit resource ceilings.
+    pub fn load_from_path_with_limits(path: impl AsRef<Path>, limits: InputLimits) -> Result<Self> {
         let path = path.as_ref();
-        let content = fs::read_to_string(path)?;
+        let content = read_utf8_with_limit(path, limits.max_spec_bytes, "document spec")?;
         let extension = path
             .extension()
             .and_then(|ext| ext.to_str())
@@ -48,9 +54,9 @@ impl DocumentSpec {
             .to_ascii_lowercase();
 
         let mut spec = match extension.as_str() {
-            "yaml" | "yml" | "" => Self::from_yaml_path(&content, Some(path)),
-            "json" => Self::from_json_str(&content),
-            "toml" => Self::from_toml_str(&content),
+            "yaml" | "yml" | "" => Self::from_yaml_path(&content, Some(path), limits),
+            "json" => Self::from_json_str_with_limits(&content, limits),
+            "toml" => Self::from_toml_str_with_limits(&content, limits),
             other => Err(DocxError::parse(format!(
                 "unsupported document spec extension '{other}', expected .yaml, .yml, .json, or .toml"
             ))),
@@ -61,17 +67,35 @@ impl DocumentSpec {
 
     /// Parses a YAML document specification string.
     pub fn from_yaml_str(content: &str) -> Result<Self> {
-        Self::from_yaml_path(content, None)
+        Self::from_yaml_str_with_limits(content, InputLimits::default())
+    }
+
+    /// Parses a YAML document specification with explicit resource ceilings.
+    pub fn from_yaml_str_with_limits(content: &str, limits: InputLimits) -> Result<Self> {
+        ensure_spec_size(content, limits.max_spec_bytes, "YAML document spec")?;
+        Self::from_yaml_path(content, None, limits)
     }
 
     /// Parses a JSON document specification string.
     pub fn from_json_str(content: &str) -> Result<Self> {
+        Self::from_json_str_with_limits(content, InputLimits::default())
+    }
+
+    /// Parses a JSON document specification with explicit resource ceilings.
+    pub fn from_json_str_with_limits(content: &str, limits: InputLimits) -> Result<Self> {
+        ensure_spec_size(content, limits.max_spec_bytes, "JSON document spec")?;
         serde_json::from_str(content)
             .map_err(|error| DocxError::parse(format!("invalid JSON document spec: {error}")))
     }
 
     /// Parses a TOML document specification string.
     pub fn from_toml_str(content: &str) -> Result<Self> {
+        Self::from_toml_str_with_limits(content, InputLimits::default())
+    }
+
+    /// Parses a TOML document specification with explicit resource ceilings.
+    pub fn from_toml_str_with_limits(content: &str, limits: InputLimits) -> Result<Self> {
+        ensure_spec_size(content, limits.max_spec_bytes, "TOML document spec")?;
         toml::from_str(content)
             .map_err(|error| DocxError::parse(format!("invalid TOML document spec: {error}")))
     }
@@ -121,8 +145,7 @@ impl DocumentSpec {
             }
         };
 
-        fs::write(path, content)?;
-        Ok(())
+        crate::io_utils::atomic_write(path, content.as_bytes())
     }
 
     /// Writes a commented YAML starter document template to disk.
@@ -131,8 +154,7 @@ impl DocumentSpec {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::write(path, Self::default_yaml_template())?;
-        Ok(())
+        crate::io_utils::atomic_write(path, Self::default_yaml_template().as_bytes())
     }
 
     /// Returns the default YAML starter document template.
@@ -157,11 +179,51 @@ impl DocumentSpec {
         self
     }
 
-    fn from_yaml_path(content: &str, source_path: Option<&Path>) -> Result<Self> {
-        let expanded = expand_yaml_document_spec(content, source_path)?;
+    fn from_yaml_path(
+        content: &str,
+        source_path: Option<&Path>,
+        limits: InputLimits,
+    ) -> Result<Self> {
+        let expanded = expand_yaml_document_spec_with_limits(content, source_path, limits)?;
         serde_yaml::from_value(expanded)
             .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
     }
+}
+
+fn ensure_spec_size(content: &str, limit: u64, label: &str) -> Result<()> {
+    let bytes = u64::try_from(content.len()).unwrap_or(u64::MAX);
+    if bytes > limit {
+        return Err(DocxError::resource_limit(format!(
+            "{label} is {bytes} bytes; limit is {limit} bytes"
+        )));
+    }
+    Ok(())
+}
+
+fn read_utf8_with_limit(path: &Path, limit: u64, label: &str) -> Result<String> {
+    let declared = fs::metadata(path)?.len();
+    if declared > limit {
+        return Err(DocxError::resource_limit(format!(
+            "{label} '{}' is {declared} bytes; limit is {limit} bytes",
+            path.display()
+        )));
+    }
+    let mut bytes = Vec::new();
+    fs::File::open(path)?
+        .take(limit.saturating_add(1))
+        .read_to_end(&mut bytes)?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > limit {
+        return Err(DocxError::resource_limit(format!(
+            "{label} '{}' grew beyond the {limit} byte limit while reading",
+            path.display()
+        )));
+    }
+    String::from_utf8(bytes).map_err(|error| {
+        DocxError::parse(format!(
+            "{label} '{}' is not valid UTF-8: {error}",
+            path.display()
+        ))
+    })
 }
 
 /// A high-level document block.

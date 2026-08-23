@@ -41,7 +41,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p target/parity
-          cargo run --locked -- verify examples --output-root target/parity --format json > target/parity/summary.json
+          cargo run --locked -- verify examples \
+            --output-root target/parity \
+            --visual-baseline tests/golden/pages/linux-x86_64 \
+            --visual-threshold 0 \
+            --format json > target/parity/summary.json
 
       - name: Upload gallery parity reports and rendered diffs
         if: matrix.os == 'ubuntu-latest' && always()
@@ -73,3 +77,22 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: ./scripts/test_install.ps1 -BinaryPath target/release/rusdox.exe
+
+  fuzz-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fuzz
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
+
+      - name: Compile fuzz targets
+        run: cargo +nightly fuzz build

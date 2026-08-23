@@ -47,11 +47,11 @@
         <div class="docs-static-layout">
           <aside class="docs-static-nav" aria-label="Documentation navigation">
     <p class="docs-nav-label">Field guide</p>
-    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a class="is-active" aria-current="page" href="parity.html">Parity verification</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a class="is-active" aria-current="page" href="parity.html">Parity verification</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#what-is-compared">What is compared</a></li><li class="toc-level-2"><a href="#visual-regression-thresholds">Visual regression thresholds</a></li><li class="toc-level-2"><a href="#machine-readable-output-and-exit-codes">Machine-readable output and exit codes</a></li><li class="toc-level-2"><a href="#privacy-boundary">Privacy boundary</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#what-is-compared">What is compared</a></li><li class="toc-level-2"><a href="#visual-regression-thresholds">Visual regression thresholds</a></li><li class="toc-level-2"><a href="#deterministic-and-intentionally-variable-data">Deterministic and intentionally variable data</a></li><li class="toc-level-2"><a href="#machine-readable-output-and-exit-codes">Machine-readable output and exit codes</a></li><li class="toc-level-2"><a href="#privacy-boundary">Privacy boundary</a></li></ol></nav>
             <div class="docs-content prose"><p><code>rusdox verify</code> turns the dual-output promise into a CI contract:</p>
 <pre><code class="language-bash">rusdox verify board-report.yaml</code></pre>
 <p>It writes:</p>
@@ -69,6 +69,7 @@ reports/board-report-pages/page-001.png</code></pre>
 <p>Each generated DOCX and PDF also receives a SHA-256 digest in the report.</p>
 <h2 id="visual-regression-thresholds">Visual regression thresholds</h2>
 <p>Every verification emits deterministic PNG snapshots from the PDF renderer&#39;s real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.</p>
+<p>The repository checks in 26 Linux baselines covering every one of the 17 top-level examples under <code>tests/golden/pages/linux-x86_64/</code>. Ubuntu CI compares them at a zero-pixel threshold. Baselines are platform-scoped because installed font files can differ; updating them requires reviewer inspection and <code>scripts/update_visual_baselines.sh</code>.</p>
 <p>Compare a single spec to an approved baseline:</p>
 <pre><code class="language-bash">rusdox verify report.yaml \
   --visual-baseline tests/visual-baselines/report \
@@ -79,6 +80,11 @@ reports/board-report-pages/page-001.png</code></pre>
   invoice/page-001.png</code></pre>
 <p>The threshold is the maximum fraction of pixels that may differ on each page. <code>0</code> is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.</p>
 <p>Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.</p>
+<h2 id="deterministic-and-intentionally-variable-data">Deterministic and intentionally variable data</h2>
+<p>Saving the same in-memory document twice produces byte-identical DOCX and PDF files in the regression suite. Stable metadata defaults, ordered maps, deterministic object identifiers, and fixed ZIP entry ordering are part of that contract.</p>
+<p>The following are intentionally outside cross-machine byte determinism:</p>
+<ul><li>benchmark durations, peak-memory samples, and host metadata;</li><li>font fallback and page geometry when different font files are installed;</li><li>metadata already present in an externally authored DOCX when the caller chooses to preserve or change it;</li><li>compatibility screenshots and application-generated resaves from different viewer versions.</li></ul>
+<p>Semantic projections and OOXML relationship/content-type checks remain the portable contract across hosts.</p>
 <p>The executable boundary fixture is <a href="../examples/dual_output_contract.yaml"> TOKEN0 </a>. Script coverage and known shaping limits are captured by <a href="../examples/international_scripts.yaml"> TOKEN1 </a>.</p>
 <h2 id="machine-readable-output-and-exit-codes">Machine-readable output and exit codes</h2>
 <p>Print a compact JSON command summary while still writing the full HTML and JSON reports:</p>
@@ -89,7 +95,7 @@ reports/board-report-pages/page-001.png</code></pre>
 <h2 id="privacy-boundary">Privacy boundary</h2>
 <p>Verification is local. RusDox does not upload the source, output documents, report, or snapshots. Uploading reports as CI artifacts is an explicit repository workflow decision; treat reports as sensitive whenever their normalized text or metadata is sensitive.</p></div>
             <nav class="docs-pager" aria-label="Documentation pagination">
-    <a href="compatibility.html"><span>Previous</span><strong>Compatibility matrix</strong></a>
+    <a href="input-safety.html"><span>Previous</span><strong>Input safety and limits</strong></a>
     <a class="docs-pager-next" href="troubleshooting.html"><span>Next</span><strong>Troubleshooting</strong></a>
   </nav>
           </article>
