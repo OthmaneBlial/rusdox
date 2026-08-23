@@ -149,6 +149,154 @@
           "pdf_bytes": 0
         }
       ]
+    },
+    {
+      "generated_at_utc": "2026-08-23T23:20:09.154Z",
+      "git_commit": "8b21d2e4428272da9ac75793cffcd1cde50c3cb7",
+      "protocol_version": "2026-08-24",
+      "host": {
+        "platform": "linux",
+        "os_release": "6.17.0-1022-azure",
+        "os_version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026",
+        "architecture": "x64",
+        "cpu": "AMD EPYC 9V74 80-Core Processor",
+        "logical_cpu_count": 4,
+        "total_memory_bytes": 16766414848,
+        "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0\nLLVM version: 22.1.8",
+        "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)"
+      },
+      "scenarios": [
+        {
+          "id": "small-validation",
+          "tier": "small",
+          "pipeline": "validation",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 0.036494,
+          "peak_memory_bytes": 6860800,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "small-docx",
+          "tier": "small",
+          "pipeline": "docx",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 1.1545189999999999,
+          "peak_memory_bytes": 7467008,
+          "docx_bytes": 3662,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "small-pdf",
+          "tier": "small",
+          "pipeline": "pdf",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 4.353578000000001,
+          "peak_memory_bytes": 11685888,
+          "docx_bytes": 0,
+          "pdf_bytes": 1249492
+        },
+        {
+          "id": "small-dual",
+          "tier": "small",
+          "pipeline": "dual",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 5.526425,
+          "peak_memory_bytes": 12603392,
+          "docx_bytes": 3662,
+          "pdf_bytes": 1249492
+        },
+        {
+          "id": "medium-validation",
+          "tier": "medium",
+          "pipeline": "validation",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 0.212881,
+          "peak_memory_bytes": 7073792,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "medium-docx",
+          "tier": "medium",
+          "pipeline": "docx",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 1.800462,
+          "peak_memory_bytes": 7827456,
+          "docx_bytes": 6436,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "medium-pdf",
+          "tier": "medium",
+          "pipeline": "pdf",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 5.79497,
+          "peak_memory_bytes": 12083200,
+          "docx_bytes": 0,
+          "pdf_bytes": 1267836
+        },
+        {
+          "id": "medium-dual",
+          "tier": "medium",
+          "pipeline": "dual",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 6.956839,
+          "peak_memory_bytes": 12550144,
+          "docx_bytes": 6436,
+          "pdf_bytes": 1267836
+        },
+        {
+          "id": "pages-1000-validation",
+          "tier": "pages-1000",
+          "pipeline": "validation",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 131.46416499999998,
+          "peak_memory_bytes": 73469952,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "pages-1000-docx",
+          "tier": "pages-1000",
+          "pipeline": "docx",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 314.589761,
+          "peak_memory_bytes": 106004480,
+          "docx_bytes": 731129,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "pages-1000-pdf",
+          "tier": "pages-1000",
+          "pipeline": "pdf",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 1287.01705,
+          "peak_memory_bytes": 156635136,
+          "docx_bytes": 0,
+          "pdf_bytes": 14392531
+        },
+        {
+          "id": "pages-1000-dual",
+          "tier": "pages-1000",
+          "pipeline": "dual",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 1403.418762,
+          "peak_memory_bytes": 159805440,
+          "docx_bytes": 731129,
+          "pdf_bytes": 14392531
+        },
+        {
+          "id": "external-docx-open-save",
+          "tier": "existing-docx",
+          "pipeline": "existing-docx",
+          "input_sha256": "61ffe1ddca7882b6ebf17c2957d035a39518b0e1a509de3c6946fccc3ac283ba",
+          "median_total_ms": 1.3568639999999998,
+          "peak_memory_bytes": 7004160,
+          "docx_bytes": 5163,
+          "pdf_bytes": 0
+        }
+      ]
     }
   ]
 }

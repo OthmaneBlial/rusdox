@@ -1,0 +1,1262 @@
+{
+  "schema_version": 1,
+  "protocol_version": "2026-08-24",
+  "generated_at_utc": "2026-08-23T23:20:09.154Z",
+  "git_commit": "8b21d2e4428272da9ac75793cffcd1cde50c3cb7",
+  "git_dirty": false,
+  "host": {
+    "platform": "linux",
+    "os_release": "6.17.0-1022-azure",
+    "os_version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026",
+    "architecture": "x64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpu_count": 4,
+    "total_memory_bytes": 16766414848,
+    "rustc": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.0\nLLVM version: 22.1.8",
+    "cargo": "cargo 1.98.0 (797e8a9bc 2026-08-05)"
+  },
+  "command": {
+    "runner": "node scripts/run_benchmark_protocol.mjs",
+    "binary": "target/release/rusdox",
+    "profile": "release",
+    "iterations": 5,
+    "warmup": 1
+  },
+  "scenarios": [
+    {
+      "id": "small-validation",
+      "label": "Small (1 page) / validation",
+      "tier": "small",
+      "logical_pages": 1,
+      "pipeline": "validation",
+      "input": "examples/hello_world.yaml",
+      "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+      "input_bytes": 263,
+      "command_flags": [
+        "bench",
+        "examples/hello_world.yaml",
+        "--pipeline",
+        "validation",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 6860800,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/hello_world.yaml",
+        "pipeline": "validation",
+        "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+        "input_bytes": 263,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.037268,
+          "min": 0.035151999999999996,
+          "median": 0.035283,
+          "max": 0.042754
+        },
+        "validate_ms": {
+          "avg": 0.0008290000000000001,
+          "min": 0.0006,
+          "median": 0.000751,
+          "max": 0.001312
+        },
+        "compose_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 0.0385458,
+          "min": 0.036125,
+          "median": 0.036494,
+          "max": 0.044657
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "small-docx",
+      "label": "Small (1 page) / docx",
+      "tier": "small",
+      "logical_pages": 1,
+      "pipeline": "docx",
+      "input": "examples/hello_world.yaml",
+      "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+      "input_bytes": 263,
+      "command_flags": [
+        "bench",
+        "examples/hello_world.yaml",
+        "--pipeline",
+        "docx",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 7467008,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/hello_world.yaml",
+        "pipeline": "docx",
+        "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+        "input_bytes": 263,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.057943,
+          "min": 0.054712000000000004,
+          "median": 0.055433,
+          "max": 0.064828
+        },
+        "validate_ms": {
+          "avg": 0.0026082,
+          "min": 0.002254,
+          "median": 0.002634,
+          "max": 0.0031149999999999997
+        },
+        "compose_ms": {
+          "avg": 0.0045126,
+          "min": 0.004076,
+          "median": 0.004326,
+          "max": 0.005338000000000001
+        },
+        "docx_ms": {
+          "avg": 1.0971866000000001,
+          "min": 0.98265,
+          "median": 1.0722049999999999,
+          "max": 1.285376
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 1.170457,
+          "min": 1.0529359999999999,
+          "median": 1.1545189999999999,
+          "max": 1.354871
+        },
+        "docx_bytes": {
+          "avg": 3662,
+          "min": 3662,
+          "median": 3662,
+          "max": 3662
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "small-pdf",
+      "label": "Small (1 page) / pdf",
+      "tier": "small",
+      "logical_pages": 1,
+      "pipeline": "pdf",
+      "input": "examples/hello_world.yaml",
+      "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+      "input_bytes": 263,
+      "command_flags": [
+        "bench",
+        "examples/hello_world.yaml",
+        "--pipeline",
+        "pdf",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 11685888,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/hello_world.yaml",
+        "pipeline": "pdf",
+        "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+        "input_bytes": 263,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.0649778,
+          "min": 0.059109,
+          "median": 0.059969999999999996,
+          "max": 0.07976
+        },
+        "validate_ms": {
+          "avg": 0.0034012,
+          "min": 0.0028049999999999998,
+          "median": 0.003015,
+          "max": 0.005047
+        },
+        "compose_ms": {
+          "avg": 0.0056284,
+          "min": 0.004777,
+          "median": 0.0052179999999999995,
+          "max": 0.007301
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 4.4271428,
+          "min": 4.198114,
+          "median": 4.26833,
+          "max": 4.923056
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 4.511169600000001,
+          "min": 4.275881,
+          "median": 4.353578000000001,
+          "max": 5.0268120000000005
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 1249492,
+          "min": 1249492,
+          "median": 1249492,
+          "max": 1249492
+        }
+      }
+    },
+    {
+      "id": "small-dual",
+      "label": "Small (1 page) / dual",
+      "tier": "small",
+      "logical_pages": 1,
+      "pipeline": "dual",
+      "input": "examples/hello_world.yaml",
+      "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+      "input_bytes": 263,
+      "command_flags": [
+        "bench",
+        "examples/hello_world.yaml",
+        "--pipeline",
+        "dual",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 12603392,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/hello_world.yaml",
+        "pipeline": "dual",
+        "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+        "input_bytes": 263,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.0706966,
+          "min": 0.061753,
+          "median": 0.067602,
+          "max": 0.08679100000000001
+        },
+        "validate_ms": {
+          "avg": 0.0032666,
+          "min": 0.0028640000000000002,
+          "median": 0.003064,
+          "max": 0.0037749999999999997
+        },
+        "compose_ms": {
+          "avg": 0.005778800000000001,
+          "min": 0.005188,
+          "median": 0.006069,
+          "max": 0.006239
+        },
+        "docx_ms": {
+          "avg": 1.240174,
+          "min": 1.112165,
+          "median": 1.163592,
+          "max": 1.391727
+        },
+        "pdf_ms": {
+          "avg": 4.6736284,
+          "min": 4.082599999999999,
+          "median": 4.271585,
+          "max": 5.430841
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 6.023646,
+          "min": 5.323098,
+          "median": 5.526425,
+          "max": 6.957930999999999
+        },
+        "docx_bytes": {
+          "avg": 3662,
+          "min": 3662,
+          "median": 3662,
+          "max": 3662
+        },
+        "pdf_bytes": {
+          "avg": 1249492,
+          "min": 1249492,
+          "median": 1249492,
+          "max": 1249492
+        }
+      }
+    },
+    {
+      "id": "medium-validation",
+      "label": "Medium (4 PDF pages) / validation",
+      "tier": "medium",
+      "logical_pages": 4,
+      "pipeline": "validation",
+      "input": "examples/dual_output_contract.yaml",
+      "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+      "input_bytes": 3282,
+      "command_flags": [
+        "bench",
+        "examples/dual_output_contract.yaml",
+        "--pipeline",
+        "validation",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 7073792,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/dual_output_contract.yaml",
+        "pipeline": "validation",
+        "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+        "input_bytes": 3282,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.2110858,
+          "min": 0.19662600000000002,
+          "median": 0.207012,
+          "max": 0.23782799999999998
+        },
+        "validate_ms": {
+          "avg": 0.004689200000000001,
+          "min": 0.004096000000000001,
+          "median": 0.004537,
+          "max": 0.005368
+        },
+        "compose_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 0.2175116,
+          "min": 0.201964,
+          "median": 0.212881,
+          "max": 0.24605
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "medium-docx",
+      "label": "Medium (4 PDF pages) / docx",
+      "tier": "medium",
+      "logical_pages": 4,
+      "pipeline": "docx",
+      "input": "examples/dual_output_contract.yaml",
+      "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+      "input_bytes": 3282,
+      "command_flags": [
+        "bench",
+        "examples/dual_output_contract.yaml",
+        "--pipeline",
+        "docx",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 7827456,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/dual_output_contract.yaml",
+        "pipeline": "docx",
+        "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+        "input_bytes": 3282,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.2515248,
+          "min": 0.240592,
+          "median": 0.250667,
+          "max": 0.26609099999999997
+        },
+        "validate_ms": {
+          "avg": 0.006966600000000001,
+          "min": 0.00662,
+          "median": 0.006901,
+          "max": 0.007351
+        },
+        "compose_ms": {
+          "avg": 0.023147,
+          "min": 0.022595,
+          "median": 0.023125,
+          "max": 0.023866000000000002
+        },
+        "docx_ms": {
+          "avg": 1.5815781999999998,
+          "min": 1.438356,
+          "median": 1.491446,
+          "max": 1.879421
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 1.8835998,
+          "min": 1.7394610000000001,
+          "median": 1.800462,
+          "max": 2.1790529999999997
+        },
+        "docx_bytes": {
+          "avg": 6436,
+          "min": 6436,
+          "median": 6436,
+          "max": 6436
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "medium-pdf",
+      "label": "Medium (4 PDF pages) / pdf",
+      "tier": "medium",
+      "logical_pages": 4,
+      "pipeline": "pdf",
+      "input": "examples/dual_output_contract.yaml",
+      "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+      "input_bytes": 3282,
+      "command_flags": [
+        "bench",
+        "examples/dual_output_contract.yaml",
+        "--pipeline",
+        "pdf",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 12083200,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/dual_output_contract.yaml",
+        "pipeline": "pdf",
+        "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+        "input_bytes": 3282,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.25123860000000003,
+          "min": 0.24208500000000002,
+          "median": 0.24700200000000003,
+          "max": 0.26525000000000004
+        },
+        "validate_ms": {
+          "avg": 0.007151,
+          "min": 0.00662,
+          "median": 0.0069700000000000005,
+          "max": 0.007781999999999999
+        },
+        "compose_ms": {
+          "avg": 0.0233272,
+          "min": 0.022713999999999998,
+          "median": 0.023225,
+          "max": 0.024317000000000002
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 5.3665762,
+          "min": 5.118941,
+          "median": 5.4958089999999995,
+          "max": 5.566095
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 5.6673294,
+          "min": 5.410921,
+          "median": 5.79497,
+          "max": 5.876322
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 1267836,
+          "min": 1267836,
+          "median": 1267836,
+          "max": 1267836
+        }
+      }
+    },
+    {
+      "id": "medium-dual",
+      "label": "Medium (4 PDF pages) / dual",
+      "tier": "medium",
+      "logical_pages": 4,
+      "pipeline": "dual",
+      "input": "examples/dual_output_contract.yaml",
+      "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+      "input_bytes": 3282,
+      "command_flags": [
+        "bench",
+        "examples/dual_output_contract.yaml",
+        "--pipeline",
+        "dual",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 12550144,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/dual_output_contract.yaml",
+        "pipeline": "dual",
+        "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+        "input_bytes": 3282,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0.25283659999999997,
+          "min": 0.244658,
+          "median": 0.24640099999999998,
+          "max": 0.269426
+        },
+        "validate_ms": {
+          "avg": 0.0072331999999999995,
+          "min": 0.007011,
+          "median": 0.007150999999999999,
+          "max": 0.007562
+        },
+        "compose_ms": {
+          "avg": 0.0232514,
+          "min": 0.022865,
+          "median": 0.023275999999999998,
+          "max": 0.023716
+        },
+        "docx_ms": {
+          "avg": 1.5900311999999999,
+          "min": 1.483865,
+          "median": 1.582474,
+          "max": 1.697307
+        },
+        "pdf_ms": {
+          "avg": 4.9630526,
+          "min": 4.885911,
+          "median": 4.935595,
+          "max": 5.108015
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 6.870178800000001,
+          "min": 6.67816,
+          "median": 6.956839,
+          "max": 7.006144
+        },
+        "docx_bytes": {
+          "avg": 6436,
+          "min": 6436,
+          "median": 6436,
+          "max": 6436
+        },
+        "pdf_bytes": {
+          "avg": 1267836,
+          "min": 1267836,
+          "median": 1267836,
+          "max": 1267836
+        }
+      }
+    },
+    {
+      "id": "pages-1000-validation",
+      "label": "Stress (1,000 logical pages) / validation",
+      "tier": "pages-1000",
+      "logical_pages": 1000,
+      "pipeline": "validation",
+      "input": "examples/stress/stress_1000_pages.yaml",
+      "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+      "input_bytes": 2273318,
+      "command_flags": [
+        "bench",
+        "examples/stress/stress_1000_pages.yaml",
+        "--pipeline",
+        "validation",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 73469952,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/stress/stress_1000_pages.yaml",
+        "pipeline": "validation",
+        "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+        "input_bytes": 2273318,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 128.60573760000003,
+          "min": 127.710291,
+          "median": 128.379028,
+          "max": 130.21255000000002
+        },
+        "validate_ms": {
+          "avg": 1.5454398,
+          "min": 1.5025030000000001,
+          "median": 1.564897,
+          "max": 1.5815219999999999
+        },
+        "compose_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 131.659105,
+          "min": 130.865654,
+          "median": 131.46416499999998,
+          "max": 133.04865199999998
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "pages-1000-docx",
+      "label": "Stress (1,000 logical pages) / docx",
+      "tier": "pages-1000",
+      "logical_pages": 1000,
+      "pipeline": "docx",
+      "input": "examples/stress/stress_1000_pages.yaml",
+      "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+      "input_bytes": 2273318,
+      "command_flags": [
+        "bench",
+        "examples/stress/stress_1000_pages.yaml",
+        "--pipeline",
+        "docx",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 106004480,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/stress/stress_1000_pages.yaml",
+        "pipeline": "docx",
+        "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+        "input_bytes": 2273318,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 129.2412204,
+          "min": 128.67246,
+          "median": 129.293676,
+          "max": 129.980831
+        },
+        "validate_ms": {
+          "avg": 1.687652,
+          "min": 1.624106,
+          "median": 1.673681,
+          "max": 1.748264
+        },
+        "compose_ms": {
+          "avg": 33.8808052,
+          "min": 33.721487,
+          "median": 33.805413,
+          "max": 34.117284
+        },
+        "docx_ms": {
+          "avg": 126.8252184,
+          "min": 125.48190100000001,
+          "median": 126.00961899999999,
+          "max": 128.700652
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 315.85391760000005,
+          "min": 313.842147,
+          "median": 314.589761,
+          "max": 319.069711
+        },
+        "docx_bytes": {
+          "avg": 731129,
+          "min": 731129,
+          "median": 731129,
+          "max": 731129
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "id": "pages-1000-pdf",
+      "label": "Stress (1,000 logical pages) / pdf",
+      "tier": "pages-1000",
+      "logical_pages": 1000,
+      "pipeline": "pdf",
+      "input": "examples/stress/stress_1000_pages.yaml",
+      "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+      "input_bytes": 2273318,
+      "command_flags": [
+        "bench",
+        "examples/stress/stress_1000_pages.yaml",
+        "--pipeline",
+        "pdf",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 156635136,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/stress/stress_1000_pages.yaml",
+        "pipeline": "pdf",
+        "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+        "input_bytes": 2273318,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 128.1084064,
+          "min": 126.90412400000001,
+          "median": 127.618871,
+          "max": 129.67568
+        },
+        "validate_ms": {
+          "avg": 1.5807648000000003,
+          "min": 1.481071,
+          "median": 1.568412,
+          "max": 1.6699650000000001
+        },
+        "compose_ms": {
+          "avg": 33.80752819999999,
+          "min": 33.589738000000004,
+          "median": 33.883179999999996,
+          "max": 33.957663
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 1103.2812298000001,
+          "min": 1096.8000749999999,
+          "median": 1100.477914,
+          "max": 1112.256432
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 1291.0184524000001,
+          "min": 1284.2220900000002,
+          "median": 1287.01705,
+          "max": 1302.001077
+        },
+        "docx_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_bytes": {
+          "avg": 14392531,
+          "min": 14392531,
+          "median": 14392531,
+          "max": 14392531
+        }
+      }
+    },
+    {
+      "id": "pages-1000-dual",
+      "label": "Stress (1,000 logical pages) / dual",
+      "tier": "pages-1000",
+      "logical_pages": 1000,
+      "pipeline": "dual",
+      "input": "examples/stress/stress_1000_pages.yaml",
+      "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+      "input_bytes": 2273318,
+      "command_flags": [
+        "bench",
+        "examples/stress/stress_1000_pages.yaml",
+        "--pipeline",
+        "dual",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 159805440,
+      "result": {
+        "schema_version": 2,
+        "target": "examples/stress/stress_1000_pages.yaml",
+        "pipeline": "dual",
+        "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+        "input_bytes": 2273318,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": true,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 128.7378938,
+          "min": 127.89313299999999,
+          "median": 128.66787,
+          "max": 130.15321799999998
+        },
+        "validate_ms": {
+          "avg": 1.6563130000000001,
+          "min": 1.604336,
+          "median": 1.663866,
+          "max": 1.685509
+        },
+        "compose_ms": {
+          "avg": 33.8300304,
+          "min": 33.647676000000004,
+          "median": 33.856539999999995,
+          "max": 33.909641
+        },
+        "docx_ms": {
+          "avg": 126.89828240000001,
+          "min": 126.40259800000001,
+          "median": 126.67557900000001,
+          "max": 127.75865
+        },
+        "pdf_ms": {
+          "avg": 1090.6766766,
+          "min": 1086.9495259999999,
+          "median": 1090.713405,
+          "max": 1096.3633360000001
+        },
+        "existing_docx_open_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_save_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "total_ms": {
+          "avg": 1405.1706088,
+          "min": 1401.897249,
+          "median": 1403.418762,
+          "max": 1411.6251530000002
+        },
+        "docx_bytes": {
+          "avg": 731129,
+          "min": 731129,
+          "median": 731129,
+          "max": 731129
+        },
+        "pdf_bytes": {
+          "avg": 14392531,
+          "min": 14392531,
+          "median": 14392531,
+          "max": 14392531
+        }
+      }
+    },
+    {
+      "id": "external-docx-open-save",
+      "label": "External DOCX open/save",
+      "tier": "existing-docx",
+      "logical_pages": null,
+      "pipeline": "existing-docx",
+      "input": "tests/fixtures/external-macos-textutil.docx",
+      "input_sha256": "61ffe1ddca7882b6ebf17c2957d035a39518b0e1a509de3c6946fccc3ac283ba",
+      "input_bytes": 3737,
+      "command_flags": [
+        "bench",
+        "tests/fixtures/external-macos-textutil.docx",
+        "--pipeline",
+        "existing-docx",
+        "--iterations",
+        "5",
+        "--warmup",
+        "1",
+        "--format",
+        "json"
+      ],
+      "peak_memory_bytes": 7004160,
+      "result": {
+        "schema_version": 2,
+        "target": "tests/fixtures/external-macos-textutil.docx",
+        "pipeline": "existing-docx",
+        "input_sha256": "61ffe1ddca7882b6ebf17c2957d035a39518b0e1a509de3c6946fccc3ac283ba",
+        "input_bytes": 3737,
+        "specs": 1,
+        "iterations": 5,
+        "warmup": 1,
+        "emit_pdf": false,
+        "keep_output": false,
+        "parse_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "validate_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "compose_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "docx_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "pdf_ms": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        },
+        "existing_docx_open_ms": {
+          "avg": 0.1960714,
+          "min": 0.181053,
+          "median": 0.18884399999999998,
+          "max": 0.231649
+        },
+        "existing_docx_save_ms": {
+          "avg": 1.2166172000000002,
+          "min": 1.063642,
+          "median": 1.1610500000000001,
+          "max": 1.417696
+        },
+        "total_ms": {
+          "avg": 1.4200013999999999,
+          "min": 1.251736,
+          "median": 1.3568639999999998,
+          "max": 1.622284
+        },
+        "docx_bytes": {
+          "avg": 5163,
+          "min": 5163,
+          "median": 5163,
+          "max": 5163
+        },
+        "pdf_bytes": {
+          "avg": 0,
+          "min": 0,
+          "median": 0,
+          "max": 0
+        }
+      }
+    }
+  ]
+}

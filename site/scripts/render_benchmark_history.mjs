@@ -55,7 +55,10 @@ function renderChart(runs) {
   const colors = ["#2dd4bf", "#60a5fa", "#f59e0b", "#f472b6"];
   const values = runs.flatMap((run) => ids.map((id) => scenarioValue(run, id))).filter(Number.isFinite);
   const maxLog = Math.max(1, ...values.map((value) => Math.log10(value + 1)));
-  const x = (index) => margin.left + (runs.length === 1 ? plotWidth / 2 : (plotWidth * index) / (runs.length - 1));
+  const xInset = Math.min(96, plotWidth / 4);
+  const x = (index) => margin.left + (runs.length === 1
+    ? plotWidth / 2
+    : xInset + ((plotWidth - xInset * 2) * index) / (runs.length - 1));
   const y = (value) => margin.top + plotHeight - (Math.log10(value + 1) / maxLog) * plotHeight;
   const grid = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
     const gy = margin.top + plotHeight * (1 - ratio);
@@ -63,15 +66,14 @@ function renderChart(runs) {
     return `<line x1="${margin.left}" y1="${gy}" x2="${width - margin.right}" y2="${gy}" class="grid"/><text x="${margin.left - 16}" y="${gy + 5}" text-anchor="end" class="axis">${formatMs(value)}</text>`;
   }).join("");
   const series = ids.map((id, seriesIndex) => {
-    const points = runs.map((run, index) => ({ x: x(index), y: y(scenarioValue(run, id)), value: scenarioValue(run, id) }));
-    const pathData = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+    const points = runs.map((run, index) => ({ x: x(index), y: y(scenarioValue(run, id)), value: scenarioValue(run, id), host: hostKey(run) }));
+    const pathData = points.map((point, index) => `${index === 0 || point.host !== points[index - 1].host ? "M" : "L"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
     const circles = points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="6" fill="${colors[seriesIndex]}"><title>${labels[seriesIndex]}: ${point.value.toFixed(2)} ms</title></circle>`).join("");
     return `<path d="${pathData}" fill="none" stroke="${colors[seriesIndex]}" stroke-width="3"/>${circles}`;
   }).join("");
-  const dates = runs.map((run, index) => `<text x="${x(index)}" y="${height - margin.bottom + 30}" text-anchor="middle" class="axis">${escapeXml(run.generated_at_utc.slice(0, 10))}</text>`).join("");
+  const dates = runs.map((run, index) => `<text x="${x(index)}" y="${height - margin.bottom + 28}" text-anchor="middle" class="axis">${escapeXml(run.generated_at_utc.slice(0, 16).replace("T", " "))}Z</text><text x="${x(index)}" y="${height - margin.bottom + 49}" text-anchor="middle" class="note">${escapeXml(run.host.platform)}/${escapeXml(run.host.architecture)}</text>`).join("");
   const legend = labels.map((label, index) => `<g transform="translate(${margin.left + index * 250},72)"><circle r="6" fill="${colors[index]}"/><text x="14" y="5" class="legend">${label}</text></g>`).join("");
-  const latest = runs.at(-1);
-  const host = `${latest.host.cpu} · ${latest.host.platform}/${latest.host.architecture}`;
+  const hostCount = new Set(runs.map(hostKey)).size;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 ${width} ${height}">
   <title id="title">RusDox reproducible benchmark history</title>
@@ -81,13 +83,17 @@ function renderChart(runs) {
   <text x="${margin.left}" y="42" class="title">Reproducible benchmark history</text>
   <text x="${margin.left}" y="102" class="subtitle">Median total runtime · log scale · lower is better</text>
   ${legend}${grid}${series}${dates}
-  <text x="${margin.left}" y="${height - 24}" class="note">Latest host: ${escapeXml(host)} · ${runs.length} checked-in run${runs.length === 1 ? "" : "s"}</text>
+  <text x="${margin.left}" y="${height - 18}" class="note">${runs.length} checked-in run${runs.length === 1 ? "" : "s"} · ${hostCount} host ${hostCount === 1 ? "identity" : "identities"} · lines only connect comparable hosts</text>
 </svg>
 `;
 }
 
 function scenarioValue(run, id) {
   return run.scenarios.find((scenario) => scenario.id === id)?.median_total_ms ?? 0;
+}
+
+function hostKey(run) {
+  return [run.host.platform, run.host.architecture, run.host.cpu].join("|");
 }
 
 function formatMs(value) {

@@ -206,12 +206,14 @@ Section evidence: the suite opens, modifies, saves, structurally validates, and 
 
 ### Reproducible performance
 
-- [ ] Replace the single-machine benchmark claim with a reproducible benchmark protocol.
-- [ ] Record CPU, OS, Rust version, input hash, output sizes, peak memory, and command flags.
-- [ ] Add small, medium, and 1,000-page benchmark tiers.
-- [ ] Track DOCX, PDF, dual-output, validation, and existing-DOCX open/save separately.
-- [ ] Run scheduled benchmark CI and flag material regressions without making noisy PR checks.
-- [ ] Publish benchmark history as data and charts, not a manually updated screenshot only.
+- [x] Replace the single-machine benchmark claim with a reproducible benchmark protocol.
+- [x] Record CPU, OS, Rust version, input hash, output sizes, peak memory, and command flags.
+- [x] Add small, medium, and 1,000-page benchmark tiers.
+- [x] Track DOCX, PDF, dual-output, validation, and existing-DOCX open/save separately.
+- [x] Run scheduled benchmark CI and flag material regressions without making noisy PR checks.
+- [x] Publish benchmark history as data and charts, not a manually updated screenshot only.
+
+Section evidence: protocol `2026-08-24` runs 13 isolated release processes: four pipelines for 1-page, 4-page, and 1,000-page tiers plus external-DOCX open/save. Each raw report pins host/toolchain metadata, input SHA-256 and bytes, exact flags, per-stage distributions, output sizes, and normalized peak RSS. Clean checked-in runs cover Apple M2/darwin-arm64 and GitHub Actions AMD EPYC/Linux-x64; manual Ubuntu run `32673209069` passed and supplied the comparable scheduled baseline. The Monday/manual-only workflow applies dual relative/absolute floors (20% + 5 ms runtime; 25% + 16 MiB RSS) so pull requests stay quiet while material regressions fail. `benchmarks/history.json` and the accessible SVG chart are regenerated from immutable raw JSON rather than hand-edited.
 
 #### Exit gate
 
@@ -220,6 +222,8 @@ Section evidence: the suite opens, modifies, saves, structurally validates, and 
 - compatibility claims link to dated viewer evidence;
 - benchmark results are independently reproducible;
 - untrusted input has documented resource limits and fuzz coverage.
+
+Exit evidence: all 17 gallery specifications pass 19 parity checks and exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
 
 ---
 
