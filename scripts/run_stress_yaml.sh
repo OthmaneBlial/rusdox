@@ -14,4 +14,4 @@ echo "Generating examples/stress/stress_1000_pages.yaml"
 "$script_dir/generate_stress_yaml.sh" "${1:-}"
 
 echo "Running 1000-page YAML stress benchmark"
-cargo run "${release_flag[@]}" --bin stress_1000_pages
+cargo run "${release_flag[@]}" --features maintainer-tools --bin stress_1000_pages

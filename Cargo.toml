@@ -3,6 +3,7 @@ name = "rusdox"
 version = "0.1.0"
 edition = "2021"
 default-run = "rusdox"
+autobins = false
 license = "MIT"
 description = "Generate DOCX and PDF from YAML at Rust speed."
 repository = "https://github.com/OthmaneBlial/rusdox"
@@ -32,6 +33,24 @@ include = [
 [lib]
 name = "rusdox"
 path = "src/lib.rs"
+
+[[bin]]
+name = "rusdox"
+path = "src/bin/rusdox.rs"
+
+[[bin]]
+name = "generate_stress_1000_pages_yaml"
+path = "src/bin/generate_stress_1000_pages_yaml.rs"
+required-features = ["maintainer-tools"]
+
+[[bin]]
+name = "stress_1000_pages"
+path = "src/bin/stress_1000_pages.rs"
+required-features = ["maintainer-tools"]
+
+[features]
+default = []
+maintainer-tools = []
 
 [dependencies]
 bitflags = "2.6"

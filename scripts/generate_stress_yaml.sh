@@ -10,4 +10,4 @@ if [[ "${1:-}" == "--release" ]]; then
   release_flag=(--release)
 fi
 
-cargo run "${release_flag[@]}" --quiet --bin generate_stress_1000_pages_yaml
+cargo run "${release_flag[@]}" --quiet --features maintainer-tools --bin generate_stress_1000_pages_yaml
