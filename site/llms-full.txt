@@ -2258,45 +2258,47 @@ Target: 1–2 weeks
 Release: `v0.1.0`  
 Goal: every public promise works on a clean machine.
 
+Status: **complete (2026-08-23).** `v0.1.0` delivered the public launch; `v0.1.1` completed the native `cargo binstall` path and moved crates.io publishing to short-lived OIDC credentials.
+
 ### Distribution
 
-- [ ] Create a real `v0.1.0` tag and GitHub Release using the existing Linux, macOS Intel, macOS Apple Silicon, and Windows build matrix.
-- [ ] Add SHA-256 checksums for every archive.
-- [ ] Add build provenance attestations and an SBOM to the release workflow.
-- [ ] Smoke-test `scripts/install.sh` and `scripts/install.ps1` against the published assets.
-- [ ] Publish the library and binary to crates.io.
-- [ ] Verify `cargo install rusdox --locked`, `cargo add rusdox`, and the generated docs.rs site from clean environments.
-- [ ] Test `cargo binstall rusdox` against actual release asset names; add package metadata only if the defaults do not resolve correctly.
-- [ ] Add an explicit Cargo `include` list so crates.io receives source, essential docs, and required examples—not the duplicated `site/` tree or generated binary documents.
-- [ ] Add `CHANGELOG.md` with release dates, user-facing changes, breaking changes, and migration notes.
+- [x] Create a real `v0.1.0` tag and GitHub Release using the existing Linux, macOS Intel, macOS Apple Silicon, and Windows build matrix.
+- [x] Add SHA-256 checksums for every archive.
+- [x] Add build provenance attestations and an SBOM to the release workflow.
+- [x] Smoke-test `scripts/install.sh` and `scripts/install.ps1` against the published assets.
+- [x] Publish the library and binary to crates.io.
+- [x] Verify `cargo install rusdox --locked`, `cargo add rusdox`, and the generated docs.rs site from clean environments.
+- [x] Test `cargo binstall rusdox` against actual release asset names; add package metadata only if the defaults do not resolve correctly.
+- [x] Add an explicit Cargo `include` list so crates.io receives source, essential docs, and required examples—not the duplicated `site/` tree or generated binary documents.
+- [x] Add `CHANGELOG.md` with release dates, user-facing changes, breaking changes, and migration notes.
 
 ### Repository trust
 
-- [ ] Replace every stale `master` reference with `main`.
-- [ ] Fix the CI badge and confirm it reports the real workflow state.
-- [ ] Update `Cargo.toml` homepage/documentation URLs to the live site and docs.rs.
-- [ ] Enable GitHub Discussions with Announcements, Q&A, Ideas, and Show and tell.
-- [ ] Enable private vulnerability reporting, Dependabot alerts/security updates, and CodeQL default setup.
-- [ ] Route usage questions to Discussions and security reports to the private reporting channel.
-- [ ] Add `good first issue`, `help wanted`, `compatibility`, `template`, and `docs` labels.
+- [x] Replace every stale `master` reference with `main`.
+- [x] Fix the CI badge and confirm it reports the real workflow state.
+- [x] Update `Cargo.toml` homepage/documentation URLs to the live site and docs.rs.
+- [x] Enable GitHub Discussions with Announcements, Q&A, Ideas, and Show and tell.
+- [x] Enable private vulnerability reporting, Dependabot alerts/security updates, and CodeQL default setup.
+- [x] Route usage questions to Discussions and security reports to the private reporting channel.
+- [x] Add `good first issue`, `help wanted`, `compatibility`, `template`, and `docs` labels.
 
 ### README conversion
 
-- [ ] Put a verified “Install in 10 seconds” block before the long benchmark section.
-- [ ] Add a 20–30 second terminal/demo recording: install → initialize → edit one value → receive DOCX and PDF.
-- [ ] Show one YAML input beside large, readable previews of both real outputs.
-- [ ] Replace the generic “Foundation” badge with a version/stability statement tied to the release.
-- [ ] Add a concise “Why RusDox instead of X?” table covering DOCX editability, native PDF, office-runtime dependency, templates, and parity verification.
-- [ ] Link the live playground/site, crates.io, docs.rs, releases, roadmap, discussions, and gallery above the fold.
-- [ ] State unsupported features honestly and link to the compatibility matrix.
+- [x] Put a verified “Install in 10 seconds” block before the long benchmark section.
+- [x] Add a 20–30 second terminal/demo recording: install → initialize → edit one value → receive DOCX and PDF.
+- [x] Show one YAML input beside large, readable previews of both real outputs.
+- [x] Replace the generic “Foundation” badge with a version/stability statement tied to the release.
+- [x] Add a concise “Why RusDox instead of X?” table covering DOCX editability, native PDF, office-runtime dependency, templates, and parity verification.
+- [x] Link the live playground/site, crates.io, docs.rs, releases, roadmap, discussions, and gallery above the fold.
+- [x] State unsupported features honestly and link to the compatibility matrix.
 
 ### Documentation
 
-- [ ] Generate crawlable static HTML with a stable URL for every guide and example.
-- [ ] Ensure core documentation remains usable without JavaScript.
-- [ ] Add canonical metadata, social cards, sitemap, and searchable page titles.
-- [ ] Split “owner GitHub setup” instructions out of end-user documentation.
-- [ ] Add a troubleshooting page for fonts, asset paths, viewer differences, large documents, and install/PATH problems.
+- [x] Generate crawlable static HTML with a stable URL for every guide and example.
+- [x] Ensure core documentation remains usable without JavaScript.
+- [x] Add canonical metadata, social cards, sitemap, and searchable page titles.
+- [x] Split “owner GitHub setup” instructions out of end-user documentation.
+- [x] Add a troubleshooting page for fonts, asset paths, viewer differences, large documents, and install/PATH problems.
 
 #### Exit gate
 
@@ -2308,6 +2310,8 @@ Milestone 0 is complete only when:
 - all public links and badges resolve;
 - the packaged crate is deliberately scoped and below the registry size limit;
 - a visitor can reach a real output in under two minutes.
+
+Evidence: release workflow [32667470624](https://github.com/OthmaneBlial/rusdox/actions/runs/32667470624), three-platform main CI [32667142635](https://github.com/OthmaneBlial/rusdox/actions/runs/32667142635), CodeQL [32667142592](https://github.com/OthmaneBlial/rusdox/actions/runs/32667142592), and the [v0.1.1 release](https://github.com/OthmaneBlial/rusdox/releases/tag/v0.1.1). Published archives were independently checksum- and attestation-verified; clean `cargo install`, `cargo add`, and archive-only `cargo binstall` checks passed.
 
 ---
 
