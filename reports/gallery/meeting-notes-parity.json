@@ -41,6 +41,42 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
       "id": "metadata",
       "label": "Document metadata",
       "status": "passed",
@@ -96,10 +132,19 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Agenda",
+      "Decisions"
+    ],
     "tables": [],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -116,7 +161,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -135,10 +181,19 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Agenda",
+      "Decisions"
+    ],
     "tables": [],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -155,7 +210,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -175,10 +231,19 @@
         "paragraph",
         "paragraph"
       ],
-      "headings": [],
+      "headings": [
+        "Agenda",
+        "Decisions"
+      ],
       "tables": [],
       "images": [],
       "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [],
       "metadata": {
         "title": "RusDox Document",
         "author": "RusDox",
@@ -195,7 +260,8 @@
         "margin_left_twips": 1440,
         "header_twips": 720,
         "footer_twips": 720,
-        "gutter_twips": 0
+        "gutter_twips": 0,
+        "orientation": "portrait"
       },
       "header": null,
       "footer": null,
@@ -224,13 +290,13 @@
   "artifacts": [
     {
       "path": "generated/meeting-notes.docx",
-      "bytes": 3892,
-      "sha256": "102f2dd1c34c5061c6b61a3501d3dc511b6c5c3f8ed75daa58597069266cde70"
+      "bytes": 3933,
+      "sha256": "d18226ded49f6f054422ebf9dd1e5eed003679190083c75b79fe9b754bc7ef23"
     },
     {
       "path": "rendered/meeting-notes.pdf",
-      "bytes": 1532407,
-      "sha256": "ed76c1c1baeb3c3da5bedd885aaa7e4e13cdb478508469843254290c1f86c9ad"
+      "bytes": 1532416,
+      "sha256": "59e580fadaa93771e1d25591ffbc08417b418fcf938199055cc32b6c8013ab93"
     }
   ]
 }

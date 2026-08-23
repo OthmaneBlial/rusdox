@@ -41,6 +41,42 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
       "id": "metadata",
       "label": "Document metadata",
       "status": "passed",
@@ -108,7 +144,13 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Executive Summary",
+      "Business Highlights",
+      "Delivery Health",
+      "Risk Register",
+      "Next 30 Days"
+    ],
     "tables": [
       [
         [
@@ -163,6 +205,213 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -179,7 +428,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -210,7 +460,13 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Executive Summary",
+      "Business Highlights",
+      "Delivery Health",
+      "Risk Register",
+      "Next 30 Days"
+    ],
     "tables": [
       [
         [
@@ -265,6 +521,213 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 2,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -281,7 +744,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -313,7 +777,13 @@
         "paragraph",
         "paragraph"
       ],
-      "headings": [],
+      "headings": [
+        "Executive Summary",
+        "Business Highlights",
+        "Delivery Health",
+        "Risk Register",
+        "Next 30 Days"
+      ],
       "tables": [
         [
           [
@@ -368,6 +838,213 @@
       ],
       "images": [],
       "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [
+        {
+          "rows": [
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 2,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 2,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 2,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "metadata": {
         "title": "RusDox Document",
         "author": "RusDox",
@@ -384,15 +1061,16 @@
         "margin_left_twips": 1440,
         "header_twips": 720,
         "footer_twips": 720,
-        "gutter_twips": 0
+        "gutter_twips": 0,
+        "orientation": "portrait"
       },
       "header": null,
       "footer": null,
       "page_numbering": null
     },
     "page_count": 2,
-    "draw_operations": 93,
-    "text_lines": 62,
+    "draw_operations": 88,
+    "text_lines": 60,
     "image_operations": 0
   },
   "visual_diff": {
@@ -421,13 +1099,13 @@
   "artifacts": [
     {
       "path": "generated/executive-dashboard.docx",
-      "bytes": 5711,
-      "sha256": "ddf29f03b7b00989c773471c17ed67996085c507750843a58a93f9e384aa11fd"
+      "bytes": 5757,
+      "sha256": "dc3211b22d4ba7814af09ed3aee5f0a64cfce4d515eaef581bb3b3190bd87934"
     },
     {
       "path": "rendered/executive-dashboard.pdf",
-      "bytes": 2111056,
-      "sha256": "89f145edd2294192bcdab08f64b57de55a5a1d81ccc14115f8559fd01fd245d2"
+      "bytes": 2110719,
+      "sha256": "92110ccdd29530fa775cfb93f2411e00a4f8aafdbdeaa65435f1fd8785ef152d"
     }
   ]
 }

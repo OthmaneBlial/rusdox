@@ -1,11 +1,14 @@
+use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::Path;
 
 use rusdox::config::RusdoxConfig;
+use rusdox::parity::DocumentProjection;
+use rusdox::spec::DocumentSpec;
 use rusdox::studio::Studio;
 use rusdox::{
     Border, BorderStyle, Document, DocumentMode, HeaderFooter, PageNumberFormat, PageNumbering,
-    PageSetup, Paragraph, ParagraphAlignment, ParagraphList, ParagraphStyle,
+    PageOrientation, PageSetup, Paragraph, ParagraphAlignment, ParagraphList, ParagraphStyle,
     ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
     TableCell, TableRow, TableStyle, TableStyleProperties, UnderlineStyle, Visual, VisualKind,
 };
@@ -774,4 +777,73 @@ fn open_from_disk_sets_source_path_and_open_read_only_mode() -> Result<(), rusdo
     assert_eq!(read_write.source_path(), Some(path.as_path()));
     assert_eq!(read_only.source_path(), Some(path.as_path()));
     Ok(())
+}
+
+#[test]
+fn dual_output_contract_round_trips_and_emits_interactive_pdf() -> Result<(), rusdox::DocxError> {
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/dual_output_contract.yaml");
+    let spec = DocumentSpec::load_from_path(fixture)?;
+    let studio = Studio::default();
+    let document = studio.compose(&spec);
+    assert_eq!(
+        document.page_setup().orientation,
+        PageOrientation::Landscape
+    );
+
+    let temp = tempdir().expect("temp dir");
+    let docx_path = temp.path().join("contract.docx");
+    let pdf_path = temp.path().join("contract.pdf");
+    document.save(&docx_path)?;
+    studio.render_pdf_with_evidence(&document, &pdf_path, None)?;
+
+    let reopened = Document::open(&docx_path)?;
+    assert_eq!(
+        DocumentProjection::from_document(&document),
+        DocumentProjection::from_document(&reopened)
+    );
+
+    let mut archive = ZipArchive::new(std::fs::File::open(&docx_path)?)?;
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")?
+        .read_to_string(&mut document_xml)?;
+    assert!(document_xml.contains("w:bookmarkStart"));
+    assert!(document_xml.contains("HYPERLINK"));
+    assert!(document_xml.contains(" TOC "));
+    assert!(document_xml.contains("w:footnoteReference"));
+    assert!(document_xml.contains(r#"w:orient="landscape""#));
+    assert!(document_xml.contains(r#"w:gridSpan w:val="2""#));
+    assert!(archive.by_name("word/footnotes.xml").is_ok());
+
+    let pdf = fs::read(&pdf_path)?;
+    let pdf_text = String::from_utf8_lossy(&pdf);
+    assert!(pdf_text.contains("/Subtype /Link"));
+    assert!(pdf_text.contains("/S /URI"));
+    assert!(pdf_text.contains("/S /GoTo"));
+    assert!(pdf_text.contains("/Type /Outlines"));
+    assert!(pdf_text.contains("/MediaBox [0 0 792 612]"));
+    Ok(())
+}
+
+#[test]
+fn unsplittable_table_row_overflow_is_diagnostic() {
+    let mut document =
+        Document::new().with_page_setup(PageSetup::new(4_000, 4_000).margins(400, 400, 400, 400));
+    let long_text = (0..80)
+        .map(|index| format!("line {index}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    document.push_table(Table::new().add_row(
+        TableRow::new().allow_split_across_pages(false).add_cell(
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text(long_text))),
+        ),
+    ));
+
+    let temp = tempdir().expect("temp dir");
+    let error = Studio::default()
+        .render_pdf_with_evidence(&document, temp.path().join("overflow.pdf"), None)
+        .expect_err("oversized unsplittable row must fail");
+    assert!(
+        matches!(error, rusdox::DocxError::Parse(message) if message.contains("table row overflow") && message.contains("allow_split_across_pages=false"))
+    );
 }

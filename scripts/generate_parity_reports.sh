@@ -12,7 +12,16 @@ cargo run --quiet --locked -- verify examples --output-root "$scratch_dir" >/dev
 destination="$repo_root/reports/gallery"
 mkdir -p "$destination"
 
-for name in board-report executive-dashboard product-launch-brief talent-profile invoice meeting-notes; do
+for name in \
+  board-report \
+  executive-dashboard \
+  product-launch-brief \
+  talent-profile \
+  invoice \
+  meeting-notes \
+  dual-output-contract \
+  international-scripts
+do
   rm -f "$destination/$name-parity.html" "$destination/$name-parity.json"
   rm -rf "$destination/$name-pages"
   cp "$scratch_dir/reports/$name-parity.html" "$destination/$name-parity.html"

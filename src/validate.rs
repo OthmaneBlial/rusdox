@@ -288,6 +288,22 @@ pub fn validate_spec(spec: &DocumentSpec) -> ValidationReport {
     }
     validate_metadata(&mut report, &spec.metadata);
 
+    if let Some(page) = spec.page_setup.as_ref() {
+        if page.width_twips == 0 || page.height_twips == 0 {
+            report.push_error("page_setup", "page width and height must be positive");
+        }
+        let orientation_matches = match page.orientation {
+            crate::PageOrientation::Portrait => page.height_twips >= page.width_twips,
+            crate::PageOrientation::Landscape => page.width_twips >= page.height_twips,
+        };
+        if !orientation_matches {
+            report.push_error(
+                "page_setup.orientation",
+                "orientation conflicts with the explicit width and height",
+            );
+        }
+    }
+
     validate_stylesheet(&mut report, &mut list_registry, &spec.styles);
 
     for (index, block) in spec.blocks.iter().enumerate() {
@@ -521,7 +537,15 @@ fn validate_block(
                 report.push_warning(format!("{path}.items"), "metrics block has no items");
             }
         }
-        BlockSpec::Spacer => {}
+        BlockSpec::TableOfContents { title } => {
+            if title
+                .as_deref()
+                .is_some_and(|title| title.trim().is_empty())
+            {
+                report.push_warning(format!("{path}.title"), "TOC title is blank");
+            }
+        }
+        BlockSpec::PageBreak | BlockSpec::SectionBreak | BlockSpec::Spacer => {}
     }
 }
 
@@ -593,6 +617,39 @@ fn validate_run_spec(
     if let Some(size_pt) = run.size_pt {
         validate_positive_f32(report, format!("{path}.size_pt"), size_pt);
     }
+    if let Some(target) = run.hyperlink.as_deref() {
+        if target.trim().is_empty()
+            || (!target.starts_with('#')
+                && !target.starts_with("https://")
+                && !target.starts_with("http://")
+                && !target.starts_with("mailto:"))
+        {
+            report.push_error(
+                format!("{path}.hyperlink"),
+                "hyperlink must be an http(s), mailto, or #bookmark target",
+            );
+        }
+    }
+    if let Some(bookmark) = run.bookmark.as_deref() {
+        if bookmark.is_empty()
+            || bookmark.len() > 40
+            || !bookmark
+                .chars()
+                .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        {
+            report.push_error(
+                format!("{path}.bookmark"),
+                "bookmark must contain 1-40 ASCII letters, digits, or underscores",
+            );
+        }
+    }
+    if run
+        .footnote
+        .as_deref()
+        .is_some_and(|note| note.trim().is_empty())
+    {
+        report.push_error(format!("{path}.footnote"), "footnote cannot be blank");
+    }
 }
 
 fn validate_table_block(
@@ -636,7 +693,14 @@ fn validate_table_block(
     }
 
     for (row_index, row) in table.rows.iter().enumerate() {
-        let cell_count = row.cells.len();
+        let cell_count = row
+            .cells
+            .iter()
+            .map(|cell| match cell {
+                CellSpec::Rich { grid_span, .. } => grid_span.unwrap_or(1).max(1) as usize,
+                _ => 1,
+            })
+            .sum::<usize>();
         let column_count = table.columns.len();
         if cell_count > column_count {
             report.push_error(
@@ -669,6 +733,50 @@ fn validate_table_block(
                         report.push_warning(
                             format!("{path}.spec.rows[{row_index}].cells[{cell_index}].text"),
                             "status cell text is blank",
+                        );
+                    }
+                }
+                CellSpec::Rich {
+                    paragraphs,
+                    grid_span,
+                    background_color,
+                    nested_table,
+                } => {
+                    if let Some(span) = grid_span {
+                        validate_positive_u32(
+                            report,
+                            format!("{path}.spec.rows[{row_index}].cells[{cell_index}].grid_span"),
+                            *span,
+                        );
+                    }
+                    if let Some(color) = background_color {
+                        validate_hex_color(
+                            report,
+                            format!(
+                                "{path}.spec.rows[{row_index}].cells[{cell_index}].background_color"
+                            ),
+                            color,
+                        );
+                    }
+                    for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
+                        validate_paragraph_block(
+                            report,
+                            &format!(
+                                "{path}.spec.rows[{row_index}].cells[{cell_index}].paragraphs[{paragraph_index}]"
+                            ),
+                            paragraph,
+                            stylesheet,
+                            &mut BTreeMap::new(),
+                        );
+                    }
+                    if let Some(nested_table) = nested_table {
+                        validate_table_block(
+                            report,
+                            &format!(
+                                "{path}.spec.rows[{row_index}].cells[{cell_index}].nested_table"
+                            ),
+                            nested_table,
+                            stylesheet,
                         );
                     }
                 }
@@ -980,6 +1088,7 @@ mod tests {
                         cells: vec![CellSpec::Text {
                             text: "ARR".to_string(),
                         }],
+                        ..RowSpec::default()
                     }],
                 },
             },
@@ -1037,6 +1146,7 @@ mod tests {
                                 text: "B".to_string(),
                             },
                         ],
+                        ..RowSpec::default()
                     }],
                 },
             },

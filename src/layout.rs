@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::paragraph::ParagraphAlignment;
 
+/// Physical page orientation shared by DOCX and PDF output.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PageOrientation {
+    #[default]
+    Portrait,
+    Landscape,
+}
+
 /// Page setup values stored in OOXML twips.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -15,6 +24,7 @@ pub struct PageSetup {
     pub header_twips: u32,
     pub footer_twips: u32,
     pub gutter_twips: u32,
+    pub orientation: PageOrientation,
 }
 
 impl Default for PageSetup {
@@ -29,6 +39,7 @@ impl Default for PageSetup {
             header_twips: 720,
             footer_twips: 720,
             gutter_twips: 0,
+            orientation: PageOrientation::Portrait,
         }
     }
 }
@@ -68,6 +79,12 @@ impl PageSetup {
     /// Sets the gutter margin in twips.
     pub fn gutter(mut self, gutter_twips: u32) -> Self {
         self.gutter_twips = gutter_twips;
+        self
+    }
+
+    /// Sets the physical orientation. Width and height remain explicit.
+    pub fn orientation(mut self, orientation: PageOrientation) -> Self {
+        self.orientation = orientation;
         self
     }
 }

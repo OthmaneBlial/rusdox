@@ -264,6 +264,25 @@ Common helpers include:
 
 There are also convenience free functions in `rusdox::studio` such as `title(...)`, `body(...)`, and `save_with_pdf(...)` that use the configured default `Studio`.
 
+## Shared Layout And Interactive Semantics
+
+The low-level model is shared by DOCX and PDF. `PageSetup` controls physical width, height, orientation, margins, header/footer distances, and gutter. `HeaderFooter` supports `{page}` and `{pages}` fields, while `PageNumbering` controls restart and number format.
+
+Runs can carry external or internal links, bookmark anchors, TOC fields, and footnotes:
+
+```rust
+use rusdox::{Paragraph, Run, RunField};
+
+let paragraph = Paragraph::new()
+    .add_run(Run::from_text("Overview").bookmark("overview"))
+    .add_run(Run::from_text(" project").hyperlink("https://github.com/OthmaneBlial/rusdox"))
+    .add_run(Run::from_text(" evidence").footnote("Generated from the typed source."));
+let toc = Paragraph::new()
+    .add_run(Run::from_text("Update field in Word").field(RunField::TableOfContents));
+```
+
+`Paragraph::page_break_before()` and `Paragraph::section_break_before()` provide explicit breaks. `TableRow::repeat_as_header()` and `allow_split_across_pages(false)` control pagination. `TableCell::grid_span(...)`, multiple paragraphs, and `add_table(...)` cover the parity-tested rich-cell surface.
+
 ## Low-Level Rust: Build The Document Yourself
 
 When you need full control, use the core document model directly.

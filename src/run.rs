@@ -62,6 +62,14 @@ pub enum VerticalAlign {
     Baseline,
 }
 
+/// Dynamic Word fields that also have a deterministic PDF fallback.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RunField {
+    /// An automatic table of contents based on heading styles.
+    TableOfContents,
+}
+
 impl VerticalAlign {
     pub(crate) fn from_xml(value: &str) -> Self {
         match value {
@@ -126,6 +134,10 @@ pub struct Run {
     text: String,
     style_id: Option<String>,
     properties: RunProperties,
+    hyperlink: Option<String>,
+    bookmark: Option<String>,
+    field: Option<RunField>,
+    footnote: Option<String>,
 }
 
 impl Run {
@@ -154,6 +166,10 @@ impl Run {
             text: text.into(),
             style_id: None,
             properties: RunProperties::default(),
+            hyperlink: None,
+            bookmark: None,
+            field: None,
+            footnote: None,
         }
     }
 
@@ -189,6 +205,50 @@ impl Run {
     pub fn set_text(&mut self, text: impl Into<String>) -> &mut Self {
         self.text = text.into();
         self
+    }
+
+    /// Makes this run an external URL or an internal `#bookmark` link.
+    pub fn hyperlink(mut self, target: impl Into<String>) -> Self {
+        self.hyperlink = Some(target.into());
+        self
+    }
+
+    /// Returns the hyperlink target, when present.
+    pub fn hyperlink_target(&self) -> Option<&str> {
+        self.hyperlink.as_deref()
+    }
+
+    /// Anchors a bookmark at this run.
+    pub fn bookmark(mut self, name: impl Into<String>) -> Self {
+        self.bookmark = Some(name.into());
+        self
+    }
+
+    /// Returns the bookmark name, when present.
+    pub fn bookmark_name(&self) -> Option<&str> {
+        self.bookmark.as_deref()
+    }
+
+    /// Marks the run as a dynamic field with its text as fallback content.
+    pub fn field(mut self, field: RunField) -> Self {
+        self.field = Some(field);
+        self
+    }
+
+    /// Returns the dynamic field kind, when present.
+    pub fn field_kind(&self) -> Option<RunField> {
+        self.field
+    }
+
+    /// Adds a footnote whose marker follows this run.
+    pub fn footnote(mut self, text: impl Into<String>) -> Self {
+        self.footnote = Some(text.into());
+        self
+    }
+
+    /// Returns the attached footnote text, when present.
+    pub fn footnote_text(&self) -> Option<&str> {
+        self.footnote.as_deref()
     }
 
     /// Returns the run properties.
@@ -277,11 +337,19 @@ impl Run {
         text: String,
         style_id: Option<String>,
         properties: RunProperties,
+        hyperlink: Option<String>,
+        bookmark: Option<String>,
+        field: Option<RunField>,
+        footnote: Option<String>,
     ) -> Self {
         Self {
             text,
             style_id,
             properties,
+            hyperlink,
+            bookmark,
+            field,
+            footnote,
         }
     }
 
@@ -465,7 +533,15 @@ mod tests {
             vertical_align: Some(VerticalAlign::Baseline),
         };
 
-        let run = Run::from_parts("abc".to_string(), None, properties.clone());
+        let run = Run::from_parts(
+            "abc".to_string(),
+            None,
+            properties.clone(),
+            None,
+            None,
+            None,
+            None,
+        );
         assert_eq!(run.text(), "abc");
         assert_eq!(run.properties(), &properties);
     }

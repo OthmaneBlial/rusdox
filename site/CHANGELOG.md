@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
+- Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.
+- Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
+
+### Changed
+
+- `PageSetup`, `Run`, `RowSpec`, and related low-level constructors now carry the expanded dual-output contract; this is a breaking Rust API change planned for `v0.2.0`.
+- PDF page geometry now comes from the document's `PageSetup`; PDF config geometry remains a compatibility fallback when no document-level value is supplied.
+- PDF nested tables use a bounded flattened-row representation and do not claim exact nested-grid geometry.
+
+### Fixed
+
+- Script-mode CLI tests now share a Cargo target cache and use unique package names, preventing multi-gigabyte temporary build accumulation and binary collisions.
+
 ## [0.1.1] - 2026-08-23
 
 ### Changed

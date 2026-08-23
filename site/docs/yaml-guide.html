@@ -51,7 +51,7 @@
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#top-level-fields">Top-Level Fields</a></li><li class="toc-level-2"><a href="#metadata">Metadata</a></li><li class="toc-level-2"><a href="#variables-includes-and-repeaters">Variables, Includes, And Repeaters</a></li><li class="toc-level-2"><a href="#named-styles">Named Styles</a></li><li class="toc-level-2"><a href="#simple-block-types">Simple Block Types</a></li><li class="toc-level-2"><a href="#visual-blocks">Visual Blocks</a></li><li class="toc-level-2"><a href="#list-blocks">List Blocks</a></li><li class="toc-level-3"><a href="#bullets">bullets</a></li><li class="toc-level-3"><a href="#labelvalues">labelvalues</a></li><li class="toc-level-3"><a href="#metrics">metrics</a></li><li class="toc-level-2"><a href="#tables">Tables</a></li><li class="toc-level-2"><a href="#custom-paragraphs">Custom Paragraphs</a></li><li class="toc-level-2"><a href="#best-practices">Best Practices</a></li><li class="toc-level-2"><a href="#see-real-files">See Real Files</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#top-level-fields">Top-Level Fields</a></li><li class="toc-level-2"><a href="#metadata">Metadata</a></li><li class="toc-level-2"><a href="#variables-includes-and-repeaters">Variables, Includes, And Repeaters</a></li><li class="toc-level-2"><a href="#named-styles">Named Styles</a></li><li class="toc-level-2"><a href="#simple-block-types">Simple Block Types</a></li><li class="toc-level-2"><a href="#visual-blocks">Visual Blocks</a></li><li class="toc-level-2"><a href="#list-blocks">List Blocks</a></li><li class="toc-level-3"><a href="#bullets">bullets</a></li><li class="toc-level-3"><a href="#labelvalues">labelvalues</a></li><li class="toc-level-3"><a href="#metrics">metrics</a></li><li class="toc-level-2"><a href="#tables">Tables</a></li><li class="toc-level-2"><a href="#custom-paragraphs">Custom Paragraphs</a></li><li class="toc-level-2"><a href="#shared-page-controls-and-semantic-blocks">Shared Page Controls And Semantic Blocks</a></li><li class="toc-level-2"><a href="#rich-table-rows-and-cells">Rich Table Rows And Cells</a></li><li class="toc-level-2"><a href="#best-practices">Best Practices</a></li><li class="toc-level-2"><a href="#see-real-files">See Real Files</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox is designed so the YAML reads like the document.</p>
 <p>The basic shape is always:</p>
 <pre><code class="language-yaml">output_name: my-document
@@ -301,17 +301,44 @@ blocks:
         italic: true
         color: D00000</code></pre>
 <p>Supported paragraph fields:</p>
-<ul><li><code>runs</code></li><li><code>style_id</code></li><li><code>alignment</code>: <code>left</code>, <code>center</code>, <code>right</code>, <code>justified</code></li><li><code>spacing_before_twips</code></li><li><code>spacing_after_twips</code></li><li><code>page_break_before</code></li></ul>
+<ul><li><code>runs</code></li><li><code>style_id</code></li><li><code>alignment</code>: <code>left</code>, <code>center</code>, <code>right</code>, <code>justified</code></li><li><code>spacing_before_twips</code></li><li><code>spacing_after_twips</code></li><li><code>page_break_before</code></li><li><code>section_break_before</code></li></ul>
 <p>Supported run fields:</p>
-<ul><li><code>text</code></li><li><code>style_id</code></li><li><code>bold</code></li><li><code>italic</code></li><li><code>underline</code></li><li><code>strikethrough</code></li><li><code>small_caps</code></li><li><code>shadow</code></li><li><code>color</code></li><li><code>font_family</code></li><li><code>size_pt</code></li><li><code>vertical_align</code></li></ul>
+<ul><li><code>text</code></li><li><code>style_id</code></li><li><code>bold</code></li><li><code>italic</code></li><li><code>underline</code></li><li><code>strikethrough</code></li><li><code>small_caps</code></li><li><code>shadow</code></li><li><code>color</code></li><li><code>font_family</code></li><li><code>size_pt</code></li><li><code>vertical_align</code></li><li><code>hyperlink</code>: <code>https://</code>, <code>http://</code>, <code>mailto:</code>, or <code>#bookmark</code></li><li><code>bookmark</code>: 1–40 ASCII letters, digits, or underscores</li><li><code>field</code>: currently <code>table_of_contents</code></li><li><code>footnote</code></li></ul>
 <p>Underline values:</p>
 <ul><li><code>single</code></li><li><code>double</code></li><li><code>dotted</code></li><li><code>dash</code></li><li><code>wavy</code></li><li><code>words</code></li><li><code>none</code></li></ul>
 <p>Vertical align values:</p>
 <ul><li><code>superscript</code></li><li><code>subscript</code></li><li><code>baseline</code></li></ul>
+<h2 id="shared-page-controls-and-semantic-blocks">Shared Page Controls And Semantic Blocks</h2>
+<p><code>page_setup</code>, <code>header</code>, <code>footer</code>, and <code>page_numbering</code> are consumed by both DOCX and PDF. Orientation is explicit and must agree with width and height.</p>
+<pre><code class="language-yaml">page_setup:
+  width_twips: 15840
+  height_twips: 12240
+  orientation: landscape
+  margin_top_twips: 1080
+  margin_right_twips: 900
+  margin_bottom_twips: 1080
+  margin_left_twips: 900
+header:
+  text: Quarterly review
+  alignment: right
+footer:
+  text: Page {page} of {pages}
+  alignment: center
+page_numbering:
+  start_at: 3
+  format: lower_roman
+blocks:
+  - type: table_of_contents
+    title: Contents
+  - type: page_break
+  - type: section_break</code></pre>
+<p>The DOCX TOC is an updateable Word field. PDF emits the heading list known from the spec at render time and does not invent page numbers.</p>
+<h2 id="rich-table-rows-and-cells">Rich Table Rows And Cells</h2>
+<p>Rows accept <code>repeat_as_header</code> and <code>allow_split_across_pages</code>. A <code>kind: rich</code> cell accepts <code>paragraphs</code>, horizontal <code>grid_span</code>, <code>background_color</code>, and an optional <code>nested_table</code>. See <a href="../examples/dual_output_contract.yaml"> TOKEN7 </a> for a complete, parity-tested example.</p>
 <h2 id="best-practices">Best Practices</h2>
 <ul><li>Use variables for repeated values, not for every sentence in the document.</li><li>Reach for <code>include</code> and <code>repeat</code> before moving to Rust if the workflow is still mostly static content.</li><li>Prefer <code>title</code>, <code>section</code>, <code>body</code>, <code>bullets</code>, <code>metrics</code>, and <code>table</code> before reaching for custom paragraphs.</li><li>Let config control styling instead of repeating style values everywhere.</li><li>Copy a close example and edit the content.</li></ul>
 <h2 id="see-real-files">See Real Files</h2>
-<ul><li><a href="../examples/board_report.yaml">../examples/board_report.yaml</a></li><li><a href="../examples/executive_dashboard.yaml">../examples/executive_dashboard.yaml</a></li><li><a href="../examples/formatting_showcase.yaml">../examples/formatting_showcase.yaml</a></li><li><a href="../examples/named_styles_showcase.yaml">../examples/named_styles_showcase.yaml</a></li><li><a href="../examples/yaml_composition_showcase.yaml">../examples/yaml_composition_showcase.yaml</a></li></ul></div>
+<ul><li><a href="../examples/board_report.yaml">../examples/board_report.yaml</a></li><li><a href="../examples/executive_dashboard.yaml">../examples/executive_dashboard.yaml</a></li><li><a href="../examples/dual_output_contract.yaml">../examples/dual_output_contract.yaml</a></li><li><a href="../examples/international_scripts.yaml">../examples/international_scripts.yaml</a></li><li><a href="../examples/formatting_showcase.yaml">../examples/formatting_showcase.yaml</a></li><li><a href="../examples/named_styles_showcase.yaml">../examples/named_styles_showcase.yaml</a></li><li><a href="../examples/yaml_composition_showcase.yaml">../examples/yaml_composition_showcase.yaml</a></li></ul></div>
             <nav class="docs-pager" aria-label="Documentation pagination">
     <a href="getting-started.html"><span>Previous</span><strong>Getting started</strong></a>
     <a class="docs-pager-next" href="configuration.html"><span>Next</span><strong>Configuration</strong></a>

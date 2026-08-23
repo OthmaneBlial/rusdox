@@ -41,6 +41,42 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
       "id": "metadata",
       "label": "Document metadata",
       "status": "passed",
@@ -114,6 +150,80 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -130,7 +240,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -167,6 +278,80 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -183,7 +368,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -221,6 +407,80 @@
       ],
       "images": [],
       "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "metadata": {
         "title": "RusDox Document",
         "author": "RusDox",
@@ -237,7 +497,8 @@
         "margin_left_twips": 1440,
         "header_twips": 720,
         "footer_twips": 720,
-        "gutter_twips": 0
+        "gutter_twips": 0,
+        "orientation": "portrait"
       },
       "header": null,
       "footer": null,
@@ -266,13 +527,13 @@
   "artifacts": [
     {
       "path": "generated/invoice.docx",
-      "bytes": 4176,
-      "sha256": "41eb5f0ee94fb0e8514569243aba4588369073285dc68e17fe3347fddc160d77"
+      "bytes": 4204,
+      "sha256": "90adb11a2ea15d6723d055a96036ba9a3a0e25a1d7a125781d8ba8adf0458a3b"
     },
     {
       "path": "rendered/invoice.pdf",
-      "bytes": 1532401,
-      "sha256": "0a1f8abfefef6be069b3b4d163edad3694c9ef51d1254a71ae28daad0bc61190"
+      "bytes": 1532407,
+      "sha256": "5dbc4771948fe8a832e1e432b9ddd0c543f8175282a95695299122e23edae0ef"
     }
   ]
 }

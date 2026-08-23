@@ -65,7 +65,7 @@ reports/board-report-pages/page-001.png</code></pre>
 <p>RusDox compares three views:</p>
 <ol><li>the typed document composed from the source spec;</li><li>the generated DOCX reopened through the RusDox OOXML reader;</li><li>the semantic projection actually consumed by the native PDF layout path.</li></ol>
 <p>The current contract checks:</p>
-<ul><li>normalized text and heading sequence;</li><li>top-level block order;</li><li>every table row and cell;</li><li>image count, semantic kind, and alt text;</li><li>explicit page-break positions;</li><li>document metadata;</li><li>page setup, headers, footers, and numbering settings;</li><li>required DOCX parts and package relationships;</li><li>PDF header, trailer, and page evidence;</li><li>optional deterministic rendered-page visual thresholds.</li></ul>
+<ul><li>normalized text and heading sequence;</li><li>top-level block order;</li><li>every table row and cell;</li><li>image count, semantic kind, and alt text;</li><li>explicit page-break positions;</li><li>explicit section-break positions;</li><li>hyperlinks, bookmarks, dynamic fields, and footnote text;</li><li>repeating/splittable row controls, grid spans, rich-cell paragraph counts, and nested-table presence;</li><li>document metadata;</li><li>page setup, headers, footers, and numbering settings;</li><li>required DOCX parts and package relationships;</li><li>PDF header, trailer, and page evidence;</li><li>optional deterministic rendered-page visual thresholds.</li></ul>
 <p>Each generated DOCX and PDF also receives a SHA-256 digest in the report.</p>
 <h2 id="visual-regression-thresholds">Visual regression thresholds</h2>
 <p>Every verification emits deterministic PNG snapshots from the PDF renderer&#39;s real layout operations. These geometry rasters show line wrapping, text positions, tables, images, spacing, and page boundaries without depending on a particular desktop PDF viewer.</p>
@@ -79,6 +79,7 @@ reports/board-report-pages/page-001.png</code></pre>
   invoice/page-001.png</code></pre>
 <p>The threshold is the maximum fraction of pixels that may differ on each page. <code>0</code> is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.</p>
 <p>Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.</p>
+<p>The executable boundary fixture is <a href="../examples/dual_output_contract.yaml"> TOKEN0 </a>. Script coverage and known shaping limits are captured by <a href="../examples/international_scripts.yaml"> TOKEN1 </a>.</p>
 <h2 id="machine-readable-output-and-exit-codes">Machine-readable output and exit codes</h2>
 <p>Print a compact JSON command summary while still writing the full HTML and JSON reports:</p>
 <pre><code class="language-bash">rusdox verify examples --output-root target/parity --format json</code></pre>

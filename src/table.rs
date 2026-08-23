@@ -176,6 +176,7 @@ pub struct TableCellProperties {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TableCell {
     paragraphs: Vec<Paragraph>,
+    nested_tables: Vec<Table>,
     properties: TableCellProperties,
 }
 
@@ -205,6 +206,17 @@ impl TableCell {
     /// Returns mutable access to cell paragraphs.
     pub fn paragraphs_mut(&mut self) -> std::slice::IterMut<'_, Paragraph> {
         self.paragraphs.iter_mut()
+    }
+
+    /// Appends a nested table after the cell paragraphs.
+    pub fn add_table(mut self, table: Table) -> Self {
+        self.nested_tables.push(table);
+        self
+    }
+
+    /// Returns nested tables in document order.
+    pub fn nested_tables(&self) -> std::slice::Iter<'_, Table> {
+        self.nested_tables.iter()
     }
 
     /// Sets the cell width in DXA units.
@@ -243,16 +255,23 @@ impl TableCell {
 
     /// Extracts plain text from all cell paragraphs.
     pub fn text(&self) -> String {
-        self.paragraphs
+        let mut parts = self
+            .paragraphs
             .iter()
             .map(Paragraph::text)
-            .collect::<Vec<_>>()
-            .join("\n")
+            .collect::<Vec<_>>();
+        parts.extend(self.nested_tables.iter().map(Table::text));
+        parts.join("\n")
     }
 
-    pub(crate) fn from_parts(paragraphs: Vec<Paragraph>, properties: TableCellProperties) -> Self {
+    pub(crate) fn from_parts(
+        paragraphs: Vec<Paragraph>,
+        nested_tables: Vec<Table>,
+        properties: TableCellProperties,
+    ) -> Self {
         Self {
             paragraphs,
+            nested_tables,
             properties,
         }
     }
@@ -593,6 +612,7 @@ mod tests {
         };
         let cell = TableCell::from_parts(
             vec![Paragraph::new().add_run(Run::from_text("value"))],
+            Vec::new(),
             cell_properties.clone(),
         );
         assert_eq!(cell.properties(), &cell_properties);

@@ -2,7 +2,7 @@
 
 > From a capable document engine to the most trustworthy way to generate an editable DOCX and a faithful PDF from one source.
 
-Last updated: 2026-08-23
+Last updated: 2026-08-24
 
 ## The honest starting point
 
@@ -173,21 +173,23 @@ Theme: parity, compatibility, and quality.
 - [x] Make parity failures machine-readable through JSON and meaningful exit codes.
 - [x] Upload parity reports and rendered diffs as CI artifacts.
 
-Section evidence: `rusdox verify examples` passes all 15 top-level examples and emits 15 HTML/JSON reports plus 20 deterministic page snapshots. The six visual gallery reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
+Section evidence: `rusdox verify examples` passes all 17 top-level examples. Each report now evaluates 19 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Eight representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 
-The current PDF path uses PDF config settings and lays out body blocks, but it does not yet provide the same documented treatment of document page setup, headers, footers, and page numbering as the DOCX path.
+This section unified the two renderers around one documented model. Remaining limits are explicit contract boundaries—such as per-section geometry and advanced bidirectional shaping—not silent differences between advertised outputs.
 
-- [ ] Make page size, orientation, and margins come from the same document model in both outputs.
-- [ ] Render headers, footers, page numbers, and total-page fields in PDF.
-- [ ] Add explicit page and section break blocks.
-- [ ] Add hyperlinks and bookmarks in both outputs.
-- [ ] Add automatic table of contents/field support with a documented PDF behavior.
-- [ ] Improve long-table pagination, repeating headers, unsplittable rows, and overflow diagnostics.
-- [ ] Add merged cells, rich cell paragraphs, per-row properties, and nested tables where parity can be guaranteed.
-- [ ] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
-- [ ] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
+- [x] Make page size, orientation, and margins come from the same document model in both outputs.
+- [x] Render headers, footers, page numbers, and total-page fields in PDF.
+- [x] Add explicit page and section break blocks.
+- [x] Add hyperlinks and bookmarks in both outputs.
+- [x] Add automatic table of contents/field support with a documented PDF behavior.
+- [x] Improve long-table pagination, repeating headers, unsplittable rows, and overflow diagnostics.
+- [x] Add merged cells, rich cell paragraphs, per-row properties, and nested tables where parity can be guaranteed.
+- [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
+- [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
+
+Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 181 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 

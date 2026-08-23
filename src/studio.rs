@@ -13,7 +13,9 @@ use std::time::{Duration, Instant};
 
 use fontdb::{Database as FontDatabase, Family as FontFamily, Query as FontQuery};
 use miniz_oxide::deflate::{compress_to_vec_zlib, CompressionLevel};
-use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
+use pdf_writer::types::{
+    ActionType, AnnotationType, CidFontType, FontFlags, SystemInfo, UnicodeCmap,
+};
 use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str, TextStr};
 
 use crate::{
@@ -21,12 +23,13 @@ use crate::{
     parity::{DocumentProjection, PdfRenderEvidence},
     spec::{
         BlockSpec, CellSpec, DocumentSpec, ParagraphAlignmentSpec,
-        ParagraphSpec as BlockParagraphSpec, RunSpec as BlockRunSpec, TableSpec as BlockTableSpec,
-        Tone, UnderlineStyleSpec, VerticalAlignSpec, VisualSpec as BlockVisualSpec,
+        ParagraphSpec as BlockParagraphSpec, RunFieldSpec, RunSpec as BlockRunSpec,
+        TableSpec as BlockTableSpec, Tone, UnderlineStyleSpec, VerticalAlignSpec,
+        VisualSpec as BlockVisualSpec,
     },
     Border, BorderStyle, Document, DocumentBlockRef, Paragraph, ParagraphAlignment, ParagraphList,
-    Run, RunProperties, Stylesheet, Table, TableBorders, TableCell, TableRow, UnderlineStyle,
-    VerticalAlign, Visual, VisualKind,
+    ParagraphStyle, Run, RunProperties, Stylesheet, Table, TableBorders, TableCell, TableRow,
+    UnderlineStyle, VerticalAlign, Visual, VisualKind,
 };
 
 /// Default config file expected in the current working directory.
@@ -149,7 +152,16 @@ impl Studio {
         document.set_header(spec.header.clone());
         document.set_footer(spec.footer.clone());
         document.set_page_numbering(spec.page_numbering.clone());
-        document.set_styles(spec.styles.clone());
+        let mut styles = spec.styles.clone();
+        if styles.paragraph_style("Heading1").is_none() {
+            styles.define_paragraph_style(
+                ParagraphStyle::new("Heading1")
+                    .name("Heading 1")
+                    .based_on("Normal")
+                    .next("Normal"),
+            );
+        }
+        document.set_styles(styles);
         self.append_spec(&mut document, spec);
         document
     }
@@ -157,12 +169,32 @@ impl Studio {
     /// Appends a high-level document specification to an existing [`Document`].
     pub fn append_spec(&self, document: &mut Document, spec: &DocumentSpec) {
         let asset_base_dir = spec.asset_base_dir().map(Path::to_path_buf);
+        let toc_headings = spec
+            .blocks
+            .iter()
+            .filter_map(|block| match block {
+                BlockSpec::Title { text }
+                | BlockSpec::PageHeading { text }
+                | BlockSpec::Section { text } => Some(text.clone()),
+                BlockSpec::Paragraph { spec }
+                    if spec
+                        .style_id
+                        .as_deref()
+                        .is_some_and(|style| style.starts_with("Heading")) =>
+                {
+                    Some(spec.runs.iter().map(|run| run.text.as_str()).collect())
+                }
+                _ => None,
+            })
+            .filter(|heading: &String| !heading.trim().is_empty())
+            .collect::<Vec<_>>();
         for (index, block) in spec.blocks.iter().enumerate() {
             self.push_spec_block(
                 document,
                 block,
                 spec.blocks.get(index + 1),
                 asset_base_dir.as_deref(),
+                &toc_headings,
             );
         }
     }
@@ -340,6 +372,7 @@ impl Studio {
     /// Builds a section heading paragraph.
     pub fn section(&self, text: &str) -> Paragraph {
         Paragraph::new()
+            .with_style("Heading1")
             .spacing_before(self.config.spacing.section_before_twips)
             .spacing_after(self.config.spacing.section_after_twips)
             .add_run(
@@ -446,6 +479,7 @@ impl Studio {
     /// Builds a page-heading paragraph that starts on a new page.
     pub fn page_heading(&self, text: &str) -> Paragraph {
         Paragraph::new()
+            .with_style("Heading1")
             .page_break_before()
             .spacing_after(self.config.spacing.page_heading_after_twips)
             .add_run(
@@ -612,6 +646,7 @@ impl Studio {
         block: &BlockSpec,
         next_block: Option<&BlockSpec>,
         asset_base_dir: Option<&Path>,
+        toc_headings: &[String],
     ) {
         match block {
             BlockSpec::CoverTitle { text } => {
@@ -683,6 +718,28 @@ impl Studio {
                     block,
                     next_block,
                 ));
+            }
+            BlockSpec::PageBreak => {
+                document.push_paragraph(Paragraph::new().page_break_before());
+            }
+            BlockSpec::SectionBreak => {
+                document.push_paragraph(Paragraph::new().section_break_before());
+            }
+            BlockSpec::TableOfContents { title } => {
+                if let Some(title) = title {
+                    document.push_paragraph(self.section(title));
+                }
+                let fallback = toc_headings.join("\n");
+                document.push_paragraph(
+                    Paragraph::new().add_run(
+                        self.text_run(if fallback.is_empty() {
+                            "Table of contents"
+                        } else {
+                            &fallback
+                        })
+                        .field(crate::RunField::TableOfContents),
+                    ),
+                );
             }
             BlockSpec::Bullets { items } => {
                 let list_id = Self::next_list_id(document);
@@ -793,6 +850,9 @@ impl Studio {
         if spec.page_break_before {
             paragraph = paragraph.page_break_before();
         }
+        if spec.section_break_before {
+            paragraph = paragraph.section_break_before();
+        }
 
         for run in &spec.runs {
             paragraph = paragraph.add_run(self.run_from_spec(run));
@@ -854,6 +914,20 @@ impl Studio {
                 }
             };
         }
+        if let Some(target) = &spec.hyperlink {
+            run = run.hyperlink(target.clone());
+        }
+        if let Some(bookmark) = &spec.bookmark {
+            run = run.bookmark(bookmark.clone());
+        }
+        if let Some(field) = spec.field {
+            run = run.field(match field {
+                RunFieldSpec::TableOfContents => crate::RunField::TableOfContents,
+            });
+        }
+        if let Some(footnote) = &spec.footnote {
+            run = run.footnote(footnote.clone());
+        }
 
         run
     }
@@ -882,19 +956,66 @@ impl Studio {
 
         for row_spec in &spec.rows {
             let mut row = TableRow::new();
+            if row_spec.repeat_as_header {
+                row = row.repeat_as_header();
+            }
+            if let Some(allow) = row_spec.allow_split_across_pages {
+                row = row.allow_split_across_pages(allow);
+            }
 
-            for (index, column) in spec.columns.iter().enumerate() {
-                let cell = row_spec.cells.get(index);
-                row = row.add_cell(match cell {
-                    Some(CellSpec::Text { text }) => self.data_cell(text, column.width),
+            let mut column_index = 0usize;
+            let mut cell_index = 0usize;
+            while column_index < spec.columns.len() {
+                let cell_spec = row_spec.cells.get(cell_index);
+                let requested_span = match cell_spec {
+                    Some(CellSpec::Rich { grid_span, .. }) => grid_span.unwrap_or(1),
+                    _ => 1,
+                };
+                let span = usize::try_from(requested_span.max(1))
+                    .unwrap_or(usize::MAX)
+                    .min(spec.columns.len() - column_index);
+                let width = spec.columns[column_index..column_index + span]
+                    .iter()
+                    .map(|column| column.width)
+                    .sum::<u32>();
+                row = row.add_cell(match cell_spec {
+                    Some(CellSpec::Text { text }) => self.data_cell(text, width),
                     Some(CellSpec::Status(status)) => self.status_cell(
                         &status.text,
-                        column.width,
+                        width,
                         self.tone_background(status.tone),
                         self.tone_foreground(status.tone),
                     ),
-                    None => self.data_cell("", column.width),
+                    Some(CellSpec::Rich {
+                        paragraphs,
+                        grid_span,
+                        background_color,
+                        nested_table,
+                    }) => {
+                        let mut cell = TableCell::new().width(width);
+                        for paragraph in paragraphs {
+                            cell = cell.add_paragraph(self.paragraph_from_spec(paragraph));
+                        }
+                        if cell.paragraphs().next().is_none() {
+                            cell = cell.add_paragraph(Paragraph::new());
+                        }
+                        if grid_span.is_some() {
+                            cell = cell.grid_span(span as u32);
+                        }
+                        if let Some(color) = background_color {
+                            cell = cell.background(color);
+                        }
+                        if let Some(nested) = nested_table {
+                            cell = cell.add_table(self.table_from_spec(nested));
+                        }
+                        cell
+                    }
+                    None => self.data_cell("", width),
                 });
+                column_index += span;
+                if cell_spec.is_some() {
+                    cell_index += 1;
+                }
             }
 
             table = table.add_row(row);
@@ -968,7 +1089,10 @@ fn should_keep_next(block: &BlockSpec, next_block: Option<&BlockSpec>) -> bool {
         return false;
     };
 
-    if matches!(next_block, BlockSpec::Spacer) {
+    if matches!(
+        next_block,
+        BlockSpec::Spacer | BlockSpec::PageBreak | BlockSpec::SectionBreak
+    ) {
         return false;
     }
 
@@ -987,6 +1111,7 @@ fn should_keep_next(block: &BlockSpec, next_block: Option<&BlockSpec>) -> bool {
                 | BlockSpec::Signature { .. }
                 | BlockSpec::Chart { .. }
         ),
+        BlockSpec::TableOfContents { .. } | BlockSpec::PageBreak | BlockSpec::SectionBreak => false,
         _ => false,
     }
 }
@@ -1224,6 +1349,26 @@ impl PdfRenderSettings {
         }
     }
 
+    fn from_document(config: &RusdoxConfig, document: &Document) -> Self {
+        let mut settings = Self::from_config(config);
+        let page = document.page_setup();
+        settings.page_width = twips_to_points(page.width_twips).max(MIN_CONTENT_WIDTH);
+        settings.page_height = twips_to_points(page.height_twips).max(settings.default_line_height);
+        settings.margin_x =
+            twips_to_points(page.margin_left_twips.saturating_add(page.gutter_twips))
+                .min((settings.page_width - MIN_CONTENT_WIDTH).max(0.0));
+        let margin_right = twips_to_points(page.margin_right_twips)
+            .min((settings.page_width - settings.margin_x - MIN_CONTENT_WIDTH).max(0.0));
+        settings.margin_top = twips_to_points(page.margin_top_twips)
+            .min((settings.page_height - settings.default_line_height).max(0.0));
+        settings.margin_bottom = twips_to_points(page.margin_bottom_twips).min(
+            (settings.page_height - settings.margin_top - settings.default_line_height).max(0.0),
+        );
+        settings.content_width =
+            (settings.page_width - settings.margin_x - margin_right).max(MIN_CONTENT_WIDTH);
+        settings
+    }
+
     fn effective_line_height(self, size: f32) -> f32 {
         self.default_line_height
             .max(size * self.line_height_multiplier)
@@ -1296,6 +1441,8 @@ struct TextSpan {
     glyphs: Vec<u16>,
     style: TextPaintStyle,
     width: f32,
+    hyperlink: Option<String>,
+    bookmark: Option<String>,
 }
 
 #[derive(Clone, Copy)]
@@ -1358,6 +1505,82 @@ struct PdfImageAsset {
     height_px: u32,
     encoded_rgb: Vec<u8>,
     encoded_alpha: Option<Vec<u8>>,
+}
+
+#[derive(Clone)]
+struct PdfBookmarkPlacement {
+    name: String,
+    page_index: usize,
+    x: f32,
+    top: f32,
+}
+
+#[derive(Clone)]
+struct PdfLinkPlacement {
+    target: String,
+    label: String,
+    page_index: usize,
+    rect: Rect,
+}
+
+fn collect_pdf_interactions(
+    layout: &PdfDocumentLayout,
+    settings: PdfRenderSettings,
+) -> (
+    BTreeMap<String, PdfBookmarkPlacement>,
+    Vec<PdfLinkPlacement>,
+) {
+    let mut bookmarks = BTreeMap::new();
+    let mut links = Vec::new();
+    for (page_index, page) in layout.pages.iter().enumerate() {
+        for op in &page.ops {
+            let DrawOp::TextLine {
+                x,
+                y_top,
+                line,
+                max_width,
+            } = op
+            else {
+                continue;
+            };
+            let mut cursor_x = match line.alignment {
+                ParagraphAlignment::Center => x + ((max_width - line.width).max(0.0) / 2.0),
+                ParagraphAlignment::Right => x + (max_width - line.width).max(0.0),
+                _ => *x,
+            };
+            for span in &line.spans {
+                if let Some(name) = span.bookmark.as_deref() {
+                    bookmarks
+                        .entry(name.to_string())
+                        .or_insert_with(|| PdfBookmarkPlacement {
+                            name: name.to_string(),
+                            page_index,
+                            x: cursor_x,
+                            top: settings.page_height - *y_top,
+                        });
+                }
+                if let Some(target) = span.hyperlink.as_deref() {
+                    let bottom = settings.page_height - *y_top - line.line_height;
+                    links.push(PdfLinkPlacement {
+                        target: target.to_string(),
+                        label: span.text.clone(),
+                        page_index,
+                        rect: Rect::new(
+                            cursor_x,
+                            bottom,
+                            cursor_x + span.width.max(1.0),
+                            bottom + line.line_height,
+                        ),
+                    });
+                }
+                cursor_x += span.width;
+            }
+        }
+    }
+    links.retain(|link| {
+        !link.target.starts_with('#') || bookmarks.contains_key(link.target.trim_start_matches('#'))
+    });
+    (bookmarks, links)
 }
 
 struct PdfLayout {
@@ -1519,6 +1742,8 @@ impl PdfFontSystem {
                         color: style.color,
                     },
                     width: current_width,
+                    hyperlink: None,
+                    bookmark: None,
                 });
                 current_width = 0.0;
             }
@@ -1540,6 +1765,8 @@ impl PdfFontSystem {
                     color: style.color,
                 },
                 width: current_width,
+                hyperlink: None,
+                bookmark: None,
             });
         }
 
@@ -1850,9 +2077,10 @@ fn render_pdf(
     config: &RusdoxConfig,
     page_snapshots_dir: Option<&Path>,
 ) -> crate::Result<PdfRenderEvidence> {
-    let settings = PdfRenderSettings::from_config(config);
+    let settings = PdfRenderSettings::from_document(config, document);
     let mut font_system = PdfFontSystem::new(config, settings);
-    let layout = layout_document(document, settings, &mut font_system)?;
+    let mut layout = layout_document(document, settings, &mut font_system)?;
+    add_header_footer_overlays(&mut layout, document, settings, &mut font_system)?;
     let evidence = PdfRenderEvidence {
         projection: DocumentProjection::from_document(document),
         page_count: layout.pages.len(),
@@ -1873,6 +2101,7 @@ fn render_pdf(
     if let Some(directory) = page_snapshots_dir {
         write_layout_snapshots(&layout, directory, settings)?;
     }
+    let (bookmarks, links) = collect_pdf_interactions(&layout, settings);
     let catalog_id = Ref::new(1);
     let page_tree_id = Ref::new(2);
     let mut next_id = 3;
@@ -1913,6 +2142,28 @@ fn render_pdf(
         image_object_ids.push(PdfImageObjectIds { image_id, alpha_id });
     }
     let document_info_id = Ref::new(next_id);
+    next_id += 1;
+    let outline_id = (!bookmarks.is_empty()).then(|| {
+        let id = Ref::new(next_id);
+        next_id += 1;
+        id
+    });
+    let outline_item_ids = bookmarks
+        .values()
+        .map(|bookmark| {
+            let id = Ref::new(next_id);
+            next_id += 1;
+            (bookmark.name.clone(), id)
+        })
+        .collect::<BTreeMap<_, _>>();
+    let link_ids = links
+        .iter()
+        .map(|_| {
+            let id = Ref::new(next_id);
+            next_id += 1;
+            id
+        })
+        .collect::<Vec<_>>();
 
     let estimated_capacity = layout
         .pages
@@ -1921,7 +2172,13 @@ fn render_pdf(
         .sum::<usize>()
         .max(64 * 1024);
     let mut pdf = Pdf::with_capacity(estimated_capacity);
-    pdf.catalog(catalog_id).pages(page_tree_id);
+    {
+        let mut catalog = pdf.catalog(catalog_id);
+        catalog.pages(page_tree_id);
+        if let Some(outline_id) = outline_id {
+            catalog.outlines(outline_id);
+        }
+    }
     {
         let metadata = document.metadata();
         let mut info = pdf.document_info(document_info_id);
@@ -2022,7 +2279,13 @@ fn render_pdf(
         }
     }
 
-    for ((page, page_id), content_id) in layout.pages.iter().zip(&page_ids).zip(&content_ids) {
+    for (page_index, ((page, page_id), content_id)) in layout
+        .pages
+        .iter()
+        .zip(&page_ids)
+        .zip(&content_ids)
+        .enumerate()
+    {
         let content = render_page_content(page, settings, &font_system, &layout.images);
         pdf.stream(*content_id, &content);
 
@@ -2036,6 +2299,14 @@ fn render_pdf(
                 settings.page_height,
             ))
             .contents(*content_id);
+        let page_annotations = links
+            .iter()
+            .zip(&link_ids)
+            .filter_map(|(link, id)| (link.page_index == page_index).then_some(*id))
+            .collect::<Vec<_>>();
+        if !page_annotations.is_empty() {
+            page_writer.annotations(page_annotations);
+        }
 
         let mut resources = page_writer.resources();
         {
@@ -2051,6 +2322,54 @@ fn render_pdf(
         let mut x_objects = resources.x_objects();
         for (image, object_ids) in layout.images.iter().zip(&image_object_ids) {
             x_objects.pair(Name(image.resource_name.as_bytes()), object_ids.image_id);
+        }
+    }
+
+    for (link, link_id) in links.iter().zip(&link_ids) {
+        let mut annotation = pdf.annotation(*link_id);
+        annotation
+            .subtype(AnnotationType::Link)
+            .rect(link.rect)
+            .contents(TextStr(&link.label))
+            .border(0.0, 0.0, 0.0, None);
+        if let Some(bookmark_name) = link.target.strip_prefix('#') {
+            if let Some(bookmark) = bookmarks.get(bookmark_name) {
+                annotation
+                    .action()
+                    .action_type(ActionType::GoTo)
+                    .destination()
+                    .page(page_ids[bookmark.page_index])
+                    .xyz(bookmark.x, bookmark.top, None);
+            }
+        } else {
+            annotation
+                .action()
+                .action_type(ActionType::Uri)
+                .uri(Str(link.target.as_bytes()));
+        }
+    }
+
+    if let Some(outline_id) = outline_id {
+        let ordered = bookmarks.values().collect::<Vec<_>>();
+        if let (Some(first), Some(last)) = (ordered.first(), ordered.last()) {
+            pdf.outline(outline_id)
+                .first(outline_item_ids[&first.name])
+                .last(outline_item_ids[&last.name])
+                .count(i32::try_from(ordered.len()).unwrap_or(i32::MAX));
+        }
+        for (index, bookmark) in ordered.iter().enumerate() {
+            let item_id = outline_item_ids[&bookmark.name];
+            let mut item = pdf.outline_item(item_id);
+            item.title(TextStr(&bookmark.name)).parent(outline_id);
+            if index > 0 {
+                item.prev(outline_item_ids[&ordered[index - 1].name]);
+            }
+            if index + 1 < ordered.len() {
+                item.next(outline_item_ids[&ordered[index + 1].name]);
+            }
+            item.dest()
+                .page(page_ids[bookmark.page_index])
+                .xyz(bookmark.x, bookmark.top, None);
         }
     }
 
@@ -2230,10 +2549,213 @@ fn layout_document(
         }
     }
 
+    let footnotes = collect_document_footnotes(document);
+    if !footnotes.is_empty() {
+        let heading = Paragraph::new()
+            .page_break_before()
+            .spacing_after(180)
+            .add_run(Run::from_text("Footnotes").bold().size_points(16));
+        layout_paragraph_block(&mut layout, styles, &heading, font_system)?;
+        for (index, note) in footnotes.iter().enumerate() {
+            let paragraph = Paragraph::new()
+                .spacing_after(100)
+                .add_run(Run::from_text(format!("{}. {note}", index + 1)));
+            layout_paragraph_block(&mut layout, styles, &paragraph, font_system)?;
+        }
+    }
+
     Ok(PdfDocumentLayout {
         pages: layout.pages,
         images: layout.images,
     })
+}
+
+fn collect_document_footnotes(document: &Document) -> Vec<String> {
+    fn collect_paragraph(paragraph: &Paragraph, notes: &mut Vec<String>) {
+        notes.extend(
+            paragraph
+                .runs()
+                .filter_map(|run| run.footnote_text().map(str::to_owned)),
+        );
+    }
+    fn collect_table(table: &Table, notes: &mut Vec<String>) {
+        for row in table.rows() {
+            for cell in row.cells() {
+                for paragraph in cell.paragraphs() {
+                    collect_paragraph(paragraph, notes);
+                }
+                for nested in cell.nested_tables() {
+                    collect_table(nested, notes);
+                }
+            }
+        }
+    }
+
+    let mut notes = Vec::new();
+    for block in document.blocks() {
+        match block {
+            DocumentBlockRef::Paragraph(paragraph) => collect_paragraph(paragraph, &mut notes),
+            DocumentBlockRef::Table(table) => collect_table(table, &mut notes),
+            DocumentBlockRef::Visual(_) => {}
+        }
+    }
+    notes
+}
+
+fn add_header_footer_overlays(
+    layout: &mut PdfDocumentLayout,
+    document: &Document,
+    settings: PdfRenderSettings,
+    font_system: &mut PdfFontSystem,
+) -> crate::Result<()> {
+    let total_pages = layout.pages.len();
+    if total_pages == 0 || (document.header().is_none() && document.footer().is_none()) {
+        return Ok(());
+    }
+
+    let page_setup = document.page_setup();
+    for (index, page) in layout.pages.iter_mut().enumerate() {
+        let displayed_page = document
+            .page_numbering()
+            .and_then(|numbering| numbering.start_at)
+            .unwrap_or(1)
+            .saturating_add(index as u32);
+        let displayed_total = document
+            .page_numbering()
+            .and_then(|numbering| numbering.start_at)
+            .unwrap_or(1)
+            .saturating_add(total_pages.saturating_sub(1) as u32);
+
+        if let Some(header) = document.header() {
+            let text = resolve_header_footer_template(
+                &header.text,
+                displayed_page,
+                displayed_total,
+                document.page_numbering(),
+            );
+            let paragraph = Paragraph::new()
+                .with_alignment(header.alignment.clone())
+                .add_run(Run::from_text(text));
+            let lines = layout_paragraph_lines(
+                document.styles(),
+                &paragraph,
+                settings.content_width,
+                settings,
+                font_system,
+            )?;
+            let mut y_top = twips_to_points(page_setup.header_twips);
+            for line in lines {
+                let line_height = line.line_height;
+                page.ops.push(DrawOp::TextLine {
+                    x: settings.margin_x,
+                    y_top,
+                    line,
+                    max_width: settings.content_width,
+                });
+                y_top += line_height;
+            }
+        }
+
+        if let Some(footer) = document.footer() {
+            let text = resolve_header_footer_template(
+                &footer.text,
+                displayed_page,
+                displayed_total,
+                document.page_numbering(),
+            );
+            let paragraph = Paragraph::new()
+                .with_alignment(footer.alignment.clone())
+                .add_run(Run::from_text(text));
+            let lines = layout_paragraph_lines(
+                document.styles(),
+                &paragraph,
+                settings.content_width,
+                settings,
+                font_system,
+            )?;
+            let total_height = lines.iter().map(|line| line.line_height).sum::<f32>();
+            let mut y_top =
+                (settings.page_height - twips_to_points(page_setup.footer_twips) - total_height)
+                    .max(0.0);
+            for line in lines {
+                let line_height = line.line_height;
+                page.ops.push(DrawOp::TextLine {
+                    x: settings.margin_x,
+                    y_top,
+                    line,
+                    max_width: settings.content_width,
+                });
+                y_top += line_height;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn resolve_header_footer_template(
+    template: &str,
+    page: u32,
+    pages: u32,
+    numbering: Option<&crate::PageNumbering>,
+) -> String {
+    let format = numbering
+        .map(|numbering| numbering.format)
+        .unwrap_or(crate::PageNumberFormat::Decimal);
+    template
+        .replace("{pages}", &format_page_number(pages, format))
+        .replace("{page}", &format_page_number(page, format))
+}
+
+fn format_page_number(value: u32, format: crate::PageNumberFormat) -> String {
+    match format {
+        crate::PageNumberFormat::Decimal => value.to_string(),
+        crate::PageNumberFormat::UpperRoman => roman_page_number(value).to_ascii_uppercase(),
+        crate::PageNumberFormat::LowerRoman => roman_page_number(value).to_ascii_lowercase(),
+        crate::PageNumberFormat::UpperLetter => alphabetic_page_number(value).to_ascii_uppercase(),
+        crate::PageNumberFormat::LowerLetter => alphabetic_page_number(value).to_ascii_lowercase(),
+    }
+}
+
+fn roman_page_number(mut value: u32) -> String {
+    if value == 0 || value > 3_999 {
+        return value.to_string();
+    }
+    let mut output = String::new();
+    for (number, symbol) in [
+        (1_000, "m"),
+        (900, "cm"),
+        (500, "d"),
+        (400, "cd"),
+        (100, "c"),
+        (90, "xc"),
+        (50, "l"),
+        (40, "xl"),
+        (10, "x"),
+        (9, "ix"),
+        (5, "v"),
+        (4, "iv"),
+        (1, "i"),
+    ] {
+        while value >= number {
+            output.push_str(symbol);
+            value -= number;
+        }
+    }
+    output
+}
+
+fn alphabetic_page_number(mut value: u32) -> String {
+    if value == 0 {
+        return "0".to_string();
+    }
+    let mut output = Vec::new();
+    while value > 0 {
+        value -= 1;
+        output.push((b'a' + (value % 26) as u8) as char);
+        value /= 26;
+    }
+    output.into_iter().rev().collect()
 }
 
 fn maybe_push_page_for_keep_next_group(
@@ -2340,7 +2862,9 @@ fn layout_paragraph_block(
     font_system: &mut PdfFontSystem,
 ) -> crate::Result<()> {
     let resolved = styles.resolve_paragraph(paragraph)?;
-    if resolved.page_break_before && layout.cursor_y > layout.settings.margin_top {
+    if (resolved.page_break_before || paragraph.has_section_break_before())
+        && layout.cursor_y > layout.settings.margin_top
+    {
         layout.push_page();
     }
 
@@ -2399,7 +2923,7 @@ fn layout_table_block(
         .collect::<Vec<_>>();
 
     for row_layout in row_layouts {
-        place_table_row(layout, row_layout, &repeated_headers);
+        place_table_row(layout, row_layout, &repeated_headers)?;
     }
 
     layout.cursor_y += layout.settings.table_after_spacing;
@@ -2536,6 +3060,32 @@ fn layout_row(
             y_offset += twips_to_points(resolved_paragraph.spacing_after.unwrap_or(0));
         }
 
+        for nested_table in resolved_cell.cell.nested_tables() {
+            for nested_row in nested_table.rows() {
+                let nested_text = nested_row
+                    .cells()
+                    .map(TableCell::text)
+                    .collect::<Vec<_>>()
+                    .join("  |  ");
+                let paragraph =
+                    Paragraph::new().add_run(Run::from_text(nested_text).size_points(9));
+                for line in layout_paragraph_lines(
+                    styles,
+                    &paragraph,
+                    content_width,
+                    settings,
+                    font_system,
+                )? {
+                    let line_height = line.line_height;
+                    lines.push(CellLine {
+                        y_offset,
+                        layout: line,
+                    });
+                    y_offset += line_height;
+                }
+            }
+        }
+
         let height = cell_height(&lines, settings);
         row_height = row_height.max(height);
         cells.push(CellLayout {
@@ -2664,14 +3214,18 @@ fn normalized_grid_span(grid_span: Option<u32>, remaining_columns: usize) -> usi
     grid_span.unwrap_or(1).max(1).min(remaining_columns as u32) as usize
 }
 
-fn place_table_row(layout: &mut PdfLayout, mut row: RowLayout, repeated_headers: &[RowLayout]) {
+fn place_table_row(
+    layout: &mut PdfLayout,
+    mut row: RowLayout,
+    repeated_headers: &[RowLayout],
+) -> crate::Result<()> {
     let mut page_is_fresh_for_row = layout.cursor_y <= layout.settings.margin_top + 0.01;
 
     loop {
         let available_height = page_remaining_height(layout);
         if row.height <= available_height {
             render_row_layout(layout, &row);
-            break;
+            return Ok(());
         }
 
         if row.allow_split_across_pages {
@@ -2692,8 +3246,12 @@ fn place_table_row(layout: &mut PdfLayout, mut row: RowLayout, repeated_headers:
             continue;
         }
 
-        render_row_layout(layout, &row);
-        break;
+        return Err(crate::DocxError::parse(format!(
+            "table row overflow: {:.1}pt row cannot fit in {:.1}pt of usable page height (allow_split_across_pages={})",
+            row.height,
+            available_height.max(0.0),
+            row.allow_split_across_pages
+        )));
     }
 }
 
@@ -2860,6 +3418,7 @@ fn layout_paragraph_lines(
     for run in paragraph.runs() {
         let run_properties = styles.resolve_run(paragraph, run)?;
         let style = style_from_run(&run_properties, settings, font_system.default_family());
+        let mut bookmark_pending = run.bookmark_name().map(str::to_owned);
         for token in tokenize(run.text()) {
             if token == "\n" {
                 flush_line(
@@ -2877,9 +3436,17 @@ fn layout_paragraph_lines(
                 continue;
             }
 
-            let shaped = font_system.shape_text(&style, &token)?;
+            let mut shaped = font_system.shape_text(&style, &token)?;
             if shaped.spans.is_empty() {
                 continue;
+            }
+            for span in &mut shaped.spans {
+                span.hyperlink = run.hyperlink_target().map(str::to_owned);
+            }
+            if let (Some(bookmark), Some(first)) =
+                (bookmark_pending.take(), shaped.spans.first_mut())
+            {
+                first.bookmark = Some(bookmark);
             }
 
             if current_width + shaped.width > max_width
@@ -2906,6 +3473,14 @@ fn layout_paragraph_lines(
                 current_line_height.max(settings.effective_line_height(style.size));
             current_width += shaped.width;
             current_spans.extend(shaped.spans);
+        }
+
+        if run.footnote_text().is_some() {
+            let mut marker_style = style.clone();
+            marker_style.size = (marker_style.size * 0.72).max(6.0);
+            let marker = font_system.shape_text(&marker_style, "*")?;
+            current_width += marker.width;
+            current_spans.extend(marker.spans);
         }
     }
 
@@ -4313,7 +4888,7 @@ mod tests {
     }
 
     #[test]
-    fn save_with_pdf_stats_uses_configured_page_size() {
+    fn save_with_pdf_stats_uses_document_page_size() {
         let temp = tempdir().expect("temp dir");
         let mut config = RusdoxConfig::default();
         config.output.docx_dir = temp.path().join("docx").to_string_lossy().to_string();
@@ -4323,7 +4898,7 @@ mod tests {
         config.pdf.page_height_pt = 500.0;
         let studio = Studio::new(config);
 
-        let mut document = Document::new();
+        let mut document = Document::new().with_page_setup(crate::PageSetup::new(6_000, 10_000));
         document.push_paragraph(Paragraph::new().add_run(Run::from_text("custom pdf")));
         let docx_path = temp.path().join("docx/custom.docx");
 
@@ -4355,7 +4930,8 @@ mod tests {
         config.pdf.baseline_factor = 0.5;
         let studio = Studio::new(config);
 
-        let mut document = Document::new();
+        let mut document = Document::new()
+            .with_page_setup(crate::PageSetup::new(6_000, 10_000).margins(340, 660, 240, 660));
         document.push_paragraph(Paragraph::new().add_run(Run::from_text("origin")));
         let docx_path = temp.path().join("docx/origin.docx");
 
@@ -4389,7 +4965,8 @@ mod tests {
         config.table.pdf_grid_stroke_width_pt = 2.5;
         let studio = Studio::new(config);
 
-        let mut document = Document::new();
+        let mut document = Document::new()
+            .with_page_setup(crate::PageSetup::new(4_800, 4_800).margins(220, 420, 220, 420));
         document.push_table(crate::Table::new().add_row(crate::TableRow::new().add_cell(
             crate::TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text("cell"))),
         )));

@@ -1,0 +1,785 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/dual_output_contract.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Dual-output contract\nContents\nDual-output contract Interactive semantics Rich and paginated tables Next-page section\nInteractive semantics\nOverview demonstrates an external link and a generated footnote.\nJump back to Overview\nRich and paginated tables\nCapability\nEvidence\nState\nRepeated semantic header\nRow properties survive OOXML reopen and PDF pagination.\nVerified\nMerged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF\nGreen\nNext-page section\nThe section break, landscape page model, margins, visible header/footer, and lower-Roman page fields all come from the same document projection.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [
+      "Contents",
+      "Interactive semantics",
+      "Rich and paginated tables",
+      "Next-page section"
+    ],
+    "tables": [
+      [
+        [
+          "Capability",
+          "Evidence",
+          "State"
+        ],
+        [
+          "Repeated semantic header",
+          "Row properties survive OOXML reopen and PDF pagination.",
+          "Verified"
+        ],
+        [
+          "Merged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF",
+          "Green"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [
+      6
+    ],
+    "section_breaks": [
+      9
+    ],
+    "hyperlinks": [
+      {
+        "text": "external link",
+        "target": "https://github.com/OthmaneBlial/rusdox"
+      },
+      {
+        "text": "Jump back to Overview",
+        "target": "#overview"
+      }
+    ],
+    "bookmarks": [
+      "overview"
+    ],
+    "fields": [
+      "tableofcontents"
+    ],
+    "footnotes": [
+      "The DOCX uses a real footnotes part; the PDF uses an inline marker and deterministic endnotes page."
+    ],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": false,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": false,
+            "cells": [
+              {
+                "grid_span": 2,
+                "paragraph_count": 2,
+                "nested_table_count": 1
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "title": "RusDox dual-output contract",
+      "author": "RusDox maintainers",
+      "subject": "Executable DOCX and PDF feature parity fixture",
+      "keywords": [
+        "parity",
+        "ooxml",
+        "pdf"
+      ],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 15840,
+      "height_twips": 12240,
+      "margin_top_twips": 1080,
+      "margin_right_twips": 900,
+      "margin_bottom_twips": 1080,
+      "margin_left_twips": 900,
+      "header_twips": 420,
+      "footer_twips": 420,
+      "gutter_twips": 120,
+      "orientation": "landscape"
+    },
+    "header": {
+      "text": "RusDox parity contract",
+      "alignment": "right"
+    },
+    "footer": {
+      "text": "Page {page} of {pages}",
+      "alignment": "center"
+    },
+    "page_numbering": {
+      "start_at": 3,
+      "format": "lower_roman"
+    }
+  },
+  "docx": {
+    "normalized_text": "Dual-output contract\nContents\nDual-output contract Interactive semantics Rich and paginated tables Next-page section\nInteractive semantics\nOverview demonstrates an external link and a generated footnote.\nJump back to Overview\nRich and paginated tables\nCapability\nEvidence\nState\nRepeated semantic header\nRow properties survive OOXML reopen and PDF pagination.\nVerified\nMerged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF\nGreen\nNext-page section\nThe section break, landscape page model, margins, visible header/footer, and lower-Roman page fields all come from the same document projection.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "table",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [
+      "Contents",
+      "Interactive semantics",
+      "Rich and paginated tables",
+      "Next-page section"
+    ],
+    "tables": [
+      [
+        [
+          "Capability",
+          "Evidence",
+          "State"
+        ],
+        [
+          "Repeated semantic header",
+          "Row properties survive OOXML reopen and PDF pagination.",
+          "Verified"
+        ],
+        [
+          "Merged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF",
+          "Green"
+        ]
+      ]
+    ],
+    "images": [],
+    "page_breaks": [
+      6
+    ],
+    "section_breaks": [
+      9
+    ],
+    "hyperlinks": [
+      {
+        "text": "external link",
+        "target": "https://github.com/OthmaneBlial/rusdox"
+      },
+      {
+        "text": "Jump back to Overview",
+        "target": "#overview"
+      }
+    ],
+    "bookmarks": [
+      "overview"
+    ],
+    "fields": [
+      "tableofcontents"
+    ],
+    "footnotes": [
+      "The DOCX uses a real footnotes part; the PDF uses an inline marker and deterministic endnotes page."
+    ],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": false,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": false,
+            "cells": [
+              {
+                "grid_span": 2,
+                "paragraph_count": 2,
+                "nested_table_count": 1
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "title": "RusDox dual-output contract",
+      "author": "RusDox maintainers",
+      "subject": "Executable DOCX and PDF feature parity fixture",
+      "keywords": [
+        "parity",
+        "ooxml",
+        "pdf"
+      ],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 15840,
+      "height_twips": 12240,
+      "margin_top_twips": 1080,
+      "margin_right_twips": 900,
+      "margin_bottom_twips": 1080,
+      "margin_left_twips": 900,
+      "header_twips": 420,
+      "footer_twips": 420,
+      "gutter_twips": 120,
+      "orientation": "landscape"
+    },
+    "header": {
+      "text": "RusDox parity contract",
+      "alignment": "right"
+    },
+    "footer": {
+      "text": "Page {page} of {pages}",
+      "alignment": "center"
+    },
+    "page_numbering": {
+      "start_at": 3,
+      "format": "lower_roman"
+    }
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Dual-output contract\nContents\nDual-output contract Interactive semantics Rich and paginated tables Next-page section\nInteractive semantics\nOverview demonstrates an external link and a generated footnote.\nJump back to Overview\nRich and paginated tables\nCapability\nEvidence\nState\nRepeated semantic header\nRow properties survive OOXML reopen and PDF pagination.\nVerified\nMerged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF\nGreen\nNext-page section\nThe section break, landscape page model, margins, visible header/footer, and lower-Roman page fields all come from the same document projection.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "table",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [
+        "Contents",
+        "Interactive semantics",
+        "Rich and paginated tables",
+        "Next-page section"
+      ],
+      "tables": [
+        [
+          [
+            "Capability",
+            "Evidence",
+            "State"
+          ],
+          [
+            "Repeated semantic header",
+            "Row properties survive OOXML reopen and PDF pagination.",
+            "Verified"
+          ],
+          [
+            "Merged rich cell Multiple paragraphs, mixed formatting, and a nested table share one typed cell model. Nested key Nested value Semantic parity Preserved in DOCX and rendered in PDF",
+            "Green"
+          ]
+        ]
+      ],
+      "images": [],
+      "page_breaks": [
+        6
+      ],
+      "section_breaks": [
+        9
+      ],
+      "hyperlinks": [
+        {
+          "text": "external link",
+          "target": "https://github.com/OthmaneBlial/rusdox"
+        },
+        {
+          "text": "Jump back to Overview",
+          "target": "#overview"
+        }
+      ],
+      "bookmarks": [
+        "overview"
+      ],
+      "fields": [
+        "tableofcontents"
+      ],
+      "footnotes": [
+        "The DOCX uses a real footnotes part; the PDF uses an inline marker and deterministic endnotes page."
+      ],
+      "table_layout": [
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": false,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": false,
+              "cells": [
+                {
+                  "grid_span": 2,
+                  "paragraph_count": 2,
+                  "nested_table_count": 1
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "title": "RusDox dual-output contract",
+        "author": "RusDox maintainers",
+        "subject": "Executable DOCX and PDF feature parity fixture",
+        "keywords": [
+          "parity",
+          "ooxml",
+          "pdf"
+        ],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 15840,
+        "height_twips": 12240,
+        "margin_top_twips": 1080,
+        "margin_right_twips": 900,
+        "margin_bottom_twips": 1080,
+        "margin_left_twips": 900,
+        "header_twips": 420,
+        "footer_twips": 420,
+        "gutter_twips": 120,
+        "orientation": "landscape"
+      },
+      "header": {
+        "text": "RusDox parity contract",
+        "alignment": "right"
+      },
+      "footer": {
+        "text": "Page {page} of {pages}",
+        "alignment": "center"
+      },
+      "page_numbering": {
+        "start_at": 3,
+        "format": "lower_roman"
+      }
+    },
+    "page_count": 4,
+    "draw_operations": 44,
+    "text_lines": 36,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/dual-output-contract-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/dual-output-contract-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 3,
+        "current": "reports/dual-output-contract-pages/page-003.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 4,
+        "current": "reports/dual-output-contract-pages/page-004.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/dual-output-contract.docx",
+      "bytes": 6436,
+      "sha256": "5737623721ed3bf0c79b87f803bd5311e86dfffac691af5d8ef1b91cfac5aa52"
+    },
+    {
+      "path": "rendered/dual-output-contract.pdf",
+      "bytes": 2103843,
+      "sha256": "39f5f283195fddadc223e444972490d096c6c637d68507dcb63ca050a24eea25"
+    }
+  ]
+}

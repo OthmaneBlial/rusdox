@@ -28,6 +28,12 @@ pub struct DocumentProjection {
     pub tables: Vec<Vec<Vec<String>>>,
     pub images: Vec<ParityImage>,
     pub page_breaks: Vec<usize>,
+    pub section_breaks: Vec<usize>,
+    pub hyperlinks: Vec<ParityHyperlink>,
+    pub bookmarks: Vec<String>,
+    pub fields: Vec<String>,
+    pub footnotes: Vec<String>,
+    pub table_layout: Vec<ParityTableLayout>,
     pub metadata: DocumentMetadata,
     pub page_setup: PageSetup,
     pub header: Option<HeaderFooter>,
@@ -44,6 +50,12 @@ impl DocumentProjection {
         let mut tables = Vec::new();
         let mut images = Vec::new();
         let mut page_breaks = Vec::new();
+        let mut section_breaks = Vec::new();
+        let mut hyperlinks = Vec::new();
+        let mut bookmarks = Vec::new();
+        let mut fields = Vec::new();
+        let mut footnotes = Vec::new();
+        let mut table_layout = Vec::new();
 
         for (index, block) in document.blocks().enumerate() {
             match block {
@@ -63,6 +75,16 @@ impl DocumentProjection {
                     if paragraph.has_page_break_before() {
                         page_breaks.push(index);
                     }
+                    if paragraph.has_section_break_before() {
+                        section_breaks.push(index);
+                    }
+                    collect_run_semantics(
+                        paragraph,
+                        &mut hyperlinks,
+                        &mut bookmarks,
+                        &mut fields,
+                        &mut footnotes,
+                    );
                 }
                 DocumentBlockRef::Table(table) => {
                     block_order.push("table".to_string());
@@ -81,6 +103,14 @@ impl DocumentProjection {
                         })
                         .collect::<Vec<_>>();
                     tables.push(rows);
+                    collect_table_semantics(
+                        table,
+                        &mut hyperlinks,
+                        &mut bookmarks,
+                        &mut fields,
+                        &mut footnotes,
+                        &mut table_layout,
+                    );
                 }
                 DocumentBlockRef::Visual(visual) => {
                     block_order.push("visual".to_string());
@@ -99,6 +129,12 @@ impl DocumentProjection {
             tables,
             images,
             page_breaks,
+            section_breaks,
+            hyperlinks,
+            bookmarks,
+            fields,
+            footnotes,
+            table_layout,
             metadata: normalized_metadata(document.metadata()),
             page_setup: document.page_setup().clone(),
             header: document.header().cloned(),
@@ -106,6 +142,102 @@ impl DocumentProjection {
             page_numbering: document.page_numbering().cloned(),
         }
     }
+}
+
+fn collect_run_semantics(
+    paragraph: &crate::Paragraph,
+    hyperlinks: &mut Vec<ParityHyperlink>,
+    bookmarks: &mut Vec<String>,
+    fields: &mut Vec<String>,
+    footnotes: &mut Vec<String>,
+) {
+    for run in paragraph.runs() {
+        if let Some(target) = run.hyperlink_target() {
+            hyperlinks.push(ParityHyperlink {
+                text: normalize_text(run.text()),
+                target: target.to_string(),
+            });
+        }
+        if let Some(bookmark) = run.bookmark_name() {
+            bookmarks.push(bookmark.to_string());
+        }
+        if let Some(field) = run.field_kind() {
+            fields.push(format!("{field:?}").to_ascii_lowercase());
+        }
+        if let Some(footnote) = run.footnote_text() {
+            footnotes.push(normalize_text(footnote));
+        }
+    }
+}
+
+fn collect_table_semantics(
+    table: &crate::Table,
+    hyperlinks: &mut Vec<ParityHyperlink>,
+    bookmarks: &mut Vec<String>,
+    fields: &mut Vec<String>,
+    footnotes: &mut Vec<String>,
+    table_layout: &mut Vec<ParityTableLayout>,
+) {
+    let mut rows = Vec::new();
+    for row in table.rows() {
+        let mut cells = Vec::new();
+        for cell in row.cells() {
+            for paragraph in cell.paragraphs() {
+                collect_run_semantics(paragraph, hyperlinks, bookmarks, fields, footnotes);
+            }
+            for nested in cell.nested_tables() {
+                collect_table_semantics(
+                    nested,
+                    hyperlinks,
+                    bookmarks,
+                    fields,
+                    footnotes,
+                    table_layout,
+                );
+            }
+            cells.push(ParityTableCellLayout {
+                grid_span: cell.properties().grid_span.unwrap_or(1),
+                paragraph_count: cell
+                    .paragraphs()
+                    .filter(|paragraph| !normalize_text(&paragraph.text()).is_empty())
+                    .count(),
+                nested_table_count: cell.nested_tables().count(),
+            });
+        }
+        rows.push(ParityTableRowLayout {
+            repeat_as_header: row.properties().repeat_as_header,
+            allow_split_across_pages: row.properties().allow_split_across_pages,
+            cells,
+        });
+    }
+    table_layout.push(ParityTableLayout { rows });
+}
+
+/// Hyperlink semantics independent of container formatting.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParityHyperlink {
+    pub text: String,
+    pub target: String,
+}
+
+/// Row and cell layout controls compared after DOCX round-trips.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParityTableLayout {
+    pub rows: Vec<ParityTableRowLayout>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParityTableRowLayout {
+    pub repeat_as_header: bool,
+    pub allow_split_across_pages: bool,
+    pub cells: Vec<ParityTableCellLayout>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParityTableCellLayout {
+    pub grid_span: u32,
+    pub paragraph_count: usize,
+    pub nested_table_count: usize,
 }
 
 /// Image semantics that can be compared across output paths.
@@ -265,6 +397,48 @@ impl ParityReport {
                 &expected.page_breaks,
                 &docx.page_breaks,
                 &pdf.projection.page_breaks,
+            ),
+            equality_check(
+                "section_breaks",
+                "Explicit section breaks",
+                &expected.section_breaks,
+                &docx.section_breaks,
+                &pdf.projection.section_breaks,
+            ),
+            equality_check(
+                "hyperlinks",
+                "Hyperlink text and targets",
+                &expected.hyperlinks,
+                &docx.hyperlinks,
+                &pdf.projection.hyperlinks,
+            ),
+            equality_check(
+                "bookmarks",
+                "Bookmark anchors",
+                &expected.bookmarks,
+                &docx.bookmarks,
+                &pdf.projection.bookmarks,
+            ),
+            equality_check(
+                "fields",
+                "Dynamic fields",
+                &expected.fields,
+                &docx.fields,
+                &pdf.projection.fields,
+            ),
+            equality_check(
+                "footnotes",
+                "Footnote text",
+                &expected.footnotes,
+                &docx.footnotes,
+                &pdf.projection.footnotes,
+            ),
+            equality_check(
+                "table_layout",
+                "Table row and rich-cell controls",
+                &expected.table_layout,
+                &docx.table_layout,
+                &pdf.projection.table_layout,
             ),
             equality_check(
                 "metadata",

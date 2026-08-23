@@ -54,10 +54,12 @@ Example files:
 - `board_report.yaml`
 - `client_proposal.yaml`
 - `configured_studio.yaml`
+- `dual_output_contract.yaml`
 - `executive_dashboard.yaml`
 - `formatting_showcase.yaml`
 - `hello_world.yaml`
 - `invoice.yaml`
+- `international_scripts.yaml`
 - `meeting_notes.yaml`
 - `named_styles_showcase.yaml`
 - `product_launch_brief.yaml`
@@ -77,6 +79,8 @@ Showcase examples:
 - `named_styles_showcase.yaml`: reusable paragraph, run, and table styles with inheritance and stable style ids
 - `visual_assets_showcase.yaml`: focused regression example for logos, raster images, signatures, and SVG chart assets
 - `yaml_composition_showcase.yaml`: variables, fragment includes, repeat blocks, and first-class document metadata in one example
+- `dual_output_contract.yaml`: executable contract for shared page setup, headers/footers, fields, links, bookmarks, footnotes, breaks, row pagination, merged/rich cells, and nested tables
+- `international_scripts.yaml`: Latin, Arabic/RTL, Hebrew, CJK, emoji, and mixed-script coverage with the renderer boundaries documented in the compatibility matrix
 
 Benchmark note:
 

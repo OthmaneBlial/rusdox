@@ -153,6 +153,7 @@ pub struct Paragraph {
     spacing_after: Option<u32>,
     keep_next: bool,
     page_break_before: bool,
+    section_break_before: bool,
 }
 
 impl Paragraph {
@@ -270,6 +271,12 @@ impl Paragraph {
         self
     }
 
+    /// Starts a new document section on the next page.
+    pub fn section_break_before(mut self) -> Self {
+        self.section_break_before = true;
+        self
+    }
+
     /// Keeps the paragraph on the same page as the following block when possible.
     pub fn keep_next(mut self) -> Self {
         self.keep_next = true;
@@ -291,6 +298,11 @@ impl Paragraph {
         self.page_break_before
     }
 
+    /// Returns whether the paragraph starts a new section.
+    pub fn has_section_break_before(&self) -> bool {
+        self.section_break_before
+    }
+
     /// Returns whether the paragraph should stay with the following block.
     pub fn has_keep_next(&self) -> bool {
         self.keep_next
@@ -306,6 +318,7 @@ impl Paragraph {
         spacing_after: Option<u32>,
         keep_next: bool,
         page_break_before: bool,
+        section_break_before: bool,
     ) -> Self {
         Self {
             runs,
@@ -316,6 +329,7 @@ impl Paragraph {
             spacing_after,
             keep_next,
             page_break_before,
+            section_break_before,
         }
     }
 
@@ -327,6 +341,7 @@ impl Paragraph {
             || self.spacing_after.is_some()
             || self.keep_next
             || self.page_break_before
+            || self.section_break_before
     }
 }
 
@@ -441,6 +456,7 @@ mod tests {
             Some(180),
             true,
             true,
+            false,
         );
 
         assert_eq!(paragraph.text(), "onetwo");

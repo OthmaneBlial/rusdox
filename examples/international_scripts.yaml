@@ -1,0 +1,37 @@
+output_name: international-scripts
+metadata:
+  title: International script boundary fixture
+  author: RusDox maintainers
+blocks:
+  - type: title
+    text: International scripts
+  - type: section
+    text: Latin
+  - type: body
+    text: Crème brûlée — naïve façade, Español, Français, Deutsch.
+  - type: section
+    text: Arabic and RTL source order
+  - type: paragraph
+    spec:
+      alignment: right
+      runs:
+        - text: مرحباً بالعالم — تقرير عربي 2026
+  - type: section
+    text: Hebrew and mixed direction
+  - type: paragraph
+    spec:
+      alignment: right
+      runs:
+        - text: שלום עולם — RusDox 2026
+  - type: section
+    text: CJK fallback
+  - type: body
+    text: 日本語の文書、简体中文文档、한국어 문서.
+  - type: section
+    text: Emoji fallback boundary
+  - type: body
+    text: Status ✅ warning ⚠ rocket 🚀 heart ❤️ family 👨‍👩‍👧‍👦.
+  - type: section
+    text: Mixed-script line
+  - type: body
+    text: Release إصدار リリース version 2.0 — 速度, سرعة, speed.

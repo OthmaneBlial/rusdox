@@ -33,6 +33,9 @@ The current contract checks:
 - every table row and cell;
 - image count, semantic kind, and alt text;
 - explicit page-break positions;
+- explicit section-break positions;
+- hyperlinks, bookmarks, dynamic fields, and footnote text;
+- repeating/splittable row controls, grid spans, rich-cell paragraph counts, and nested-table presence;
 - document metadata;
 - page setup, headers, footers, and numbering settings;
 - required DOCX parts and package relationships;
@@ -64,6 +67,8 @@ tests/visual-baselines/
 The threshold is the maximum fraction of pixels that may differ on each page. `0` is exact. A small non-zero threshold should be justified in the fixture documentation; do not increase it just to hide a regression.
 
 Geometry snapshots are not Microsoft Word, LibreOffice, Preview, or Acrobat screenshots. Viewer evidence is tracked separately in the compatibility scorecard.
+
+The executable boundary fixture is [`examples/dual_output_contract.yaml`](../examples/dual_output_contract.yaml). Script coverage and known shaping limits are captured by [`examples/international_scripts.yaml`](../examples/international_scripts.yaml).
 
 ## Machine-readable output and exit codes
 

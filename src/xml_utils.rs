@@ -7,9 +7,9 @@ use quick_xml::{Reader, Writer};
 
 use crate::document::BodyBlock;
 use crate::error::{DocxError, Result};
-use crate::layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup};
+use crate::layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageOrientation, PageSetup};
 use crate::paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
-use crate::run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
+use crate::run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
 use crate::style::{
     ParagraphStyle, ParagraphStyleProperties, RunStyle, RunStyleProperties, Stylesheet, TableStyle,
     TableStyleProperties,
@@ -31,10 +31,14 @@ pub(crate) const FOOTER_REL_TYPE: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer";
 pub(crate) const IMAGE_REL_TYPE: &str =
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+pub(crate) const FOOTNOTES_REL_TYPE: &str =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes";
 pub(crate) const DEFAULT_HEADER_REL_ID: &str = "rIdRusDoxHeaderDefault";
 pub(crate) const DEFAULT_FOOTER_REL_ID: &str = "rIdRusDoxFooterDefault";
 pub(crate) const DEFAULT_HEADER_PART: &str = "word/header1.xml";
 pub(crate) const DEFAULT_FOOTER_PART: &str = "word/footer1.xml";
+pub(crate) const DEFAULT_FOOTNOTES_PART: &str = "word/footnotes.xml";
+pub(crate) const DEFAULT_FOOTNOTES_REL_ID: &str = "rIdRusDoxFootnotes";
 const EMUS_PER_TWIP: u32 = 635;
 
 /// Internal section settings preserved for the generated document body.
@@ -152,12 +156,13 @@ pub(crate) fn parse_document_xml(
     let mut reader = Reader::from_reader(Cursor::new(xml));
     reader.config_mut().trim_text(false);
     let visuals = parse_visual_relationships(package_parts)?;
+    let footnotes = parse_footnotes_part(package_parts)?;
 
     let mut buffer = Vec::new();
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) if local_name(start.name().as_ref()) == b"body" => {
-                let parsed = parse_body(&mut reader, numbering, &visuals)?;
+                let parsed = parse_body(&mut reader, numbering, &visuals, &footnotes)?;
                 return Ok(parsed);
             }
             Event::Empty(start) if local_name(start.name().as_ref()) == b"body" => {
@@ -175,6 +180,49 @@ pub(crate) fn parse_document_xml(
         }
         buffer.clear();
     }
+}
+
+fn parse_footnotes_part(
+    package_parts: &BTreeMap<String, Vec<u8>>,
+) -> Result<BTreeMap<u32, String>> {
+    let Some(xml) = package_parts.get(DEFAULT_FOOTNOTES_PART) else {
+        return Ok(BTreeMap::new());
+    };
+    let mut reader = Reader::from_reader(Cursor::new(xml));
+    reader.config_mut().trim_text(false);
+    let mut notes = BTreeMap::new();
+    let mut current_id = None;
+    let mut current_text = String::new();
+    let mut buffer = Vec::new();
+
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == b"footnote" => {
+                current_id = attribute_value(&start, b"id").and_then(|id| id.parse::<u32>().ok());
+                current_text.clear();
+            }
+            Event::Start(start)
+                if current_id.is_some() && local_name(start.name().as_ref()) == b"t" =>
+            {
+                current_text.push_str(&parse_text_element(&mut reader)?);
+            }
+            Event::Empty(start)
+                if current_id.is_some() && local_name(start.name().as_ref()) == b"br" =>
+            {
+                current_text.push('\n');
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"footnote" => {
+                if let Some(id) = current_id.take() {
+                    notes.insert(id, current_text.trim().to_string());
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buffer.clear();
+    }
+
+    Ok(notes)
 }
 
 pub(crate) fn write_document_xml(
@@ -199,10 +247,20 @@ pub(crate) fn write_document_xml(
 
     writer.write_event(Event::Start(BytesStart::new("w:body")))?;
     let mut visual_iter = visuals.iter();
+    let mut bookmark_id = 1_u32;
+    let mut footnote_id = 1_u32;
     for block in body {
         match block {
-            BodyBlock::Paragraph(paragraph) => write_paragraph(&mut writer, paragraph)?,
-            BodyBlock::Table(table) => write_table(&mut writer, table)?,
+            BodyBlock::Paragraph(paragraph) => write_paragraph(
+                &mut writer,
+                paragraph,
+                Some(section_properties),
+                &mut bookmark_id,
+                &mut footnote_id,
+            )?,
+            BodyBlock::Table(table) => {
+                write_table(&mut writer, table, &mut bookmark_id, &mut footnote_id)?
+            }
             BodyBlock::Visual(visual) => {
                 let docx_visual = visual_iter.next().ok_or_else(|| {
                     DocxError::parse("missing visual metadata while writing OOXML document")
@@ -580,6 +638,7 @@ fn parse_body<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
     visuals: &VisualRelationships,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<ParsedDocument>
 where
     R: BufRead,
@@ -591,8 +650,10 @@ where
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
-                b"p" => body.push(parse_body_paragraph(reader, numbering, visuals)?),
-                b"tbl" => body.push(BodyBlock::Table(Box::new(parse_table(reader, numbering)?))),
+                b"p" => body.push(parse_body_paragraph(reader, numbering, visuals, footnotes)?),
+                b"tbl" => body.push(BodyBlock::Table(Box::new(parse_table(
+                    reader, numbering, footnotes,
+                )?))),
                 b"sectPr" => section_properties = parse_section_properties(reader)?,
                 _ => skip_current_element(reader)?,
             },
@@ -624,11 +685,12 @@ where
 fn parse_paragraph<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<Paragraph>
 where
     R: BufRead,
 {
-    let (paragraph, _) = parse_paragraph_content(reader, numbering)?;
+    let (paragraph, _) = parse_paragraph_content(reader, numbering, footnotes)?;
     Ok(paragraph)
 }
 
@@ -636,11 +698,12 @@ fn parse_body_paragraph<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
     visuals: &VisualRelationships,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<BodyBlock>
 where
     R: BufRead,
 {
-    let (paragraph, drawing) = parse_paragraph_content(reader, numbering)?;
+    let (paragraph, drawing) = parse_paragraph_content(reader, numbering, footnotes)?;
     if paragraph.text().is_empty() {
         if let Some(visual) =
             drawing.and_then(|drawing| visual_from_parsed_drawing(&paragraph, drawing, visuals))
@@ -655,6 +718,7 @@ where
 fn parse_paragraph_content<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<(Paragraph, Option<ParsedDrawing>)>
 where
     R: BufRead,
@@ -668,14 +732,19 @@ where
     let mut spacing_after = None;
     let mut keep_next = false;
     let mut page_break_before = false;
+    let mut section_break_before = false;
+    let mut pending_bookmark = None;
     let mut buffer = Vec::new();
 
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"r" => {
-                    let parsed = parse_run(reader)?;
-                    if let Some(run) = parsed.run {
+                    let parsed = parse_run(reader, footnotes)?;
+                    if let Some(mut run) = parsed.run {
+                        if let Some(bookmark) = pending_bookmark.take() {
+                            run = run.bookmark(bookmark);
+                        }
                         runs.push(run);
                     }
                     if let Some(drawing) = parsed.drawing {
@@ -691,11 +760,33 @@ where
                     spacing_after = properties.spacing_after;
                     keep_next = properties.keep_next;
                     page_break_before = properties.page_break_before;
+                    section_break_before = properties.section_break_before;
+                }
+                b"fldSimple" => {
+                    let instruction = attribute_value(&start, b"instr").unwrap_or_default();
+                    let mut field_runs = parse_simple_field(reader, &instruction, footnotes)?;
+                    if let (Some(bookmark), Some(first)) =
+                        (pending_bookmark.take(), field_runs.first_mut())
+                    {
+                        *first = first.clone().bookmark(bookmark);
+                    }
+                    runs.extend(field_runs);
+                }
+                b"bookmarkStart" => {
+                    pending_bookmark = attribute_value(&start, b"name");
+                    skip_current_element(reader)?;
                 }
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) if local_name(start.name().as_ref()) == b"r" => {
-                runs.push(Run::new());
+                let mut run = Run::new();
+                if let Some(bookmark) = pending_bookmark.take() {
+                    run = run.bookmark(bookmark);
+                }
+                runs.push(run);
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"bookmarkStart" => {
+                pending_bookmark = attribute_value(&start, b"name");
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"p" => {
                 break;
@@ -720,6 +811,7 @@ where
             spacing_after,
             keep_next,
             page_break_before,
+            section_break_before,
         ),
         if drawings.len() == 1 {
             drawings.into_iter().next()
@@ -738,6 +830,7 @@ struct ParsedParagraphProperties {
     spacing_after: Option<u32>,
     keep_next: bool,
     page_break_before: bool,
+    section_break_before: bool,
 }
 
 fn parse_paragraph_properties<R>(
@@ -781,6 +874,10 @@ where
                     properties.page_break_before = truthy_attribute(&start, b"val").unwrap_or(true);
                     skip_current_element(reader)?;
                 }
+                b"sectPr" => {
+                    properties.section_break_before = true;
+                    skip_current_element(reader)?;
+                }
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) => match local_name(start.name().as_ref()) {
@@ -807,6 +904,7 @@ where
                 b"pageBreakBefore" => {
                     properties.page_break_before = truthy_attribute(&start, b"val").unwrap_or(true);
                 }
+                b"sectPr" => properties.section_break_before = true,
                 _ => {}
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"pPr" => {
@@ -882,13 +980,69 @@ where
     }))
 }
 
-fn parse_run<R>(reader: &mut Reader<R>) -> Result<ParsedRun>
+fn parse_simple_field<R>(
+    reader: &mut Reader<R>,
+    instruction: &str,
+    footnotes: &BTreeMap<u32, String>,
+) -> Result<Vec<Run>>
+where
+    R: BufRead,
+{
+    let mut runs = Vec::new();
+    let mut buffer = Vec::new();
+    loop {
+        match reader.read_event_into(&mut buffer)? {
+            Event::Start(start) if local_name(start.name().as_ref()) == b"r" => {
+                if let Some(run) = parse_run(reader, footnotes)?.run {
+                    runs.push(apply_field_instruction(run, instruction));
+                }
+            }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"r" => {
+                runs.push(apply_field_instruction(Run::new(), instruction));
+            }
+            Event::End(end) if local_name(end.name().as_ref()) == b"fldSimple" => break,
+            Event::Eof => {
+                return Err(DocxError::parse(
+                    "malformed OOXML document: unexpected end of file in w:fldSimple",
+                ));
+            }
+            _ => {}
+        }
+        buffer.clear();
+    }
+    Ok(runs)
+}
+
+fn apply_field_instruction(run: Run, instruction: &str) -> Run {
+    let trimmed = instruction.trim();
+    if trimmed.starts_with("TOC") {
+        return run.field(RunField::TableOfContents);
+    }
+    if trimmed.starts_with("HYPERLINK") {
+        let quoted = trimmed
+            .split('"')
+            .enumerate()
+            .find_map(|(index, part)| (index % 2 == 1).then_some(part));
+        if let Some(target) = quoted {
+            let target = if trimmed.contains("\\l") {
+                format!("#{target}")
+            } else {
+                target.to_string()
+            };
+            return run.hyperlink(target);
+        }
+    }
+    run
+}
+
+fn parse_run<R>(reader: &mut Reader<R>, footnotes: &BTreeMap<u32, String>) -> Result<ParsedRun>
 where
     R: BufRead,
 {
     let mut text = String::new();
     let mut properties = ParsedRunProperties::default();
     let mut drawing = None;
+    let mut footnote = None;
     let mut buffer = Vec::new();
 
     loop {
@@ -905,11 +1059,22 @@ where
                     skip_current_element(reader)?;
                 }
                 b"drawing" => drawing = parse_drawing(reader)?,
+                b"footnoteReference" => {
+                    footnote = attribute_value(&start, b"id")
+                        .and_then(|id| id.parse::<u32>().ok())
+                        .and_then(|id| footnotes.get(&id).cloned());
+                    skip_current_element(reader)?;
+                }
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) => match local_name(start.name().as_ref()) {
                 b"tab" => text.push('\t'),
                 b"br" => text.push('\n'),
+                b"footnoteReference" => {
+                    footnote = attribute_value(&start, b"id")
+                        .and_then(|id| id.parse::<u32>().ok())
+                        .and_then(|id| footnotes.get(&id).cloned());
+                }
                 _ => {}
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"r" => {
@@ -930,6 +1095,10 @@ where
             text,
             properties.style_id,
             properties.properties,
+            None,
+            None,
+            None,
+            footnote,
         )),
         drawing,
     })
@@ -1240,7 +1409,11 @@ fn maybe_insert_visual_relationship(
     Ok(())
 }
 
-fn parse_table<R>(reader: &mut Reader<R>, numbering: Option<&NumberingDefinitions>) -> Result<Table>
+fn parse_table<R>(
+    reader: &mut Reader<R>,
+    numbering: Option<&NumberingDefinitions>,
+    footnotes: &BTreeMap<u32, String>,
+) -> Result<Table>
 where
     R: BufRead,
 {
@@ -1252,7 +1425,7 @@ where
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"tblPr" => properties = parse_table_properties(reader)?,
-                b"tr" => rows.push(parse_table_row(reader, numbering)?),
+                b"tr" => rows.push(parse_table_row(reader, numbering, footnotes)?),
                 _ => skip_current_element(reader)?,
             },
             Event::End(end) if local_name(end.name().as_ref()) == b"tbl" => {
@@ -1323,6 +1496,7 @@ where
 fn parse_table_row<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<TableRow>
 where
     R: BufRead,
@@ -1335,7 +1509,7 @@ where
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"trPr" => properties = parse_table_row_properties(reader)?,
-                b"tc" => cells.push(parse_table_cell(reader, numbering)?),
+                b"tc" => cells.push(parse_table_cell(reader, numbering, footnotes)?),
                 _ => skip_current_element(reader)?,
             },
             Event::Empty(start) if local_name(start.name().as_ref()) == b"trPr" => {
@@ -1401,21 +1575,23 @@ where
 fn parse_table_cell<R>(
     reader: &mut Reader<R>,
     numbering: Option<&NumberingDefinitions>,
+    footnotes: &BTreeMap<u32, String>,
 ) -> Result<TableCell>
 where
     R: BufRead,
 {
     let mut paragraphs = Vec::new();
     let mut properties = TableCellProperties::default();
+    let mut nested_tables = Vec::new();
     let mut buffer = Vec::new();
 
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Start(start) => match local_name(start.name().as_ref()) {
                 b"tcPr" => properties = parse_table_cell_properties(reader)?,
-                b"p" => paragraphs.push(parse_paragraph(reader, numbering)?),
+                b"p" => paragraphs.push(parse_paragraph(reader, numbering, footnotes)?),
                 b"tbl" => {
-                    skip_current_element(reader)?;
+                    nested_tables.push(parse_table(reader, numbering, footnotes)?);
                 }
                 _ => skip_current_element(reader)?,
             },
@@ -1435,7 +1611,7 @@ where
         buffer.clear();
     }
 
-    Ok(TableCell::from_parts(paragraphs, properties))
+    Ok(TableCell::from_parts(paragraphs, nested_tables, properties))
 }
 
 fn parse_table_cell_properties<R>(reader: &mut Reader<R>) -> Result<TableCellProperties>
@@ -1585,6 +1761,11 @@ where
                     {
                         section.page_setup.height_twips = value;
                     }
+                    section.page_setup.orientation =
+                        match attribute_value(&start, b"orient").as_deref() {
+                            Some("landscape") => PageOrientation::Landscape,
+                            _ => PageOrientation::Portrait,
+                        };
                     skip_current_element(reader)?;
                 }
                 b"pgMar" => {
@@ -1624,6 +1805,11 @@ where
                     {
                         section.page_setup.height_twips = value;
                     }
+                    section.page_setup.orientation =
+                        match attribute_value(&start, b"orient").as_deref() {
+                            Some("landscape") => PageOrientation::Landscape,
+                            _ => PageOrientation::Portrait,
+                        };
                 }
                 b"pgMar" => parse_page_margins(&mut section, &start),
                 b"pgNumType" => section.page_numbering = Some(parse_page_numbering(&start)),
@@ -2368,7 +2554,13 @@ where
     Ok(())
 }
 
-fn write_paragraph<W>(writer: &mut Writer<W>, paragraph: &Paragraph) -> Result<()>
+fn write_paragraph<W>(
+    writer: &mut Writer<W>,
+    paragraph: &Paragraph,
+    section_properties: Option<&SectionProperties>,
+    bookmark_id: &mut u32,
+    footnote_id: &mut u32,
+) -> Result<()>
 where
     W: Write,
 {
@@ -2422,12 +2614,81 @@ where
         if paragraph.has_page_break_before() {
             writer.write_event(Event::Empty(BytesStart::new("w:pageBreakBefore")))?;
         }
+        if paragraph.has_section_break_before() {
+            if let Some(section_properties) = section_properties {
+                write_section_properties(writer, section_properties)?;
+            } else {
+                write_section_properties(writer, &SectionProperties::default())?;
+            }
+        }
         writer.write_event(Event::End(BytesEnd::new("w:pPr")))?;
     }
     for run in paragraph.runs() {
-        write_run(writer, run)?;
+        write_inline_run(writer, run, bookmark_id, footnote_id)?;
     }
     writer.write_event(Event::End(BytesEnd::new("w:p")))?;
+    Ok(())
+}
+
+fn write_inline_run<W>(
+    writer: &mut Writer<W>,
+    run: &Run,
+    bookmark_id: &mut u32,
+    footnote_id: &mut u32,
+) -> Result<()>
+where
+    W: Write,
+{
+    let bookmark_name = run.bookmark_name();
+    if let Some(name) = bookmark_name {
+        let mut start = BytesStart::new("w:bookmarkStart");
+        let id = bookmark_id.to_string();
+        start.push_attribute(("w:id", id.as_str()));
+        start.push_attribute(("w:name", name));
+        writer.write_event(Event::Empty(start))?;
+    }
+
+    let instruction = run.hyperlink_target().map(|target| {
+        if let Some(anchor) = target.strip_prefix('#') {
+            format!(" HYPERLINK \\l \"{anchor}\" ")
+        } else {
+            format!(" HYPERLINK \"{target}\" ")
+        }
+    });
+    let instruction = instruction.or_else(|| {
+        run.field_kind().map(|field| match field {
+            RunField::TableOfContents => " TOC \\o \"1-3\" \\h \\z \\u ".to_string(),
+        })
+    });
+
+    if let Some(instruction) = instruction.as_deref() {
+        let mut field = BytesStart::new("w:fldSimple");
+        field.push_attribute(("w:instr", instruction));
+        writer.write_event(Event::Start(field))?;
+        write_run(writer, run)?;
+        writer.write_event(Event::End(BytesEnd::new("w:fldSimple")))?;
+    } else {
+        write_run(writer, run)?;
+    }
+
+    if bookmark_name.is_some() {
+        let mut end = BytesStart::new("w:bookmarkEnd");
+        let id = bookmark_id.to_string();
+        end.push_attribute(("w:id", id.as_str()));
+        writer.write_event(Event::Empty(end))?;
+        *bookmark_id = bookmark_id.saturating_add(1);
+    }
+
+    if run.footnote_text().is_some() {
+        writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+        let mut reference = BytesStart::new("w:footnoteReference");
+        let id = footnote_id.to_string();
+        reference.push_attribute(("w:id", id.as_str()));
+        writer.write_event(Event::Empty(reference))?;
+        writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+        *footnote_id = footnote_id.saturating_add(1);
+    }
+
     Ok(())
 }
 
@@ -2695,7 +2956,12 @@ fn text_segment_needs_space_preserve(text: &str) -> bool {
     starts_with_ws || ends_with_ws
 }
 
-fn write_table<W>(writer: &mut Writer<W>, table: &Table) -> Result<()>
+fn write_table<W>(
+    writer: &mut Writer<W>,
+    table: &Table,
+    bookmark_id: &mut u32,
+    footnote_id: &mut u32,
+) -> Result<()>
 where
     W: Write,
 {
@@ -2735,7 +3001,7 @@ where
             writer.write_event(Event::End(BytesEnd::new("w:trPr")))?;
         }
         for cell in row.cells() {
-            write_table_cell(writer, cell)?;
+            write_table_cell(writer, cell, bookmark_id, footnote_id)?;
         }
         writer.write_event(Event::End(BytesEnd::new("w:tr")))?;
     }
@@ -2743,7 +3009,12 @@ where
     Ok(())
 }
 
-fn write_table_cell<W>(writer: &mut Writer<W>, cell: &TableCell) -> Result<()>
+fn write_table_cell<W>(
+    writer: &mut Writer<W>,
+    cell: &TableCell,
+    bookmark_id: &mut u32,
+    footnote_id: &mut u32,
+) -> Result<()>
 where
     W: Write,
 {
@@ -2780,12 +3051,14 @@ where
         writer.write_event(Event::End(BytesEnd::new("w:tcPr")))?;
     }
 
-    if cell.paragraphs().len() == 0 {
-        write_paragraph(writer, &Paragraph::new())?;
-    } else {
-        for paragraph in cell.paragraphs() {
-            write_paragraph(writer, paragraph)?;
-        }
+    for paragraph in cell.paragraphs() {
+        write_paragraph(writer, paragraph, None, bookmark_id, footnote_id)?;
+    }
+    for nested_table in cell.nested_tables() {
+        write_table(writer, nested_table, bookmark_id, footnote_id)?;
+    }
+    if cell.paragraphs().len() == 0 || cell.nested_tables().len() > 0 {
+        write_paragraph(writer, &Paragraph::new(), None, bookmark_id, footnote_id)?;
     }
     writer.write_event(Event::End(BytesEnd::new("w:tc")))?;
     Ok(())
@@ -2871,6 +3144,12 @@ where
     let page_height = section_properties.page_setup.height_twips.to_string();
     page_size.push_attribute(("w:w", page_width.as_str()));
     page_size.push_attribute(("w:h", page_height.as_str()));
+    if matches!(
+        section_properties.page_setup.orientation,
+        PageOrientation::Landscape
+    ) {
+        page_size.push_attribute(("w:orient", "landscape"));
+    }
     writer.write_event(Event::Empty(page_size))?;
 
     let mut page_margins = BytesStart::new("w:pgMar");
@@ -2957,6 +3236,39 @@ pub(crate) fn render_header_footer_xml(
     writer.write_event(Event::Start(root))?;
     write_header_footer_paragraph(&mut writer, header_footer)?;
     writer.write_event(Event::End(BytesEnd::new(root_tag)))?;
+    Ok(writer.into_inner())
+}
+
+pub(crate) fn render_footnotes_xml(notes: &[String]) -> Result<Vec<u8>> {
+    let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
+    writer.write_event(Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
+    let mut root = BytesStart::new("w:footnotes");
+    root.push_attribute(("xmlns:w", WORD_NS));
+    writer.write_event(Event::Start(root))?;
+
+    for (index, text) in notes.iter().enumerate() {
+        let mut footnote = BytesStart::new("w:footnote");
+        let id = (index + 1).to_string();
+        footnote.push_attribute(("w:id", id.as_str()));
+        writer.write_event(Event::Start(footnote))?;
+        writer.write_event(Event::Start(BytesStart::new("w:p")))?;
+        writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+        let mut reference = BytesStart::new("w:footnoteRef");
+        reference.push_attribute(("w:customMarkFollows", "0"));
+        writer.write_event(Event::Empty(reference))?;
+        writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+        writer.write_event(Event::Start(BytesStart::new("w:r")))?;
+        write_text_segment_with_preserve(&mut writer, text, true)?;
+        writer.write_event(Event::End(BytesEnd::new("w:r")))?;
+        writer.write_event(Event::End(BytesEnd::new("w:p")))?;
+        writer.write_event(Event::End(BytesEnd::new("w:footnote")))?;
+    }
+
+    writer.write_event(Event::End(BytesEnd::new("w:footnotes")))?;
     Ok(writer.into_inner())
 }
 
@@ -3308,7 +3620,10 @@ fn attribute_value(start: &BytesStart<'_>, key: &[u8]) -> Option<String> {
             continue;
         };
         if local_name(attribute.key.as_ref()) == key {
-            return Some(String::from_utf8_lossy(attribute.value.as_ref()).into_owned());
+            return attribute
+                .normalized_value(quick_xml::XmlVersion::Implicit1_0)
+                .ok()
+                .map(|value| value.into_owned());
         }
     }
     None

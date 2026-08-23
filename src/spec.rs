@@ -198,6 +198,15 @@ pub enum BlockSpec {
     Paragraph {
         spec: ParagraphSpec,
     },
+    /// Starts the following content on a new page.
+    PageBreak,
+    /// Starts the following content in a new next-page section.
+    SectionBreak,
+    /// Emits a Word-updatable TOC field and a deterministic PDF heading list.
+    TableOfContents {
+        #[serde(default)]
+        title: Option<String>,
+    },
     Bullets {
         items: Vec<String>,
     },
@@ -242,6 +251,7 @@ pub struct ParagraphSpec {
     pub spacing_before_twips: Option<u32>,
     pub spacing_after_twips: Option<u32>,
     pub page_break_before: bool,
+    pub section_break_before: bool,
 }
 
 impl ParagraphSpec {
@@ -282,6 +292,17 @@ pub struct RunSpec {
     pub font_family: Option<String>,
     pub size_pt: Option<f32>,
     pub vertical_align: Option<VerticalAlignSpec>,
+    pub hyperlink: Option<String>,
+    pub bookmark: Option<String>,
+    pub field: Option<RunFieldSpec>,
+    pub footnote: Option<String>,
+}
+
+/// Serializable dynamic field kinds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RunFieldSpec {
+    TableOfContents,
 }
 
 /// A fully specified visual/image block.
@@ -378,17 +399,32 @@ pub struct ColumnSpec {
 }
 
 /// A table row definition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct RowSpec {
     pub cells: Vec<CellSpec>,
+    pub repeat_as_header: bool,
+    pub allow_split_across_pages: Option<bool>,
 }
 
 /// A table cell definition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum CellSpec {
-    Text { text: String },
+    Text {
+        text: String,
+    },
     Status(StatusSpec),
+    Rich {
+        #[serde(default)]
+        paragraphs: Vec<ParagraphSpec>,
+        #[serde(default)]
+        grid_span: Option<u32>,
+        #[serde(default)]
+        background_color: Option<String>,
+        #[serde(default)]
+        nested_table: Option<Box<TableSpec>>,
+    },
 }
 
 /// A status cell definition.
@@ -609,6 +645,7 @@ macro_rules! impl_into_row_spec {
                 let ($( $name, )+) = self;
                 RowSpec {
                     cells: vec![$( $name.into(), )+],
+                    ..RowSpec::default()
                 }
             }
         }
@@ -865,6 +902,7 @@ mod tests {
                                     text: "$18.7M".to_string(),
                                 },
                             ],
+                            ..super::RowSpec::default()
                         }],
                     },
                 },

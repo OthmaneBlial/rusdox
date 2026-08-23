@@ -51,19 +51,25 @@
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#unreleased">[Unreleased]</a></li><li class="toc-level-2"><a href="#0-1-1-2026-08-23">[0.1.1] - 2026-08-23</a></li><li class="toc-level-3"><a href="#changed">Changed</a></li><li class="toc-level-3"><a href="#fixed">Fixed</a></li><li class="toc-level-2"><a href="#0-1-0-2026-08-23">[0.1.0] - 2026-08-23</a></li><li class="toc-level-3"><a href="#added">Added</a></li><li class="toc-level-3"><a href="#changed-2">Changed</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#unreleased">[Unreleased]</a></li><li class="toc-level-3"><a href="#added">Added</a></li><li class="toc-level-3"><a href="#changed">Changed</a></li><li class="toc-level-3"><a href="#fixed">Fixed</a></li><li class="toc-level-2"><a href="#0-1-1-2026-08-23">[0.1.1] - 2026-08-23</a></li><li class="toc-level-3"><a href="#changed-2">Changed</a></li><li class="toc-level-3"><a href="#fixed-2">Fixed</a></li><li class="toc-level-2"><a href="#0-1-0-2026-08-23">[0.1.0] - 2026-08-23</a></li><li class="toc-level-3"><a href="#added-2">Added</a></li><li class="toc-level-3"><a href="#changed-3">Changed</a></li></ol></nav>
             <div class="docs-content prose"><p>All notable user-facing changes to RusDox are documented here.</p>
 <p>The format follows <a href="https://keepachangelog.com/en/1.1.0/" target="_blank" rel="noreferrer">Keep a Changelog</a>, and releases follow <a href="https://semver.org/spec/v2.0.0.html" target="_blank" rel="noreferrer">Semantic Versioning</a>.</p>
 <h2 id="unreleased">[Unreleased]</h2>
-<h2 id="0-1-1-2026-08-23">[0.1.1] - 2026-08-23</h2>
+<h3 id="added">Added</h3>
+<ul><li>Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.</li><li>Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.</li><li>Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.</li></ul>
 <h3 id="changed">Changed</h3>
-<ul><li>User installs now expose only the <code>rusdox</code> executable; stress generators remain available to maintainers through the <code>maintainer-tools</code> feature.</li><li>crates.io releases now use short-lived GitHub OIDC credentials through Trusted Publishing instead of a long-lived repository secret.</li><li>Installer fixtures derive the expected version from <code>Cargo.toml</code> so release checks cannot silently drift.</li></ul>
+<ul><li><code>PageSetup</code>, <code>Run</code>, <code>RowSpec</code>, and related low-level constructors now carry the expanded dual-output contract; this is a breaking Rust API change planned for <code>v0.2.0</code>.</li><li>PDF page geometry now comes from the document&#39;s <code>PageSetup</code>; PDF config geometry remains a compatibility fallback when no document-level value is supplied.</li><li>PDF nested tables use a bounded flattened-row representation and do not claim exact nested-grid geometry.</li></ul>
 <h3 id="fixed">Fixed</h3>
+<ul><li>Script-mode CLI tests now share a Cargo target cache and use unique package names, preventing multi-gigabyte temporary build accumulation and binary collisions.</li></ul>
+<h2 id="0-1-1-2026-08-23">[0.1.1] - 2026-08-23</h2>
+<h3 id="changed-2">Changed</h3>
+<ul><li>User installs now expose only the <code>rusdox</code> executable; stress generators remain available to maintainers through the <code>maintainer-tools</code> feature.</li><li>crates.io releases now use short-lived GitHub OIDC credentials through Trusted Publishing instead of a long-lived repository secret.</li><li>Installer fixtures derive the expected version from <code>Cargo.toml</code> so release checks cannot silently drift.</li></ul>
+<h3 id="fixed-2">Fixed</h3>
 <ul><li><code>cargo binstall rusdox</code> can consume the native GitHub Release archive without falling back to a source build for missing maintainer-only binaries.</li></ul>
 <h2 id="0-1-0-2026-08-23">[0.1.0] - 2026-08-23</h2>
-<h3 id="added">Added</h3>
+<h3 id="added-2">Added</h3>
 <ul><li>A public product roadmap focused on trustworthy DOCX/PDF parity, Word-native templates, and production adoption.</li><li>Lean crates.io packaging that excludes the duplicated showcase bundle and generated binary documents.</li><li>Structured community routes for support questions and private vulnerability reports.</li><li>Pure-Rust DOCX generation and native PDF preview rendering.</li><li>YAML, JSON, and TOML document specifications.</li><li>Variables, includes, repeaters, named styles, metadata, visuals, and tables.</li><li><code>validate</code>, <code>watch</code>, and <code>bench</code> CLI workflows.</li><li>Cross-platform release installers for Linux, macOS, and Windows.</li></ul>
-<h3 id="changed-2">Changed</h3>
+<h3 id="changed-3">Changed</h3>
 <ul><li>Repository, documentation, CI, and security references now consistently target the <code>main</code> branch.</li><li>CI verifies the exact locked dependency graph and the publishable crate package.</li></ul>
 <p>[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.1...HEAD [0.1.1]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.0...v0.1.1 [0.1.0]: https://github.com/OthmaneBlial/rusdox/releases/tag/v0.1.0</p></div>
             <nav class="docs-pager" aria-label="Documentation pagination">

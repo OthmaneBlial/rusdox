@@ -41,6 +41,42 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
       "id": "metadata",
       "label": "Document metadata",
       "status": "passed",
@@ -101,7 +137,13 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Profile",
+      "Core Strengths",
+      "Experience Highlights",
+      "Selected Deliverables",
+      "Signature"
+    ],
     "tables": [
       [
         [
@@ -150,6 +192,189 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -166,7 +391,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -190,7 +416,13 @@
       "paragraph",
       "paragraph"
     ],
-    "headings": [],
+    "headings": [
+      "Profile",
+      "Core Strengths",
+      "Experience Highlights",
+      "Selected Deliverables",
+      "Signature"
+    ],
     "tables": [
       [
         [
@@ -239,6 +471,189 @@
     ],
     "images": [],
     "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "rows": [
+          {
+            "repeat_as_header": true,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          },
+          {
+            "repeat_as_header": false,
+            "allow_split_across_pages": true,
+            "cells": [
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              },
+              {
+                "grid_span": 1,
+                "paragraph_count": 1,
+                "nested_table_count": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "metadata": {
       "title": "RusDox Document",
       "author": "RusDox",
@@ -255,7 +670,8 @@
       "margin_left_twips": 1440,
       "header_twips": 720,
       "footer_twips": 720,
-      "gutter_twips": 0
+      "gutter_twips": 0,
+      "orientation": "portrait"
     },
     "header": null,
     "footer": null,
@@ -280,7 +696,13 @@
         "paragraph",
         "paragraph"
       ],
-      "headings": [],
+      "headings": [
+        "Profile",
+        "Core Strengths",
+        "Experience Highlights",
+        "Selected Deliverables",
+        "Signature"
+      ],
       "tables": [
         [
           [
@@ -329,6 +751,189 @@
       ],
       "images": [],
       "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "rows": [
+            {
+              "repeat_as_header": true,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            },
+            {
+              "repeat_as_header": false,
+              "allow_split_across_pages": true,
+              "cells": [
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                },
+                {
+                  "grid_span": 1,
+                  "paragraph_count": 1,
+                  "nested_table_count": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
       "metadata": {
         "title": "RusDox Document",
         "author": "RusDox",
@@ -345,7 +950,8 @@
         "margin_left_twips": 1440,
         "header_twips": 720,
         "footer_twips": 720,
-        "gutter_twips": 0
+        "gutter_twips": 0,
+        "orientation": "portrait"
       },
       "header": null,
       "footer": null,
@@ -382,13 +988,13 @@
   "artifacts": [
     {
       "path": "generated/talent-profile.docx",
-      "bytes": 5146,
-      "sha256": "9ef17d8d04f496b1a76637c411ecd9340a305252d47789451be2a8aebccc9a38"
+      "bytes": 5189,
+      "sha256": "ffdc688ddcc2a1e803acf2cf546c72734d9dba0cf66c47d70dec032c0c52a97a"
     },
     {
       "path": "rendered/talent-profile.pdf",
-      "bytes": 2105260,
-      "sha256": "41cb19f3054ff45829275800160534f2bf4248fecd4a5fd6a855d07c2295428d"
+      "bytes": 2105282,
+      "sha256": "2c3af49804f435b7239e34fd1f0106127bd4c54e29cee847c30c2a9b8d8c47df"
     }
   ]
 }

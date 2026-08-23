@@ -34,22 +34,22 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Paragraph alignment and spacing | Supported | Supported | Yes |  | Viewer scorecard remains separate from renderer parity. |
 | Bulleted and numbered lists | Supported | Supported | Yes |  | Semantic OOXML numbering is emitted for DOCX. |
 | Named paragraph/run/table styles | Supported | Supported | Yes |  | Style inheritance is tested; viewer matrix remains separate. |
-| Tables and repeating header rows | Supported | Supported | Yes |  | Complex overflow hardening continues under the same contract. |
-| Rich paragraphs inside table cells | Supported in Rust API | Partial | Partial |  | High-level YAML cells remain text/status-oriented. |
-| Merged cells | Partial in Rust API | Partial | Partial |  | Grid-span parsing/layout exists; the high-level contract is not stable. |
-| Nested tables | No | No | No |  | Planned only after common table parity is stable. |
+| Tables and repeating header rows | Supported | Supported | Yes |  | High-level rows expose repeat and split controls; oversized unsplittable rows fail with a measured diagnostic. |
+| Rich paragraphs inside table cells | Supported | Supported | Yes |  | YAML `kind: rich` cells preserve multiple formatted paragraphs. |
+| Merged cells | Supported | Supported | Yes |  | Horizontal `grid_span` is supported and parity-tested. Vertical merges are not yet supported. |
+| Nested tables | Supported | Bounded | Yes |  | DOCX uses native nested tables. PDF renders nested rows inside the parent cell; exact nested-grid geometry is not claimed. |
 | PNG and JPEG images | Supported | Supported | Yes |  | Count, semantic kind, and alt text are compared. |
 | SVG visuals | Supported | Supported | Yes |  | Rasterized for output; complex SVG compatibility varies. |
 | Image alt text | Supported | Semantic projection | Yes |  | Tagged-PDF accessibility semantics are not yet advertised. |
 | Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords are emitted. |
-| Page size and margins | Supported | Partial | Yes |  | Semantic settings match; the PDF physical-layout gap remains tracked. |
-| Headers and footers | Supported | No | Yes |  | Semantic projection is checked; visible PDF rendering is pending. |
-| Page number fields | Supported | No | Yes |  | Semantic projection is checked; visible PDF rendering is pending. |
-| Explicit page breaks | Supported in Rust API | Supported | Yes |  | A dedicated high-level block remains planned. |
-| Multiple sections / section breaks | No | No | No |  | A document currently has one section property set. |
-| Hyperlinks and bookmarks | No | No | No |  | Planned for the parity milestone. |
-| Automatic table of contents | No | No | No |  | Planned with an explicit field/update contract. |
-| Footnotes | No | No | No |  | Planned before comments or tracked changes. |
+| Page size, orientation, and margins | Supported | Supported | Yes |  | Both outputs consume the same `PageSetup`; width/height remain explicit and orientation is validated. |
+| Headers and footers | Supported | Supported | Yes |  | PDF renders the same text/alignment template on every page. |
+| Page number and total-page fields | Supported | Supported | Yes |  | `{page}` and `{pages}` respect restart and decimal/Roman/letter formats. |
+| Explicit page breaks | Supported | Supported | Yes |  | Dedicated `page_break` block plus paragraph-level control. |
+| Next-page section breaks | Supported | Supported | Yes |  | Dedicated `section_break` block reuses the active section controls; independent per-section geometry is not yet supported. |
+| Hyperlinks and bookmarks | Supported | Supported | Yes |  | DOCX uses field links/bookmarks; PDF emits URI/GoTo annotations and bookmark outlines. |
+| Automatic table of contents | Supported | Supported fallback | Yes |  | DOCX emits an updateable TOC field. PDF freezes the spec heading list at render time without computed page numbers. |
+| Footnotes | Supported | Supported fallback | Yes |  | DOCX emits a real footnotes part. PDF uses inline markers plus a deterministic endnotes page. |
 | Comments and tracked changes | No | No | No | Yes | Deliberately deferred beyond common generated-report features. |
 | Word-native placeholders | No | No | No |  | Existing DOCX packages can be opened; template rendering is planned. |
 
@@ -66,10 +66,10 @@ This is not yet a promise of lossless editing for arbitrary Word files. RusDox p
 | Latin text | Supported | Primary tested path. |
 | Unicode font embedding in PDF | Supported | TrueType fonts and ToUnicode maps are tested. |
 | Font fallback | Partial | Depends on fonts installed on the rendering machine. |
-| Mixed scripts | Partial | Shaping has automated coverage, but no published viewer matrix yet. |
-| Arabic and RTL layout | Experimental | Do not assume correct bidirectional paragraph behavior yet. |
-| CJK | Experimental | Glyph coverage depends on installed fonts; line-breaking rules are incomplete. |
-| Emoji | Experimental | Color emoji and fallback differ by platform and viewer. |
+| Mixed scripts | Partial | The `international-scripts` fixture covers Latin, Arabic, Hebrew, CJK, emoji, and mixed lines through DOCX reopen and native PDF extraction. |
+| Arabic and RTL layout | Experimental | Unicode text and right alignment are preserved, but contextual Arabic shaping and the Unicode bidi algorithm are not yet implemented by the PDF renderer. |
+| CJK | Experimental | Glyph fallback is exercised; language-specific line-breaking and kinsoku rules are not implemented. |
+| Emoji | Experimental | Monochrome glyph fallback may work. Color/ZWJ emoji sequences are not guaranteed and vary with installed fonts. |
 
 ## Viewers and operating systems
 

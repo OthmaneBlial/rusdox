@@ -454,6 +454,7 @@ Supported paragraph fields:
 - `spacing_before_twips`
 - `spacing_after_twips`
 - `page_break_before`
+- `section_break_before`
 
 Supported run fields:
 
@@ -469,6 +470,10 @@ Supported run fields:
 - `font_family`
 - `size_pt`
 - `vertical_align`
+- `hyperlink`: `https://`, `http://`, `mailto:`, or `#bookmark`
+- `bookmark`: 1–40 ASCII letters, digits, or underscores
+- `field`: currently `table_of_contents`
+- `footnote`
 
 Underline values:
 
@@ -486,6 +491,41 @@ Vertical align values:
 - `subscript`
 - `baseline`
 
+## Shared Page Controls And Semantic Blocks
+
+`page_setup`, `header`, `footer`, and `page_numbering` are consumed by both DOCX and PDF. Orientation is explicit and must agree with width and height.
+
+```yaml
+page_setup:
+  width_twips: 15840
+  height_twips: 12240
+  orientation: landscape
+  margin_top_twips: 1080
+  margin_right_twips: 900
+  margin_bottom_twips: 1080
+  margin_left_twips: 900
+header:
+  text: Quarterly review
+  alignment: right
+footer:
+  text: Page {page} of {pages}
+  alignment: center
+page_numbering:
+  start_at: 3
+  format: lower_roman
+blocks:
+  - type: table_of_contents
+    title: Contents
+  - type: page_break
+  - type: section_break
+```
+
+The DOCX TOC is an updateable Word field. PDF emits the heading list known from the spec at render time and does not invent page numbers.
+
+## Rich Table Rows And Cells
+
+Rows accept `repeat_as_header` and `allow_split_across_pages`. A `kind: rich` cell accepts `paragraphs`, horizontal `grid_span`, `background_color`, and an optional `nested_table`. See [`dual_output_contract.yaml`](../examples/dual_output_contract.yaml) for a complete, parity-tested example.
+
 ## Best Practices
 
 - Use variables for repeated values, not for every sentence in the document.
@@ -498,6 +538,8 @@ Vertical align values:
 
 - [../examples/board_report.yaml](../examples/board_report.yaml)
 - [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
+- [../examples/dual_output_contract.yaml](../examples/dual_output_contract.yaml)
+- [../examples/international_scripts.yaml](../examples/international_scripts.yaml)
 - [../examples/formatting_showcase.yaml](../examples/formatting_showcase.yaml)
 - [../examples/named_styles_showcase.yaml](../examples/named_styles_showcase.yaml)
 - [../examples/yaml_composition_showcase.yaml](../examples/yaml_composition_showcase.yaml)

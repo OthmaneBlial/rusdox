@@ -315,7 +315,7 @@ The current foundation focuses on fast, typed support for:
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Current limitations are documented rather than hidden. High-level specs do not yet expose hyperlinks, bookmarks, footnotes, comments, tracked changes, automatic tables of contents, merged cells, or Word-native placeholder templates. PDF currently uses its own configured page geometry and does not yet mirror DOCX headers, footers, or page-number fields. Follow the [compatibility matrix](docs/compatibility.md) and [roadmap](ROADMAP.md) for the exact contract and planned parity work.
+Current limitations are documented rather than hidden. High-level specs now expose shared page controls, visible headers/footers, page fields, links, bookmarks, TOC fields, footnotes, merged/rich cells, row pagination controls, and bounded nested tables. Comments, tracked changes, arbitrary per-section geometry, complex bidirectional shaping, and Word-native placeholder templates remain outside the current contract. Follow the [compatibility matrix](docs/compatibility.md) and [roadmap](ROADMAP.md) for exact boundaries and parity evidence.
 
 ## Development
 

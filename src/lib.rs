@@ -38,10 +38,10 @@ mod xml_utils;
 
 pub use document::{Document, DocumentBlockRef, DocumentMode};
 pub use error::{DocxError, Result};
-pub use layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageSetup};
+pub use layout::{HeaderFooter, PageNumberFormat, PageNumbering, PageOrientation, PageSetup};
 pub use metadata::DocumentMetadata;
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
-pub use run::{Run, RunProperties, UnderlineStyle, VerticalAlign};
+pub use run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
 pub use style::{
     ParagraphStyle, ParagraphStyleProperties, RunStyle, RunStyleProperties, Stylesheet, TableStyle,
     TableStyleProperties,

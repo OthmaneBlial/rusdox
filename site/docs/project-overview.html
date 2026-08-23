@@ -170,7 +170,7 @@ rusdox config wizard --level advanced</code></pre>
 <h2 id="status">Status</h2>
 <p>The current foundation focuses on fast, typed support for:</p>
 <ul><li>paragraphs</li><li>runs and common text formatting</li><li>tables, rows, and cells</li><li>named paragraph, run, and table styles with inheritance</li><li>image, logo, signature, and SVG/chart blocks</li><li>plain-text extraction</li><li>config-driven composition</li><li>YAML/JSON/TOML document specs</li></ul>
-<p>Current limitations are documented rather than hidden. High-level specs do not yet expose hyperlinks, bookmarks, footnotes, comments, tracked changes, automatic tables of contents, merged cells, or Word-native placeholder templates. PDF currently uses its own configured page geometry and does not yet mirror DOCX headers, footers, or page-number fields. Follow the <a href="compatibility.html">compatibility matrix</a> and <a href="roadmap.html">roadmap</a> for the exact contract and planned parity work.</p>
+<p>Current limitations are documented rather than hidden. High-level specs now expose shared page controls, visible headers/footers, page fields, links, bookmarks, TOC fields, footnotes, merged/rich cells, row pagination controls, and bounded nested tables. Comments, tracked changes, arbitrary per-section geometry, complex bidirectional shaping, and Word-native placeholder templates remain outside the current contract. Follow the <a href="compatibility.html">compatibility matrix</a> and <a href="roadmap.html">roadmap</a> for exact boundaries and parity evidence.</p>
 <h2 id="development">Development</h2>
 <pre><code class="language-bash">cargo fmt
 cargo clippy --all-targets --all-features -- -D warnings

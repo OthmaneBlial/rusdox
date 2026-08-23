@@ -1494,6 +1494,10 @@ fn run_script(
     config.output.pdf_dir = output_dir;
 
     let runner_dir = cached_script_runner_dir(&script_path);
+    let runner_package_name = runner_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("rusdox-script-runner");
     let manifest_path = runner_dir.join("Cargo.toml");
     let src_dir = runner_dir.join("src");
     fs::create_dir_all(&src_dir)?;
@@ -1501,7 +1505,7 @@ fn run_script(
     let runner_config_path = runner_dir.join("rusdox-runtime-config.toml");
     config.save_to_path(&runner_config_path)?;
 
-    fs::write(&manifest_path, build_runner_manifest())?;
+    fs::write(&manifest_path, build_runner_manifest(runner_package_name))?;
     fs::write(
         src_dir.join("main.rs"),
         build_runner_source(&script_path, &output_path, &runner_config_path),
@@ -1516,6 +1520,12 @@ fn run_script(
     command.arg("--manifest-path");
     command.arg(&manifest_path);
     command.current_dir(&runner_dir);
+    if std::env::var_os("CARGO_TARGET_DIR").is_none() {
+        command.env(
+            "CARGO_TARGET_DIR",
+            std::env::temp_dir().join("rusdox-script-runner-target"),
+        );
+    }
 
     let status = command.status()?;
     if !status.success() {
@@ -1584,10 +1594,10 @@ fn to_absolute_path(path: &Path) -> Result<PathBuf> {
     }
 }
 
-fn build_runner_manifest() -> String {
+fn build_runner_manifest(package_name: &str) -> String {
     format!(
         r#"[package]
-name = "rusdox-script-runner"
+name = "{package_name}"
 version = "0.1.0"
 edition = "2021"
 
@@ -2068,7 +2078,7 @@ mod tests {
 
     #[test]
     fn runner_manifest_contains_dependency_section() {
-        let manifest = build_runner_manifest();
+        let manifest = build_runner_manifest("rusdox-script-runner-test");
         assert!(manifest.contains("[package]"));
         assert!(manifest.contains("[dependencies]"));
         assert!(manifest.contains("rusdox = "));

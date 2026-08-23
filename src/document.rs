@@ -19,9 +19,10 @@ use crate::table::Table;
 use crate::visual::Visual;
 use crate::xml_utils::{
     hydrate_section_from_package_parts, parse_document_xml, parse_numbering_xml, parse_styles_xml,
-    render_header_footer_xml, write_document_xml, write_numbering_xml, write_styles_xml,
-    DocxVisual, SectionProperties, DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID, DEFAULT_HEADER_PART,
-    DEFAULT_HEADER_REL_ID, FOOTER_REL_TYPE, HEADER_REL_TYPE, IMAGE_REL_TYPE,
+    render_footnotes_xml, render_header_footer_xml, write_document_xml, write_numbering_xml,
+    write_styles_xml, DocxVisual, SectionProperties, DEFAULT_FOOTER_PART, DEFAULT_FOOTER_REL_ID,
+    DEFAULT_FOOTNOTES_PART, DEFAULT_FOOTNOTES_REL_ID, DEFAULT_HEADER_PART, DEFAULT_HEADER_REL_ID,
+    FOOTER_REL_TYPE, FOOTNOTES_REL_TYPE, HEADER_REL_TYPE, IMAGE_REL_TYPE,
 };
 
 const CONTENT_TYPES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -627,6 +628,24 @@ impl Document {
                 "footer1.xml",
             )?;
         }
+        let footnotes = collect_footnotes(&self.body);
+        if !footnotes.is_empty() {
+            package_parts.insert(
+                DEFAULT_FOOTNOTES_PART.to_string(),
+                render_footnotes_xml(&footnotes)?,
+            );
+            ensure_header_footer_content_type(
+                &mut package_parts,
+                DEFAULT_FOOTNOTES_PART,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
+            )?;
+            ensure_header_footer_relationship(
+                &mut package_parts,
+                DEFAULT_FOOTNOTES_REL_ID,
+                FOOTNOTES_REL_TYPE,
+                "footnotes.xml",
+            )?;
+        }
         Ok(RenderedPackage {
             parts: package_parts,
             visuals: visuals.into_iter().map(|visual| visual.xml).collect(),
@@ -672,6 +691,39 @@ impl Document {
 
         Ok(rendered)
     }
+}
+
+fn collect_footnotes(body: &[BodyBlock]) -> Vec<String> {
+    fn collect_paragraph(paragraph: &Paragraph, notes: &mut Vec<String>) {
+        notes.extend(
+            paragraph
+                .runs()
+                .filter_map(|run| run.footnote_text().map(str::to_owned)),
+        );
+    }
+
+    fn collect_table(table: &Table, notes: &mut Vec<String>) {
+        for row in table.rows() {
+            for cell in row.cells() {
+                for paragraph in cell.paragraphs() {
+                    collect_paragraph(paragraph, notes);
+                }
+                for nested in cell.nested_tables() {
+                    collect_table(nested, notes);
+                }
+            }
+        }
+    }
+
+    let mut notes = Vec::new();
+    for block in body {
+        match block {
+            BodyBlock::Paragraph(paragraph) => collect_paragraph(paragraph, &mut notes),
+            BodyBlock::Table(table) => collect_table(table, &mut notes),
+            BodyBlock::Visual(_) => {}
+        }
+    }
+    notes
 }
 
 fn ensure_styles_relationship(parts: &mut BTreeMap<String, Vec<u8>>) -> Result<()> {

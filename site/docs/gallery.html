@@ -51,7 +51,7 @@
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#board-report">Board Report</a></li><li class="toc-level-2"><a href="#executive-dashboard">Executive Dashboard</a></li><li class="toc-level-2"><a href="#product-launch-brief">Product Launch Brief</a></li><li class="toc-level-2"><a href="#talent-profile">Talent Profile</a></li><li class="toc-level-2"><a href="#invoice">Invoice</a></li><li class="toc-level-2"><a href="#meeting-notes">Meeting Notes</a></li><li class="toc-level-2"><a href="#regenerate-gallery-assets">Regenerate Gallery Assets</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#board-report">Board Report</a></li><li class="toc-level-2"><a href="#executive-dashboard">Executive Dashboard</a></li><li class="toc-level-2"><a href="#product-launch-brief">Product Launch Brief</a></li><li class="toc-level-2"><a href="#talent-profile">Talent Profile</a></li><li class="toc-level-2"><a href="#invoice">Invoice</a></li><li class="toc-level-2"><a href="#meeting-notes">Meeting Notes</a></li><li class="toc-level-2"><a href="#contract-fixtures">Contract Fixtures</a></li><li class="toc-level-3"><a href="#complete-dual-output-contract">Complete Dual-Output Contract</a></li><li class="toc-level-3"><a href="#international-scripts">International Scripts</a></li><li class="toc-level-2"><a href="#regenerate-gallery-assets">Regenerate Gallery Assets</a></li></ol></nav>
             <div class="docs-content prose"><p>These previews are generated from the real PDF outputs in <code>rendered/</code>.</p>
 <p>That means the gallery shows actual RusDox output, not mockups.</p>
 <figure><img src="../assets/template-gallery.png" alt="Template gallery overview" loading="lazy" /><figcaption>Template gallery overview</figcaption></figure>
@@ -73,6 +73,12 @@
 <h2 id="meeting-notes">Meeting Notes</h2>
 <figure><img src="../assets/gallery/meeting-notes.png" alt="Meeting Notes preview" loading="lazy" /><figcaption>Meeting Notes preview</figcaption></figure>
 <ul><li>Spec: <a href="../examples/meeting_notes.yaml">../examples/meeting_notes.yaml</a></li><li>Evidence: <a href="../parity/meeting-notes-parity.html">DOCX/PDF parity report</a></li><li>Output: compact notes with metadata, agenda, and decisions</li></ul>
+<h2 id="contract-fixtures">Contract Fixtures</h2>
+<p>These fixtures exercise the less visible parts of the dual-output contract. Their reports are generated from the real DOCX and PDF outputs alongside the visual gallery reports.</p>
+<h3 id="complete-dual-output-contract">Complete Dual-Output Contract</h3>
+<ul><li>Spec: <a href="../examples/dual_output_contract.yaml">../examples/dual_output_contract.yaml</a></li><li>Evidence: <a href="../parity/dual-output-contract-parity.html">DOCX/PDF parity report</a></li><li>Coverage: shared landscape geometry, visible page fields, breaks, URI and internal links, bookmarks, TOC, footnotes, rich/merged/nested cells, and row pagination controls</li></ul>
+<h3 id="international-scripts">International Scripts</h3>
+<ul><li>Spec: <a href="../examples/international_scripts.yaml">../examples/international_scripts.yaml</a></li><li>Evidence: <a href="../parity/international-scripts-parity.html">DOCX/PDF parity report</a></li><li>Coverage: Unicode preservation and fallback across Latin, Arabic/RTL, Hebrew, CJK, emoji, and mixed-script text; see the compatibility matrix for shaping limits</li></ul>
 <h2 id="regenerate-gallery-assets">Regenerate Gallery Assets</h2>
 <pre><code class="language-bash">./scripts/generate_gallery_assets.sh
 ./scripts/generate_parity_reports.sh</code></pre></div>

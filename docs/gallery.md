@@ -54,6 +54,22 @@ That means the gallery shows actual RusDox output, not mockups.
 - Evidence: [DOCX/PDF parity report](../parity/meeting-notes-parity.html)
 - Output: compact notes with metadata, agenda, and decisions
 
+## Contract Fixtures
+
+These fixtures exercise the less visible parts of the dual-output contract. Their reports are generated from the real DOCX and PDF outputs alongside the visual gallery reports.
+
+### Complete Dual-Output Contract
+
+- Spec: [../examples/dual_output_contract.yaml](../examples/dual_output_contract.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/dual-output-contract-parity.html)
+- Coverage: shared landscape geometry, visible page fields, breaks, URI and internal links, bookmarks, TOC, footnotes, rich/merged/nested cells, and row pagination controls
+
+### International Scripts
+
+- Spec: [../examples/international_scripts.yaml](../examples/international_scripts.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/international-scripts-parity.html)
+- Coverage: Unicode preservation and fallback across Latin, Arabic/RTL, Hebrew, CJK, emoji, and mixed-script text; see the compatibility matrix for shaping limits
+
 ## Regenerate Gallery Assets
 
 ```bash
