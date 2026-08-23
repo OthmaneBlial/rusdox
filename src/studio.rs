@@ -2240,7 +2240,7 @@ fn prepare_pdf_image_asset(
     let mut alpha = Vec::with_capacity((raster.width_px * raster.height_px) as usize);
     let mut has_alpha = false;
 
-    for pixel in raster.rgba.chunks_exact(4) {
+    for pixel in raster.rgba.as_chunks::<4>().0 {
         rgb.extend_from_slice(&pixel[..3]);
         alpha.push(pixel[3]);
         has_alpha |= pixel[3] < 255;
