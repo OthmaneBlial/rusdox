@@ -36,6 +36,25 @@ body:
       placeholder: Ubuntu 24.04, macOS 14, Windows 11
     validations:
       required: true
+  - type: input
+    id: architecture
+    attributes:
+      label: Architecture
+      placeholder: x86_64, aarch64, Apple Silicon
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation method
+      options:
+        - GitHub release installer
+        - cargo install
+        - cargo binstall
+        - Built from source
+        - Other
+    validations:
+      required: true
   - type: textarea
     id: command
     attributes:
@@ -68,4 +87,4 @@ body:
     id: extra
     attributes:
       label: Extra context
-      description: Add config snippets, screenshots, logs, or anything else that helps.
+      description: Add sanitized config snippets, screenshots, logs, or anything else that helps. Remove secrets and private document content first.

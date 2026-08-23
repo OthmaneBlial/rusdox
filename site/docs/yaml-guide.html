@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YAML guide | RusDox Documentation</title>
+    <meta name="description" content="Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/yaml-guide.html" />
+    <meta property="og:title" content="YAML guide | RusDox" />
+    <meta property="og:description" content="Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/yaml-guide.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox YAML guide","description":"Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.","url":"https://othmaneblial.github.io/rusdox/docs/yaml-guide.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Guide</p>
+            <h1>YAML guide</h1>
+            <p class="lede">Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/yaml-guide.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a class="is-active" aria-current="page" href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#top-level-fields">Top-Level Fields</a></li><li class="toc-level-2"><a href="#metadata">Metadata</a></li><li class="toc-level-2"><a href="#variables-includes-and-repeaters">Variables, Includes, And Repeaters</a></li><li class="toc-level-2"><a href="#named-styles">Named Styles</a></li><li class="toc-level-2"><a href="#simple-block-types">Simple Block Types</a></li><li class="toc-level-2"><a href="#visual-blocks">Visual Blocks</a></li><li class="toc-level-2"><a href="#list-blocks">List Blocks</a></li><li class="toc-level-3"><a href="#bullets">bullets</a></li><li class="toc-level-3"><a href="#labelvalues">labelvalues</a></li><li class="toc-level-3"><a href="#metrics">metrics</a></li><li class="toc-level-2"><a href="#tables">Tables</a></li><li class="toc-level-2"><a href="#custom-paragraphs">Custom Paragraphs</a></li><li class="toc-level-2"><a href="#best-practices">Best Practices</a></li><li class="toc-level-2"><a href="#see-real-files">See Real Files</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox is designed so the YAML reads like the document.</p>
+<p>The basic shape is always:</p>
+<pre><code class="language-yaml">output_name: my-document
+blocks:
+  - type: title
+    text: My Document
+  - type: body
+    text: This is a paragraph.</code></pre>
+<h2 id="top-level-fields">Top-Level Fields</h2>
+<p><code>output_name</code></p>
+<ul><li>Optional</li><li>Controls the file name of the generated output</li><li>If omitted, RusDox uses the spec file stem</li></ul>
+<p><code>metadata</code></p>
+<ul><li>Optional</li><li>Controls DOCX package properties such as title, author, subject, keywords, and custom properties</li></ul>
+<p><code>blocks</code></p>
+<ul><li>Required for real documents</li><li>Ordered from top to bottom</li><li>This is the document structure</li></ul>
+<p><code>styles</code></p>
+<ul><li>Optional</li><li>Defines reusable named paragraph, run, and table styles</li><li>Supports inheritance through <code>based_on</code></li><li>Paragraph styles can also set <code>next</code></li></ul>
+<p><code>variables</code></p>
+<ul><li>Optional</li><li>Defines reusable values for text interpolation and repeat blocks in YAML</li></ul>
+<h2 id="metadata">Metadata</h2>
+<p>Use metadata when generated documents need clean properties in Word, search tools, or downstream automation.</p>
+<pre><code class="language-yaml">metadata:
+  title: Client Rollout Plan
+  author: RusDox Studio
+  subject: Q4 regional rollout
+  keywords:
+    - rollout
+    - planning
+  custom_properties:
+    Client: Northwind Health
+    Sponsor: Maya Chen</code></pre>
+<p>Supported metadata fields:</p>
+<ul><li><code>title</code></li><li><code>author</code></li><li><code>subject</code></li><li><code>keywords</code></li><li><code>custom_properties</code></li></ul>
+<p><code>custom_properties</code> values are stored as string custom properties in the DOCX package.</p>
+<h2 id="variables-includes-and-repeaters">Variables, Includes, And Repeaters</h2>
+<p>Use these features when one YAML file would otherwise become repetitive.</p>
+<p>Variables use <code>{{name}}</code> placeholders:</p>
+<pre><code class="language-yaml">variables:
+  client: Northwind Health
+  quarter: Q4 2026
+
+blocks:
+  - type: title
+    text: &quot;{{client}} Rollout Plan&quot;
+  - type: subtitle
+    text: &quot;{{quarter}} program snapshot&quot;</code></pre>
+<p>Includes inline reusable block fragments relative to the current YAML file:</p>
+<pre><code class="language-yaml">blocks:
+  - type: include
+    path: fragments/summary.yaml
+    variables:
+      sponsor: Maya Chen</code></pre>
+<p>An included YAML fragment can be:</p>
+<ul><li>a single block mapping</li><li>a sequence of blocks</li><li>a mapping with optional <code>variables</code> plus <code>blocks</code></li></ul>
+<p>Repeaters expand a block template for each item in a sequence:</p>
+<pre><code class="language-yaml">variables:
+  regions:
+    - name: North America
+      owner: Maya
+    - name: EMEA
+      owner: Leon
+
+blocks:
+  - type: repeat
+    variable: regions
+    as: region
+    blocks:
+      - type: section
+        text: &quot;{{region.name}}&quot;
+      - type: body
+        text: &quot;Owner: {{region.owner}}&quot;</code></pre>
+<p>Supported repeat fields:</p>
+<ul><li><code>variable</code>: name of a sequence variable to iterate</li><li><code>items</code>: inline sequence to iterate</li><li><code>as</code>: loop variable name, defaults to <code>item</code></li><li><code>blocks</code>: template block list</li></ul>
+<p>Each repeat iteration also exposes:</p>
+<ul><li><code>repeat_index</code>: zero-based index</li><li><code>repeat_number</code>: one-based index</li></ul>
+<h2 id="named-styles">Named Styles</h2>
+<p>Use named styles when the document needs stable reusable formatting instead of repeating direct properties on every block.</p>
+<p>Example:</p>
+<pre><code class="language-yaml">styles:
+  paragraph:
+    - id: lead
+      based_on: Normal
+      next: body
+      paragraph:
+        alignment: center
+        spacing_after: 180
+        keep_next: true
+      run:
+        bold: true
+        color: &quot;0F172A&quot;
+        font_family: Georgia
+        font_size: 28
+  run:
+    - id: accent
+      based_on: DefaultParagraphFont
+      properties:
+        italic: true
+        color: &quot;AA5500&quot;
+  table:
+    - id: grid
+      based_on: TableNormal
+      properties:
+        width: 9360
+
+blocks:
+  - type: paragraph
+    spec:
+      style_id: lead
+      runs:
+        - text: Styled
+        - text: &quot; emphasis&quot;
+          style_id: accent
+  - type: table
+    spec:
+      style_id: grid
+      columns:
+        - label: Metric
+          width: 4680
+      rows:
+        - cells:
+            - kind: text
+              text: ARR</code></pre>
+<p>Style definition groups:</p>
+<ul><li><code>styles.paragraph</code></li><li><code>styles.run</code></li><li><code>styles.table</code></li></ul>
+<p>Paragraph style fields:</p>
+<ul><li><code>id</code></li><li><code>name</code></li><li><code>based_on</code></li><li><code>next</code></li><li><code>paragraph.list</code></li><li><code>paragraph.alignment</code></li><li><code>paragraph.spacing_before</code></li><li><code>paragraph.spacing_after</code></li><li><code>paragraph.keep_next</code></li><li><code>paragraph.page_break_before</code></li><li><code>run.bold</code></li><li><code>run.italic</code></li><li><code>run.underline</code></li><li><code>run.strikethrough</code></li><li><code>run.small_caps</code></li><li><code>run.shadow</code></li><li><code>run.color</code></li><li><code>run.font_family</code></li><li><code>run.font_size</code></li><li><code>run.vertical_align</code></li></ul>
+<p>Run style fields:</p>
+<ul><li><code>id</code></li><li><code>name</code></li><li><code>based_on</code></li><li><code>properties.bold</code></li><li><code>properties.italic</code></li><li><code>properties.underline</code></li><li><code>properties.strikethrough</code></li><li><code>properties.small_caps</code></li><li><code>properties.shadow</code></li><li><code>properties.color</code></li><li><code>properties.font_family</code></li><li><code>properties.font_size</code></li><li><code>properties.vertical_align</code></li></ul>
+<p>Table style fields:</p>
+<ul><li><code>id</code></li><li><code>name</code></li><li><code>based_on</code></li><li><code>properties.width</code></li><li><code>properties.borders</code></li></ul>
+<p>Units:</p>
+<ul><li>paragraph spacing and table widths use twips</li><li>run <code>font_size</code> uses OOXML half-points, so <code>24</code> means <code>12pt</code></li></ul>
+<h2 id="simple-block-types">Simple Block Types</h2>
+<p>Use these when you want readable documents with strong defaults:</p>
+<ul><li><code>cover_title</code></li><li><code>title</code></li><li><code>subtitle</code></li><li><code>hero</code></li><li><code>centered_note</code></li><li><code>page_heading</code></li><li><code>section</code></li><li><code>body</code></li><li><code>tagline</code></li><li><code>image</code></li><li><code>logo</code></li><li><code>signature</code></li><li><code>chart</code></li><li><code>spacer</code></li></ul>
+<p>Example:</p>
+<pre><code class="language-yaml">blocks:
+  - type: cover_title
+    text: Board Report
+  - type: subtitle
+    text: March 2026
+  - type: hero
+    text: Prepared automatically with RusDox
+  - type: centered_note
+    text: Internal use only
+  - type: page_heading
+    text: Board Narrative
+  - type: body
+    text: Revenue expanded faster than forecast.</code></pre>
+<p><code>page_heading</code> starts a new page before the heading.</p>
+<p><code>spacer</code> adds vertical space when you want breathing room between sections.</p>
+<h2 id="visual-blocks">Visual Blocks</h2>
+<p>Use visual blocks when the document needs brand marks, screenshots, signatures, or SVG charts.</p>
+<p>Example:</p>
+<pre><code class="language-yaml">- type: logo
+  path: ../assets/rusdox-mark.svg
+  alt_text: RusDox logo
+  max_width_twips: 2200
+
+- type: image
+  path: ../assets/template-gallery.png
+  alt_text: RusDox template gallery
+  max_width_twips: 7200
+
+- type: chart
+  path: ../assets/benchmark-stress-1000-pages.svg
+  alt_text: RusDox benchmark chart
+  max_width_twips: 7200
+
+- type: signature
+  path: ../assets/signature-demo.svg
+  alt_text: Automated approval signature
+  max_width_twips: 2800</code></pre>
+<p>Supported visual fields:</p>
+<ul><li><code>path</code></li><li><code>alt_text</code></li><li><code>alignment</code>: <code>left</code>, <code>center</code>, <code>right</code>, <code>justified</code></li><li><code>width_twips</code></li><li><code>height_twips</code></li><li><code>max_width_twips</code></li><li><code>max_height_twips</code></li></ul>
+<p>Supported file formats:</p>
+<ul><li>PNG</li><li>JPEG</li><li>SVG</li></ul>
+<h2 id="list-blocks">List Blocks</h2>
+<h3 id="bullets"><code>bullets</code></h3>
+<pre><code class="language-yaml">- type: bullets
+  items:
+    - Confirm launch date
+    - Finalize sales enablement
+    - Publish support macros</code></pre>
+<h3 id="labelvalues"><code>label_values</code></h3>
+<p>Good for notes, metadata, meeting headers, and document summaries.</p>
+<pre><code class="language-yaml">- type: label_values
+  items:
+    - label: Date
+      value: 2026-03-10
+    - label: Owner
+      value: Operations</code></pre>
+<h3 id="metrics"><code>metrics</code></h3>
+<p>Good for dashboard-style cards.</p>
+<p>Available tones:</p>
+<ul><li><code>positive</code></li><li><code>neutral</code></li><li><code>warning</code></li><li><code>risk</code></li></ul>
+<pre><code class="language-yaml">- type: metrics
+  items:
+    - label: ARR
+      value: $18.7M
+      tone: positive
+    - label: Cash Runway
+      value: 24 mo
+      tone: warning</code></pre>
+<h2 id="tables">Tables</h2>
+<p>Tables use explicit columns and rows.</p>
+<p>Each column needs:</p>
+<ul><li><code>label</code></li><li><code>width</code></li></ul>
+<p>Each row has <code>cells</code>.</p>
+<p>Each cell can be:</p>
+<ul><li><code>kind: text</code></li><li><code>kind: status</code></li></ul>
+<p>Example:</p>
+<pre><code class="language-yaml">- type: table
+  spec:
+    style_id: grid
+    columns:
+      - label: Category
+        width: 2800
+      - label: Current
+        width: 2000
+      - label: Status
+        width: 1600
+    rows:
+      - cells:
+          - kind: text
+            text: ARR
+          - kind: text
+            text: $18.7M
+          - kind: status
+            text: Strong
+            tone: positive</code></pre>
+<p><code>width</code> values are DOCX table widths in twips.</p>
+<p>You usually only need to copy a working table from an example and edit the content.</p>
+<h2 id="custom-paragraphs">Custom Paragraphs</h2>
+<p>Use <code>paragraph</code> when you need mixed formatting inside one paragraph.</p>
+<p>Example:</p>
+<pre><code class="language-yaml">- type: paragraph
+  spec:
+    alignment: center
+    spacing_after_twips: 120
+    runs:
+      - text: &quot;This is &quot;
+      - text: important
+        bold: true
+      - text: &quot; and &quot;
+      - text: styled
+        italic: true
+        color: D00000</code></pre>
+<p>Supported paragraph fields:</p>
+<ul><li><code>runs</code></li><li><code>style_id</code></li><li><code>alignment</code>: <code>left</code>, <code>center</code>, <code>right</code>, <code>justified</code></li><li><code>spacing_before_twips</code></li><li><code>spacing_after_twips</code></li><li><code>page_break_before</code></li></ul>
+<p>Supported run fields:</p>
+<ul><li><code>text</code></li><li><code>style_id</code></li><li><code>bold</code></li><li><code>italic</code></li><li><code>underline</code></li><li><code>strikethrough</code></li><li><code>small_caps</code></li><li><code>shadow</code></li><li><code>color</code></li><li><code>font_family</code></li><li><code>size_pt</code></li><li><code>vertical_align</code></li></ul>
+<p>Underline values:</p>
+<ul><li><code>single</code></li><li><code>double</code></li><li><code>dotted</code></li><li><code>dash</code></li><li><code>wavy</code></li><li><code>words</code></li><li><code>none</code></li></ul>
+<p>Vertical align values:</p>
+<ul><li><code>superscript</code></li><li><code>subscript</code></li><li><code>baseline</code></li></ul>
+<h2 id="best-practices">Best Practices</h2>
+<ul><li>Use variables for repeated values, not for every sentence in the document.</li><li>Reach for <code>include</code> and <code>repeat</code> before moving to Rust if the workflow is still mostly static content.</li><li>Prefer <code>title</code>, <code>section</code>, <code>body</code>, <code>bullets</code>, <code>metrics</code>, and <code>table</code> before reaching for custom paragraphs.</li><li>Let config control styling instead of repeating style values everywhere.</li><li>Copy a close example and edit the content.</li></ul>
+<h2 id="see-real-files">See Real Files</h2>
+<ul><li><a href="../examples/board_report.yaml">../examples/board_report.yaml</a></li><li><a href="../examples/executive_dashboard.yaml">../examples/executive_dashboard.yaml</a></li><li><a href="../examples/formatting_showcase.yaml">../examples/formatting_showcase.yaml</a></li><li><a href="../examples/named_styles_showcase.yaml">../examples/named_styles_showcase.yaml</a></li><li><a href="../examples/yaml_composition_showcase.yaml">../examples/yaml_composition_showcase.yaml</a></li></ul></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="getting-started.html"><span>Previous</span><strong>Getting started</strong></a>
+    <a class="docs-pager-next" href="configuration.html"><span>Next</span><strong>Configuration</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

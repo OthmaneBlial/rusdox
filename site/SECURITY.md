@@ -7,7 +7,7 @@ RusDox is currently maintained as a fast-moving project.
 Security fixes are most likely to land in:
 
 - the latest release line
-- the current `master` branch
+- the current `main` branch
 
 Older versions may not receive fixes.
 
@@ -17,8 +17,8 @@ Please do not publish sensitive vulnerability details in a public issue.
 
 Preferred path:
 
-1. Use GitHub private vulnerability reporting if it is enabled for the repository.
-2. If that is not available yet, open a minimal public issue asking for a private security contact channel without including exploit details.
+1. Use [GitHub private vulnerability reporting](https://github.com/OthmaneBlial/rusdox/security/advisories/new).
+2. Do not open a public issue containing exploit details, private document content, or sensitive fixtures.
 
 When reporting, include:
 

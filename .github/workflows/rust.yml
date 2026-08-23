@@ -2,8 +2,11 @@ name: Rust
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main"]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -31,4 +34,26 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Run tests
-        run: cargo test
+        run: cargo test --locked
+
+      - name: Verify generated static documentation
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          node scripts/build_site.mjs --check
+          node scripts/check_site.mjs
+
+      - name: Verify crate package
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo package --locked --no-verify
+
+      - name: Build release binary for installer fixture
+        run: cargo build --release --locked --bin rusdox
+
+      - name: Test Unix installer with checksums
+        if: matrix.os != 'windows-latest'
+        run: sh scripts/test_install.sh target/release/rusdox
+
+      - name: Test Windows installer with checksums
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./scripts/test_install.ps1 -BinaryPath target/release/rusdox.exe

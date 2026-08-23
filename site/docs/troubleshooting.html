@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Troubleshooting | RusDox Documentation</title>
+    <meta name="description" content="Diagnose installers, paths, fonts, viewer differences, large files, and CI failures." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/troubleshooting.html" />
+    <meta property="og:title" content="Troubleshooting | RusDox" />
+    <meta property="og:description" content="Diagnose installers, paths, fonts, viewer differences, large files, and CI failures." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/troubleshooting.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Troubleshooting","description":"Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.","url":"https://othmaneblial.github.io/rusdox/docs/troubleshooting.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Troubleshooting</h1>
+            <p class="lede">Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/troubleshooting.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a class="is-active" aria-current="page" href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#installation-fails">Installation fails</a></li><li class="toc-level-3"><a href="#release-download-returns-404">Release download returns 404</a></li><li class="toc-level-3"><a href="#the-binary-is-installed-but-not-on-path">The binary is installed but not on PATH</a></li><li class="toc-level-3"><a href="#checksum-verification-fails">Checksum verification fails</a></li><li class="toc-level-2"><a href="#rusdox-cannot-find-an-asset">RusDox cannot find an asset</a></li><li class="toc-level-2"><a href="#fonts-differ-across-machines">Fonts differ across machines</a></li><li class="toc-level-2"><a href="#docx-and-pdf-do-not-look-identical">DOCX and PDF do not look identical</a></li><li class="toc-level-2"><a href="#a-table-overflows-or-splits-badly">A table overflows or splits badly</a></li><li class="toc-level-2"><a href="#a-large-document-is-slow-or-uses-too-much-memory">A large document is slow or uses too much memory</a></li><li class="toc-level-2"><a href="#watch-mode-does-not-rebuild">Watch mode does not rebuild</a></li><li class="toc-level-2"><a href="#validation-output-in-ci">Validation output in CI</a></li><li class="toc-level-2"><a href="#existing-docx-content-changes-after-save">Existing DOCX content changes after save</a></li><li class="toc-level-2"><a href="#asking-for-help-safely">Asking for help safely</a></li></ol></nav>
+            <div class="docs-content prose"><p>This guide covers the most common installation, authoring, rendering, and viewer problems.</p>
+<h2 id="installation-fails">Installation fails</h2>
+<h3 id="release-download-returns-404">Release download returns 404</h3>
+<p>Installers download a platform archive and <code>SHA256SUMS</code> from GitHub Releases. Confirm that the requested version exists:</p>
+<pre><code class="language-bash">RUSDOX_VERSION=v0.1.0 sh scripts/install.sh</code></pre>
+<p>For a source build while diagnosing release availability:</p>
+<pre><code class="language-bash">cargo install --path . --locked</code></pre>
+<h3 id="the-binary-is-installed-but-not-on-path">The binary is installed but not on <code>PATH</code></h3>
+<p>The Unix installer uses <code>/usr/local/bin</code> when writable and otherwise uses <code>$HOME/.local/bin</code>. Add the printed directory to your shell profile, then start a new terminal.</p>
+<p>On Windows, the installer updates the user <code>PATH</code>. Existing PowerShell windows may need to be reopened.</p>
+<h3 id="checksum-verification-fails">Checksum verification fails</h3>
+<p>Do not bypass the check. Delete the downloaded archive, retry on a trusted network, and confirm that the archive and <code>SHA256SUMS</code> come from the same release. If it still fails, report the release tag, platform, and architecture without attaching the corrupted binary.</p>
+<h2 id="rusdox-cannot-find-an-asset">RusDox cannot find an asset</h2>
+<p>Relative visual paths are resolved from the document spec directory, not necessarily the current shell directory.</p>
+<pre><code class="language-yaml">blocks:
+  - type: image
+    path: assets/chart.png</code></pre>
+<p>For <code>reports/weekly.yaml</code>, that resolves to <code>reports/assets/chart.png</code>. Run validation for an exact path diagnostic:</p>
+<pre><code class="language-bash">rusdox validate reports/weekly.yaml</code></pre>
+<p>Supported visual formats are PNG, JPEG, and SVG.</p>
+<h2 id="fonts-differ-across-machines">Fonts differ across machines</h2>
+<p>PDF rendering uses fonts available on the machine. A missing configured family can trigger fallback and change line wrapping.</p>
+<p>For repeatable output:</p>
+<ul><li>install the same licensed fonts on every rendering host;</li><li>use the same <code>rusdox.toml</code>;</li><li>record the OS and font package versions in CI;</li><li>keep a rendered regression fixture for important documents.</li></ul>
+<p>RusDox does not redistribute arbitrary commercial fonts.</p>
+<h2 id="docx-and-pdf-do-not-look-identical">DOCX and PDF do not look identical</h2>
+<p>DOCX is laid out by the viewer, while RusDox lays out PDF itself. Current parity limitations are listed in the <a href="compatibility.html">compatibility matrix</a>. In particular, document page setup, headers, footers, and page-number fields do not yet have full PDF parity.</p>
+<p>When reporting a mismatch, include:</p>
+<ul><li>the smallest input that reproduces it;</li><li>the active config;</li><li>the Word/LibreOffice/PDF viewer and version;</li><li>screenshots of the exact region;</li><li>whether text content, pagination, or visual styling differs.</li></ul>
+<h2 id="a-table-overflows-or-splits-badly">A table overflows or splits badly</h2>
+<ul><li>Check that column widths fit within the configured content width.</li><li>Shorten unbreakable strings such as URLs and identifiers.</li><li>Validate the spec for row/column shape warnings.</li><li>Use repeating header rows through the Rust API for long tables.</li><li>Reduce cell padding or font size only after checking the source data.</li></ul>
+<p>Complex merged/nested tables are not yet a stable high-level feature.</p>
+<h2 id="a-large-document-is-slow-or-uses-too-much-memory">A large document is slow or uses too much memory</h2>
+<p>Measure instead of guessing:</p>
+<pre><code class="language-bash">rusdox bench report.yaml --iterations 5 --warmup 1 --format json</code></pre>
+<p>To isolate the DOCX path:</p>
+<pre><code class="language-bash">rusdox report.yaml --docx-only</code></pre>
+<p>Large raster images often dominate memory and output size. Resize source images before rendering and avoid embedding the same oversized asset repeatedly.</p>
+<h2 id="watch-mode-does-not-rebuild">Watch mode does not rebuild</h2>
+<p>RusDox watches the input spec and active config with a polling loop. Confirm the path and reduce the interval while diagnosing:</p>
+<pre><code class="language-bash">rusdox watch report.yaml --poll-interval-ms 250</code></pre>
+<p>If a generated file is being written into the watched input directory by another tool, move output folders elsewhere to avoid noisy rebuilds.</p>
+<h2 id="validation-output-in-ci">Validation output in CI</h2>
+<p>Use JSON and preserve the non-zero exit code:</p>
+<pre><code class="language-bash">rusdox validate docs --format json</code></pre>
+<p>Do not pipe through a command that masks the RusDox exit status.</p>
+<h2 id="existing-docx-content-changes-after-save">Existing DOCX content changes after save</h2>
+<p>The Rust API preserves non-document package parts, but it rewrites body markup using the features RusDox understands. Arbitrary Word documents are not yet guaranteed to round-trip losslessly. Work from a copy and reduce the document to a safe fixture before reporting a parser issue.</p>
+<h2 id="asking-for-help-safely">Asking for help safely</h2>
+<p>Use <a href="https://github.com/OthmaneBlial/rusdox/discussions/categories/q-a" target="_blank" rel="noreferrer">GitHub Discussions</a> for authoring questions and <a href="https://github.com/OthmaneBlial/rusdox/issues" target="_blank" rel="noreferrer">Issues</a> for reproducible bugs.</p>
+<p>Before sharing a document:</p>
+<ul><li>remove names, emails, customer data, secrets, and hidden metadata;</li><li>replace logos and signatures;</li><li>inspect headers, footers, comments, and custom properties;</li><li>prefer a newly created minimal fixture.</li></ul>
+<p>Report security-sensitive behavior through <a href="https://github.com/OthmaneBlial/rusdox/security/advisories/new" target="_blank" rel="noreferrer">private vulnerability reporting</a>.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="compatibility.html"><span>Previous</span><strong>Compatibility matrix</strong></a>
+    <a class="docs-pager-next" href="gallery.html"><span>Next</span><strong>Template gallery</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

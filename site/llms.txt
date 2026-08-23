@@ -1,0 +1,28 @@
+# RusDox
+
+> Pure-Rust document engine: one readable spec to editable DOCX and native PDF without Word or LibreOffice.
+
+## Documentation
+
+- [Documentation](https://othmaneblial.github.io/rusdox/docs.html): Choose the shortest path from installation to a trustworthy DOCX and PDF workflow.
+- [Project overview](https://othmaneblial.github.io/rusdox/docs/project-overview.html): The product promise, benchmark, examples, installation paths, and current support boundary.
+- [Getting started](https://othmaneblial.github.io/rusdox/docs/getting-started.html): Install RusDox and generate the first editable DOCX and native PDF in minutes.
+- [YAML guide](https://othmaneblial.github.io/rusdox/docs/yaml-guide.html): Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.
+- [Configuration](https://othmaneblial.github.io/rusdox/docs/configuration.html): Control typography, spacing, color, tables, output paths, and PDF rendering.
+- [CLI reference](https://othmaneblial.github.io/rusdox/docs/cli.html): Render, validate, watch, benchmark, initialize, and configure documents.
+- [Rust API](https://othmaneblial.github.io/rusdox/docs/rust-api.html): Choose between DocumentSpec, Studio, and the low-level typed document model.
+- [Compatibility matrix](https://othmaneblial.github.io/rusdox/docs/compatibility.html): See exactly what works in DOCX, PDF, both outputs, or not yet.
+- [Troubleshooting](https://othmaneblial.github.io/rusdox/docs/troubleshooting.html): Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.
+- [Template gallery](https://othmaneblial.github.io/rusdox/docs/gallery.html): Browse real YAML inputs and generated DOCX/PDF output previews.
+- [Examples guide](https://othmaneblial.github.io/rusdox/docs/examples.html): Understand every bundled document fixture and how to render it.
+- [Roadmap](https://othmaneblial.github.io/rusdox/docs/roadmap.html): Follow the path to verified parity, Word templates, integrations, and v1.
+- [Changelog](https://othmaneblial.github.io/rusdox/docs/changelog.html): Review user-facing additions, changes, fixes, and migrations.
+- [Contributing](https://othmaneblial.github.io/rusdox/docs/contributing.html): Set up the repository and submit a focused contribution.
+- [Support](https://othmaneblial.github.io/rusdox/docs/support.html): Find the right place for questions, reproducible bugs, and security reports.
+- [Security policy](https://othmaneblial.github.io/rusdox/docs/security.html): Understand supported releases, reporting scope, and private disclosure.
+- [Code of conduct](https://othmaneblial.github.io/rusdox/docs/code-of-conduct.html): Behavior and enforcement standards for a healthy community.
+
+## Source
+
+- Repository: https://github.com/OthmaneBlial/rusdox
+- License: MIT

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contributing | RusDox Documentation</title>
+    <meta name="description" content="Set up the repository and submit a focused contribution." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/contributing.html" />
+    <meta property="og:title" content="Contributing | RusDox" />
+    <meta property="og:description" content="Set up the repository and submit a focused contribution." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/contributing.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Contributing","description":"Set up the repository and submit a focused contribution.","url":"https://othmaneblial.github.io/rusdox/docs/contributing.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>Contributing</h1>
+            <p class="lede">Set up the repository and submit a focused contribution.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/CONTRIBUTING.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a class="is-active" aria-current="page" href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#before-you-start">Before You Start</a></li><li class="toc-level-2"><a href="#best-first-contributions">Best First Contributions</a></li><li class="toc-level-2"><a href="#before-opening-a-large-pr">Before Opening A Large PR</a></li><li class="toc-level-2"><a href="#local-setup">Local Setup</a></li><li class="toc-level-2"><a href="#contribution-rules">Contribution Rules</a></li><li class="toc-level-2"><a href="#pull-request-checklist">Pull Request Checklist</a></li><li class="toc-level-2"><a href="#areas-that-matter-most">Areas That Matter Most</a></li><li class="toc-level-2"><a href="#questions">Questions</a></li></ol></nav>
+            <div class="docs-content prose"><p>Thanks for contributing to RusDox.</p>
+<p>The project goal is simple:</p>
+<ul><li>author documents as YAML</li><li>render DOCX and PDF in pure Rust</li><li>keep the experience easy for normal users</li></ul>
+<h2 id="before-you-start">Before You Start</h2>
+<p>Read these first:</p>
+<ul><li><a href="project-overview.html">README.md</a></li><li><a href="../docs.html">docs/README.md</a></li><li><a href="yaml-guide.html">docs/yaml-guide.md</a></li><li><a href="rust-api.html">docs/rust-api.md</a></li></ul>
+<h2 id="best-first-contributions">Best First Contributions</h2>
+<p>Good contributions include:</p>
+<ul><li>new YAML document examples</li><li>docs improvements</li><li>bug fixes with regression tests</li><li>better config wizard wording</li><li>higher-quality output rendering</li><li>template gallery improvements</li></ul>
+<h2 id="before-opening-a-large-pr">Before Opening A Large PR</h2>
+<p>For substantial changes, open an issue first and explain:</p>
+<ul><li>the problem</li><li>the proposed solution</li><li>user-facing impact</li><li>whether it changes YAML, config, or rendering behavior</li></ul>
+<p>This keeps the project direction consistent.</p>
+<h2 id="local-setup">Local Setup</h2>
+<pre><code class="language-bash">cargo fmt --all
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test</code></pre>
+<p>If you touch visual assets or examples, also run:</p>
+<pre><code class="language-bash">cargo run -- examples
+./scripts/generate_gallery_assets.sh</code></pre>
+<h2 id="contribution-rules">Contribution Rules</h2>
+<ul><li>Keep the user-facing story YAML-first.</li><li>Do not add complexity unless it clearly improves authoring or output quality.</li><li>Prefer readable examples over clever abstractions.</li><li>Keep configuration centralized instead of scattering styling through examples.</li><li>Add or update tests when behavior changes.</li><li>Update docs when changing YAML, config, CLI, or output behavior.</li></ul>
+<h2 id="pull-request-checklist">Pull Request Checklist</h2>
+<ul><li>explain what changed and why</li><li>mention any user-visible behavior change</li><li>include tests or explain why tests were not needed</li><li>update docs/examples if relevant</li><li>keep the worktree clean and focused</li></ul>
+<h2 id="areas-that-matter-most">Areas That Matter Most</h2>
+<ul><li>YAML authoring experience</li><li>output quality</li><li>speed</li><li>cross-platform reliability</li><li>docs clarity</li><li>template usefulness</li></ul>
+<h2 id="questions">Questions</h2>
+<p>If you are not sure where to start, read <a href="support.html">SUPPORT.md</a>.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="changelog.html"><span>Previous</span><strong>Changelog</strong></a>
+    <a class="docs-pager-next" href="support.html"><span>Next</span><strong>Support</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

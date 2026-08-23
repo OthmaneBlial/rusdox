@@ -6,11 +6,28 @@ default-run = "rusdox"
 license = "MIT"
 description = "Generate DOCX and PDF from YAML at Rust speed."
 repository = "https://github.com/OthmaneBlial/rusdox"
-homepage = "https://github.com/OthmaneBlial/rusdox"
-documentation = "https://github.com/OthmaneBlial/rusdox/tree/master/docs"
+homepage = "https://othmaneblial.github.io/rusdox/"
+documentation = "https://docs.rs/rusdox"
 readme = "README.md"
 keywords = ["docx", "pdf", "yaml", "ooxml", "documents"]
 categories = ["command-line-utilities", "parser-implementations", "encoding"]
+include = [
+  "/src/**",
+  "/Cargo.toml",
+  "/Cargo.lock",
+  "/README.md",
+  "/ROADMAP.md",
+  "/CHANGELOG.md",
+  "/LICENSE",
+  "/SECURITY.md",
+  "/docs/**",
+  "/tests/**",
+  "/examples/*.yaml",
+  "/examples/fragments/**",
+  "/examples/README.md",
+  "/assets/rusdox-mark.svg",
+  "/assets/signature-demo.svg",
+]
 
 [lib]
 name = "rusdox"

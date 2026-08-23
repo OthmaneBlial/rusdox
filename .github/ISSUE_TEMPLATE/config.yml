@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: RusDox documentation
-    url: https://github.com/OthmaneBlial/rusdox/tree/master/docs
+    url: https://othmaneblial.github.io/rusdox/docs.html
     about: Start with the docs before opening an issue.
-  - name: Support guide
-    url: https://github.com/OthmaneBlial/rusdox/blob/master/SUPPORT.md
-    about: See what details to include for bugs, styling issues, and API questions.
+  - name: Questions and support
+    url: https://github.com/OthmaneBlial/rusdox/discussions/categories/q-a
+    about: Ask usage and authoring questions in GitHub Discussions.
+  - name: Report a vulnerability privately
+    url: https://github.com/OthmaneBlial/rusdox/security/advisories/new
+    about: Do not disclose security-sensitive details in a public issue.

@@ -1,0 +1,458 @@
+# RusDox Roadmap
+
+> From a capable document engine to the most trustworthy way to generate an editable DOCX and a faithful PDF from one source.
+
+Last updated: 2026-08-23
+
+## The honest starting point
+
+RusDox already has a stronger technical foundation than its public adoption suggests:
+
+- a pure-Rust DOCX writer and PDF renderer;
+- YAML, JSON, and TOML document specs;
+- variables, includes, repeaters, named styles, metadata, visuals, and tables;
+- the ability to open and preserve existing DOCX packages through the Rust API;
+- `validate`, `watch`, and `bench` CLI workflows;
+- 169 test functions and a three-platform CI matrix;
+- real generated examples, a gallery, install scripts, and a live project site;
+- a measured 1,000-page dual-output benchmark.
+
+The problem is not a lack of code. The problem is that the public product journey currently breaks before most visitors can experience that code.
+
+Public snapshot on 2026-08-23:
+
+- 4 GitHub stars, 0 forks, and no open issues or pull requests;
+- no GitHub Release and therefore no downloadable installer assets;
+- no published `rusdox` crate on crates.io or docs.rs;
+- the primary install command points to a missing release asset;
+- `cargo add rusdox` is documented but cannot currently work;
+- the default branch is `main` while the CI badge, security policy, crate metadata, and issue links still reference `master`;
+- the live documentation is loaded client-side, which weakens indexing, direct linking, and no-JavaScript access;
+- a local `cargo package --no-verify` currently collects 164 files—24.5 MiB unpacked and 7.9 MiB compressed—including duplicated site files and generated DOCX/PDF artifacts instead of a deliberately small publish set;
+- the speed claim is visible, but there is no public compatibility/parity report proving how the DOCX and PDF behave across real viewers.
+
+That means a large launch today would amplify broken onboarding. Distribution and trust come first.
+
+## The category RusDox should own
+
+### Positioning
+
+**One spec → editable DOCX + faithful PDF + automated parity proof, at Rust speed, without an office runtime.**
+
+“Fast DOCX generation” is useful but crowded. “YAML to PDF” is also crowded. The unusual and defensible combination is:
+
+1. the DOCX remains editable by the recipient;
+2. the PDF is generated natively, without Word or LibreOffice;
+3. both outputs come from the same typed model;
+4. RusDox can prove that important content and layout survived in both;
+5. the whole pipeline is deterministic, local, scriptable, and CI-friendly.
+
+The primary audience is backend, platform, operations, finance, and developer-tooling teams that generate recurring business documents: invoices, proposals, compliance packs, reports, dashboards, and customer deliverables.
+
+### The memorable demo
+
+The flagship workflow should eventually be:
+
+```bash
+rusdox verify board-report.yaml
+```
+
+It should produce:
+
+```text
+generated/board-report.docx
+rendered/board-report.pdf
+reports/board-report-parity.html
+```
+
+The parity report should verify normalized text, headings, tables, images, page breaks, page count, and selected geometry. This is the feature people can understand, trust, share, and build CI around.
+
+### Product principles
+
+- **Trust before breadth.** A smaller supported surface with visible compatibility proof is better than nominal support for the entire OOXML specification.
+- **Two-minute first success.** A new visitor should install RusDox and generate an impressive document in under two minutes.
+- **Visual quality is a feature.** Rendering fidelity matters more to document users than a benchmark alone.
+- **Editable by default.** DOCX is not an intermediate artifact; it is one of the two first-class outputs.
+- **Local and deterministic.** No account, cloud service, office runtime, or hidden network dependency should be required.
+- **One model, explicit parity.** A feature is complete only when its DOCX behavior, PDF behavior, validation, docs, and tests are defined.
+- **Errors must teach.** Diagnostics should identify the file, YAML path, line/column when possible, cause, and likely fix.
+- **Stars are an outcome.** Activation, successful installs, real examples, repeat contributors, and downstream usage are the operating metrics.
+
+## Priority map
+
+| Priority | Outcome | User impact | Effort | Why now |
+|---|---|---:|---:|---|
+| P0 | Make every advertised install path real | Very high | Low | The current primary path ends in a missing release |
+| P0 | Fix `main`/`master` and public trust inconsistencies | High | Low | Broken badges and links damage confidence immediately |
+| P0 | Publish a lean crate, API docs, and first release | Very high | Medium | Unlocks Rust discovery and dependable distribution |
+| P0 | Define and test the DOCX/PDF parity contract | Very high | High | Turns the dual renderer into a credible differentiator |
+| P1 | Add Word-native template rendering | Very high | High | Solves a proven business-document workflow |
+| P1 | Add schema-driven authoring and precise diagnostics | High | Medium | Makes YAML pleasant in real editors and CI |
+| P1 | Ship a zero-install interactive demo | Very high | High | Converts curiosity into a visible result immediately |
+| P2 | Build a curated template and integration ecosystem | High | Medium | Creates reasons to return, contribute, and share |
+| P2 | Stabilize a v1 specification and compatibility policy | High | High | Enables production adoption |
+
+---
+
+## Milestone 0 — Repair the front door
+
+Target: 1–2 weeks  
+Release: `v0.1.0`  
+Goal: every public promise works on a clean machine.
+
+### Distribution
+
+- [ ] Create a real `v0.1.0` tag and GitHub Release using the existing Linux, macOS Intel, macOS Apple Silicon, and Windows build matrix.
+- [ ] Add SHA-256 checksums for every archive.
+- [ ] Add build provenance attestations and an SBOM to the release workflow.
+- [ ] Smoke-test `scripts/install.sh` and `scripts/install.ps1` against the published assets.
+- [ ] Publish the library and binary to crates.io.
+- [ ] Verify `cargo install rusdox --locked`, `cargo add rusdox`, and the generated docs.rs site from clean environments.
+- [ ] Test `cargo binstall rusdox` against actual release asset names; add package metadata only if the defaults do not resolve correctly.
+- [ ] Add an explicit Cargo `include` list so crates.io receives source, essential docs, and required examples—not the duplicated `site/` tree or generated binary documents.
+- [ ] Add `CHANGELOG.md` with release dates, user-facing changes, breaking changes, and migration notes.
+
+### Repository trust
+
+- [ ] Replace every stale `master` reference with `main`.
+- [ ] Fix the CI badge and confirm it reports the real workflow state.
+- [ ] Update `Cargo.toml` homepage/documentation URLs to the live site and docs.rs.
+- [ ] Enable GitHub Discussions with Announcements, Q&A, Ideas, and Show and tell.
+- [ ] Enable private vulnerability reporting, Dependabot alerts/security updates, and CodeQL default setup.
+- [ ] Route usage questions to Discussions and security reports to the private reporting channel.
+- [ ] Add `good first issue`, `help wanted`, `compatibility`, `template`, and `docs` labels.
+
+### README conversion
+
+- [ ] Put a verified “Install in 10 seconds” block before the long benchmark section.
+- [ ] Add a 20–30 second terminal/demo recording: install → initialize → edit one value → receive DOCX and PDF.
+- [ ] Show one YAML input beside large, readable previews of both real outputs.
+- [ ] Replace the generic “Foundation” badge with a version/stability statement tied to the release.
+- [ ] Add a concise “Why RusDox instead of X?” table covering DOCX editability, native PDF, office-runtime dependency, templates, and parity verification.
+- [ ] Link the live playground/site, crates.io, docs.rs, releases, roadmap, discussions, and gallery above the fold.
+- [ ] State unsupported features honestly and link to the compatibility matrix.
+
+### Documentation
+
+- [ ] Generate crawlable static HTML with a stable URL for every guide and example.
+- [ ] Ensure core documentation remains usable without JavaScript.
+- [ ] Add canonical metadata, social cards, sitemap, and searchable page titles.
+- [ ] Split “owner GitHub setup” instructions out of end-user documentation.
+- [ ] Add a troubleshooting page for fonts, asset paths, viewer differences, large documents, and install/PATH problems.
+
+#### Exit gate
+
+Milestone 0 is complete only when:
+
+- all README install commands succeed in CI or on disposable clean systems;
+- the four release archives, checksums, and attestations are downloadable;
+- crates.io and docs.rs show `v0.1.0`;
+- all public links and badges resolve;
+- the packaged crate is deliberately scoped and below the registry size limit;
+- a visitor can reach a real output in under two minutes.
+
+---
+
+## Milestone 1 — Make trust measurable
+
+Target: weeks 2–6  
+Release: `v0.2.0`  
+Theme: parity, compatibility, and quality.
+
+### Define the parity contract
+
+- [ ] Publish a feature matrix with four states: supported in DOCX, supported in PDF, parity-tested, and intentionally unsupported.
+- [ ] Introduce `rusdox verify <spec>`.
+- [ ] Generate an HTML parity report for every gallery example.
+- [ ] Compare normalized text, block order, table content, image count/alt text, page breaks, and document metadata.
+- [ ] Add optional rendered-page visual diffs with documented thresholds.
+- [ ] Make parity failures machine-readable through JSON and meaningful exit codes.
+- [ ] Upload parity reports and rendered diffs as CI artifacts.
+
+### Close current dual-output gaps
+
+The current PDF path uses PDF config settings and lays out body blocks, but it does not yet provide the same documented treatment of document page setup, headers, footers, and page numbering as the DOCX path.
+
+- [ ] Make page size, orientation, and margins come from the same document model in both outputs.
+- [ ] Render headers, footers, page numbers, and total-page fields in PDF.
+- [ ] Add explicit page and section break blocks.
+- [ ] Add hyperlinks and bookmarks in both outputs.
+- [ ] Add automatic table of contents/field support with a documented PDF behavior.
+- [ ] Improve long-table pagination, repeating headers, unsplittable rows, and overflow diagnostics.
+- [ ] Add merged cells, rich cell paragraphs, per-row properties, and nested tables where parity can be guaranteed.
+- [ ] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
+- [ ] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
+
+### Compatibility and regression lab
+
+- [ ] Maintain representative golden fixtures, including documents opened and modified from real DOCX packages.
+- [ ] Validate OOXML packages and assert relationships/content types, not only successful ZIP creation.
+- [ ] Open release fixtures in current Microsoft Word on Windows/macOS, LibreOffice, Apple Preview, and Adobe Acrobat where relevant.
+- [ ] Publish a dated compatibility scorecard instead of claiming universal compatibility.
+- [ ] Add rendered-page snapshots for every gallery example.
+- [ ] Add deterministic-output tests and document which metadata is intentionally variable.
+- [ ] Add fuzz targets and size/decompression limits for untrusted DOCX, YAML, XML, ZIP, image, and SVG inputs.
+- [ ] Test interrupted writes and confirm output files remain atomic and recoverable.
+
+### Reproducible performance
+
+- [ ] Replace the single-machine benchmark claim with a reproducible benchmark protocol.
+- [ ] Record CPU, OS, Rust version, input hash, output sizes, peak memory, and command flags.
+- [ ] Add small, medium, and 1,000-page benchmark tiers.
+- [ ] Track DOCX, PDF, dual-output, validation, and existing-DOCX open/save separately.
+- [ ] Run scheduled benchmark CI and flag material regressions without making noisy PR checks.
+- [ ] Publish benchmark history as data and charts, not a manually updated screenshot only.
+
+#### Exit gate
+
+- every gallery example has a green parity report;
+- core page controls behave consistently in DOCX and PDF;
+- compatibility claims link to dated viewer evidence;
+- benchmark results are independently reproducible;
+- untrusted input has documented resource limits and fuzz coverage.
+
+---
+
+## Milestone 2 — Build the “wow” workflow
+
+Target: weeks 6–12  
+Release: `v0.3.0`  
+Theme: Word-native templates, live feedback, and excellent authoring.
+
+### Word-native template rendering
+
+RusDox already opens existing DOCX packages and preserves untouched parts at the Rust layer. Turn that technical capability into a product workflow:
+
+```bash
+rusdox template inspect proposal.docx
+rusdox template render proposal.docx data.json
+rusdox template verify proposal.docx data.json
+```
+
+- [ ] Define a minimal, versioned placeholder syntax.
+- [ ] Support scalar replacements, nested values, loops, conditions, and reusable subtemplates.
+- [ ] Preserve designer-authored styles, sections, headers/footers, media, relationships, and untouched package parts.
+- [ ] Report template errors with part name, paragraph/table location, placeholder, and suggested fix.
+- [ ] Add safe handling for missing values and an explicit strict mode.
+- [ ] Generate the edited DOCX, native PDF, and parity report from one command.
+- [ ] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
+
+This is a higher-value differentiator than adding dozens of low-level OOXML builders with no end-user workflow.
+
+### Schema-first authoring
+
+- [ ] Add a version field to document specs and publish the compatibility policy.
+- [ ] Publish generated JSON Schema for YAML, JSON, and TOML authoring.
+- [ ] Add `rusdox schema` and `rusdox migrate` commands.
+- [ ] Provide autocomplete, hover documentation, enum suggestions, and inline diagnostics through a lightweight VS Code extension.
+- [ ] Add source spans so validation errors point to line and column.
+- [ ] Add declarative conditions, nested path access, filters, and escaping rules.
+- [ ] Keep expressions intentionally small and deterministic; do not invent a general-purpose programming language.
+
+### Zero-install playground
+
+- [ ] Run a feasibility spike for a WASM renderer with bundled, redistributable fonts.
+- [ ] If feasible, add a fully local browser playground: edit YAML, preview PDF, download DOCX/PDF, and load gallery templates.
+- [ ] If full browser rendering is not yet feasible, ship an interactive spec builder with pre-generated verified outputs and a transparent capability boundary.
+- [ ] Make every playground example reproducible with the CLI.
+- [ ] Add “Open this example” links from the README, gallery, docs, and parity reports.
+- [ ] Never upload user document content by default.
+
+### Developer feedback loop
+
+- [ ] Add `rusdox dev` as the polished successor to raw watch mode.
+- [ ] Open a local preview showing the latest PDF, validation issues, timings, and output paths.
+- [ ] Preserve the current successful output when a rebuild fails.
+- [ ] Debounce file changes and explain which input/config/asset triggered each rebuild.
+- [ ] Add `--open`, `--json`, and quiet CI-friendly modes.
+
+#### Exit gate
+
+- a non-Rust user can customize a Word-designed template from JSON;
+- a YAML author gets autocomplete and source-located errors;
+- the flagship demo works without cloning the repository;
+- one command produces the editable DOCX, faithful PDF, and parity evidence.
+
+---
+
+## Milestone 3 — Create an ecosystem, not a pile of examples
+
+Target: months 3–5  
+Release: `v0.4.0`  
+Theme: templates, integrations, and contribution loops.
+
+### Curated template registry
+
+- [ ] Define a small signed manifest format with license, author, preview, supported RusDox version, inputs, and output hashes.
+- [ ] Add `rusdox template search/list/add/update`.
+- [ ] Start curated: every template must have screenshots, sample data, tests, parity evidence, accessibility notes, and a clear license.
+- [ ] Add categories for invoices, proposals, reports, compliance, HR, education, and operations.
+- [ ] Generate a preview page automatically for template pull requests.
+- [ ] Feature a “template of the month” and credit contributors prominently.
+- [ ] Keep third-party templates outside the core crate so the engine remains lean.
+
+### GitHub-native automation
+
+- [ ] Ship a reusable GitHub Action that validates specs, renders outputs, and uploads parity reports.
+- [ ] Add examples for release notes, invoices, compliance evidence, and scheduled reporting workflows.
+- [ ] Support annotations that attach RusDox validation errors to pull-request lines.
+- [ ] Offer a pull-request visual-diff comment without uploading private documents to a third-party service.
+- [ ] Publish minimal Docker and OCI images only if real users need them; the native binary remains the default.
+
+### Integration surfaces
+
+- [ ] Stabilize a renderer boundary that can support Rust embedding, WASM, and a local stdin/stdout JSON protocol.
+- [ ] Add a tiny opt-in local HTTP service only after the core protocol is stable.
+- [ ] Provide official examples for calling the binary from Node, Python, Go, and CI without maintaining four premature native SDKs.
+- [ ] Evaluate a Node/WASM package based on demonstrated demand and browser feasibility.
+- [ ] Add Markdown/rich-text ingestion only after parity behavior is defined for each supported construct.
+
+### Contributor experience
+
+- [ ] Publish 10 genuinely small starter issues with fixtures and acceptance criteria.
+- [ ] Document the architecture from spec parsing through composition, DOCX packaging, PDF layout, validation, and CLI.
+- [ ] Add fixture-generation and visual-diff commands to the contributor workflow.
+- [ ] Recognize contributors in release notes and the site.
+- [ ] Use Discussions to collect real output examples and prioritize compatibility work.
+- [ ] Publish a short governance and maintainer policy before adding committers.
+
+#### Exit gate
+
+- external contributors can add a verified template without understanding OOXML internals;
+- another repository can use RusDox through an official GitHub Action;
+- the first integration protocol is stable and documented;
+- at least one release includes meaningful external contributions.
+
+---
+
+## Milestone 4 — Production contract
+
+Target: months 5–8  
+Release: `v1.0.0`  
+Theme: stability, international documents, accessibility, and long-term trust.
+
+### Stable contracts
+
+- [ ] Freeze and document spec version 1.
+- [ ] Publish SemVer guarantees for the Rust API, CLI, spec schema, template syntax, and output behavior.
+- [ ] Ship migration tooling for pre-1.0 specs.
+- [ ] Define a minimum supported Rust version and test it in CI.
+- [ ] Reach strong rustdoc coverage for the supported public API.
+- [ ] Publish a deprecation window and supported release policy.
+
+### Production quality
+
+- [ ] Complete the compatibility matrix for the supported v1 feature set.
+- [ ] Add load, memory, concurrency, and cancellation tests for batch generation.
+- [ ] Support configurable resource limits for hosted or multi-tenant use.
+- [ ] Complete the security review of ZIP/XML/image parsing and template expansion.
+- [ ] Provide reproducible builds and signed release artifacts.
+- [ ] Add a long-term benchmark dashboard with explicit regression budgets.
+
+### International and accessible output
+
+- [ ] Graduate RTL and CJK support from experimental only when parity fixtures pass.
+- [ ] Define font embedding, fallback, licensing, and substitution behavior.
+- [ ] Preserve meaningful image alt text and document language metadata.
+- [ ] Research tagged PDF and PDF/A requirements before advertising accessible or archival output.
+- [ ] Add accessibility checks to parity reports where the formats expose equivalent semantics.
+
+#### Exit gate
+
+`v1.0.0` is justified only when teams can upgrade with confidence, supported viewers behave predictably, the spec has a migration story, and security/performance limits are explicit.
+
+---
+
+## Growth loop after the product gates are green
+
+Do not run a large “please star this” campaign. Build a repeatable proof-and-sharing loop:
+
+1. **Show a surprising result.** A short clip turns readable YAML or a Word template into an editable DOCX, faithful PDF, and green parity report.
+2. **Make it instantly reproducible.** One verified install command and one small input file.
+3. **Publish the evidence.** Link the benchmark data, compatibility scorecard, and generated artifacts.
+4. **Give visitors a useful starting point.** A polished template or GitHub Action they can use in their own repository.
+5. **Invite a specific contribution.** Ask for a viewer fixture, template, language case, or integration—not generic “help wanted.”
+6. **Ship on a cadence.** Each release should have one clear story, a real demo, and a small set of excellent changes.
+
+Launch channels can include the Rust community, developer-tool communities, document-automation communities, Show HN, and relevant GitHub showcases, but only after the installation and parity gates pass. The message should be the technical result and reproducible proof, not the star count.
+
+### Metrics that predict durable adoption
+
+Track:
+
+- successful clean-machine installs by supported method;
+- median time from README arrival to first generated document;
+- playground example opens and completed downloads, without collecting document content;
+- crates.io downloads and downstream dependents;
+- GitHub Action usage in external repositories;
+- parity reports generated in CI;
+- template installs and template contributors;
+- issue response time, first-time contributors, and repeat contributors;
+- release adoption and upgrade lag;
+- stars and forks as lagging discovery signals.
+
+Do not add invasive analytics to a local document tool. Prefer public ecosystem signals, explicit opt-in feedback, and privacy-preserving aggregate site metrics if metrics are needed at all.
+
+## Explicitly not now
+
+These ideas would dilute the wedge before it is proven:
+
+- a cloud account system or hosted document storage;
+- a full collaborative WYSIWYG word processor;
+- AI-generated content as a core feature;
+- support for every Pandoc input/output format;
+- a plugin system before the core render/parity contracts are stable;
+- dozens of SDKs before the stdin/stdout or WASM boundary is proven;
+- comments and tracked changes before common report features and fidelity are solid;
+- a giant uncurated template marketplace;
+- benchmark marketing without reproducible data and visual-quality evidence.
+
+## Next 10 issues to open
+
+These are the best first concrete issues, in order:
+
+1. **Release v0.1.0 and smoke-test every advertised installer.**
+2. **Publish a lean crates.io package and verify docs.rs.**
+3. **Replace every `master` link with `main` and repair the CI badge.**
+4. **Generate static, linkable documentation pages.**
+5. **Define the DOCX/PDF parity matrix and report format.**
+6. **Make PDF honor document page setup, headers, footers, and numbering.**
+7. **Add hyperlinks, bookmarks, explicit breaks, and viewer fixtures.**
+8. **Generate JSON Schema and line/column validation diagnostics.**
+9. **Prototype `rusdox template inspect/render` on an existing DOCX.**
+10. **Prototype the local/WASM playground and document feasibility findings.**
+
+## Definition of success
+
+RusDox becomes genuinely interesting when a developer can say:
+
+> “I can give it one readable spec or designer-authored Word template, receive an editable Word file and a faithful PDF without Office installed, and prove in CI that both outputs contain what I expect.”
+
+If RusDox delivers that experience reliably, quickly, and visibly, stars have a reason to follow.
+
+## Public reference snapshot
+
+Current project state:
+
+- [RusDox repository](https://github.com/OthmaneBlial/rusdox)
+- [RusDox releases](https://github.com/OthmaneBlial/rusdox/releases)
+- [RusDox live site](https://othmaneblial.github.io/rusdox/)
+- [crates.io package URL](https://crates.io/crates/rusdox)
+- [docs.rs package URL](https://docs.rs/rusdox)
+
+Relevant product comparisons:
+
+- [docx-rs](https://github.com/bokuweb/docx-rs)
+- [Typst](https://github.com/typst/typst)
+- [docx for TypeScript](https://github.com/dolanmiu/docx)
+- [python-docx](https://github.com/python-openxml/python-docx)
+- [Docxtemplater](https://github.com/open-xml-templating/docxtemplater)
+- [python-docx-template](https://github.com/elapouya/python-docx-template)
+- [Pandoc](https://github.com/jgm/pandoc)
+
+Distribution and community guidance:
+
+- [Publishing on crates.io](https://doc.rust-lang.org/cargo/reference/publishing.html)
+- [cargo-binstall support conventions](https://github.com/cargo-bins/cargo-binstall/blob/main/SUPPORT.md)
+- [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)
+- [GitHub Discussions quickstart](https://docs.github.com/en/discussions/quickstart)

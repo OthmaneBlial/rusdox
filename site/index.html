@@ -6,15 +6,18 @@
     <title>RusDox | Large DOCX and PDF generation at Rust speed</title>
     <meta
       name="description"
-      content="RusDox is a pure Rust document engine that can generate 1000-page DOCX and PDF files in under a second. Explore the benchmark, use cases, examples, and docs."
+      content="Turn one YAML spec into an editable DOCX and a native PDF with RusDox, the local, deterministic document engine written in Rust."
     />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/" />
     <meta property="og:title" content="RusDox | Large DOCX and PDF generation at Rust speed" />
     <meta
       property="og:description"
       content="Generate large DOCX and PDF files programmatically at Rust speed, without Word or LibreOffice."
     />
-    <meta property="og:image" content="assets/social-preview-rusdox.png" />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/" />
     <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#b85c30" />
     <link rel="icon" href="assets/rusdox-mark.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,8 +27,23 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "RusDox",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows",
+        "description": "Generate editable DOCX and native PDF files from one structured specification.",
+        "url": "https://othmaneblial.github.io/rusdox/",
+        "codeRepository": "https://github.com/OthmaneBlial/rusdox",
+        "softwareVersion": "0.1.0",
+        "license": "https://opensource.org/license/mit"
+      }
+    </script>
   </head>
   <body data-page="home">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="site-shell">
       <header class="site-header">
         <a class="brand" href="index.html" aria-label="RusDox home">
@@ -39,22 +57,23 @@
           <a class="is-active" href="index.html">Overview</a>
           <a href="docs.html">Docs</a>
           <a href="#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
         </nav>
       </header>
 
-      <main>
+      <main id="main-content">
         <section class="hero-block">
           <div class="hero-copy">
             <p class="eyebrow">Programmatic document generation at Rust speed</p>
-            <h1>Generate 1000-page DOCX and PDF files in under a second.</h1>
+            <h1>One spec. An editable DOCX. A native PDF.</h1>
             <p class="lede">
               RusDox is a pure Rust engine for creating Word and PDF files programmatically.
               It turns YAML into large reports, dashboards, proposals, invoices, and internal
               document packs without Microsoft Word, LibreOffice, or slow office conversions.
             </p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#benchmark">See the benchmark proof</a>
-              <a class="button button-secondary" href="#examples">Browse example outputs</a>
+              <a class="button button-primary" href="docs/getting-started.html">Install and generate</a>
+              <a class="button button-secondary" href="#examples">Inspect real outputs</a>
             </div>
           </div>
 
@@ -95,6 +114,29 @@
               </ul>
             </article>
           </aside>
+        </section>
+
+        <section class="quick-install panel" aria-labelledby="quick-install-title">
+          <div>
+            <p class="eyebrow">Install in 10 seconds</p>
+            <h2 id="quick-install-title">From shell to first document without an office runtime.</h2>
+          </div>
+          <div class="quick-install-command">
+            <code>curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh</code>
+            <button
+              class="button button-secondary button-compact"
+              type="button"
+              data-copy="curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh"
+            >
+              Copy
+            </button>
+          </div>
+          <div class="quick-install-links" aria-label="Alternative installation paths">
+            <a href="https://crates.io/crates/rusdox">crates.io</a>
+            <a href="https://docs.rs/rusdox">docs.rs</a>
+            <a href="https://github.com/OthmaneBlial/rusdox/releases">Release assets</a>
+            <a href="docs/compatibility.html">Compatibility</a>
+          </div>
         </section>
 
         <section class="section">
@@ -267,6 +309,7 @@
         <div class="footer-links">
           <a href="docs.html">Docs</a>
           <a href="#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
         </div>
       </footer>
     </div>

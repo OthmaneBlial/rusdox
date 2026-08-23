@@ -10,7 +10,8 @@ If you are new, read these pages in order:
 4. [CLI Guide](cli.md)
 5. [Gallery](gallery.md)
 6. [Rust API](rust-api.md)
-7. [GitHub Setup](github-setup.md)
+7. [Compatibility Matrix](compatibility.md)
+8. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -46,7 +47,8 @@ If you are a developer and want full power:
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
 - how to use the Rust layer for advanced cases
-- how to present the repository well on GitHub
+- exactly which DOCX/PDF features are supported today
+- how to diagnose installation, font, asset, table, and viewer problems
 
 ## Core Idea
 

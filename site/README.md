@@ -1,12 +1,22 @@
 # RusDox
 
 ![Rust](https://img.shields.io/badge/Rust-2021-f0742e?style=flat-square)
-![Tests](https://img.shields.io/github/actions/workflow/status/OthmaneBlial/rusdox/rust.yml?branch=master&style=flat-square&label=tests)
+![Tests](https://img.shields.io/github/actions/workflow/status/OthmaneBlial/rusdox/rust.yml?branch=main&style=flat-square&label=tests)
 ![License](https://img.shields.io/github/license/OthmaneBlial/rusdox?style=flat-square)
 ![OOXML](https://img.shields.io/badge/OOXML-.docx-2563eb?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Foundation-059669?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.0-b85c30?style=flat-square)
 
-Generate massive DOCX and PDF files at Rust speed.
+**One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
+
+[Website](https://othmaneblial.github.io/rusdox/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+
+![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
+
+## See the full workflow in 24 seconds
+
+![Animated RusDox workflow from checksum-verified install to YAML editing and real DOCX/PDF output](assets/quick-demo.svg)
+
+The final frame keeps the YAML input beside both outputs. Inspect the real files: [YAML source](examples/product_launch_brief.yaml), [editable DOCX](site/generated/product-launch-brief.docx), and [native PDF](site/rendered/product-launch-brief.pdf).
 
 RusDox is not just another YAML-to-document helper. It is a pure Rust document engine built for generating `.docx` and `.pdf` files programmatically, fast enough for serious automation.
 
@@ -17,7 +27,46 @@ If you have ever tried to create Word or PDF files in code, you already know the
 - poor control over layout
 - painful scaling when documents get large
 
-RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. The latest 1000-page stress run renders both DOCX and PDF in `679.86 ms` in release mode.
+RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. The latest recorded 1,000-page stress run renders both DOCX and PDF in `679.86 ms` in release mode. See the [benchmark methodology and limitations](#benchmark-proof) before comparing it with another system.
+
+## Install in 10 seconds
+
+macOS or Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.ps1 | iex
+```
+
+Rust users can also install from crates.io:
+
+```bash
+cargo install rusdox --locked
+# or, when cargo-binstall is available
+cargo binstall rusdox
+```
+
+Release installers verify the archive against the published `SHA256SUMS` file before installing it.
+
+Create and render the first document:
+
+```bash
+mkdir my-rusdox-docs && cd my-rusdox-docs
+rusdox init-doc mydoc.yaml
+rusdox mydoc.yaml
+```
+
+Outputs:
+
+- `generated/mydoc.docx` — editable Word document
+- `rendered/mydoc.pdf` — native PDF preview
+
+See [Getting started](docs/getting-started.md) for the complete two-minute walkthrough.
 
 ## Why It Lands
 
@@ -37,6 +86,19 @@ RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Th
 - Client-facing automation: proposals, invoices, onboarding packs, and launch briefs
 - Internal document infrastructure: batch exports, meeting notes, project briefs, and template-driven pipelines
 
+## Why RusDox instead of another pipeline?
+
+| Capability | RusDox | Office conversion pipeline | DOCX-only library | PDF typesetter |
+|---|:---:|:---:|:---:|:---:|
+| Editable DOCX output | Yes | Yes | Yes | Usually no |
+| Native PDF output | Yes | No | No | Yes |
+| Word/LibreOffice runtime required | No | Yes | No | No |
+| Human-readable document spec | Yes | Varies | Code-first | Varies |
+| Same typed model for both outputs | Yes | No | No | No |
+| Automated DOCX/PDF parity report | [Planned for v0.2](ROADMAP.md#milestone-1--make-trust-measurable) | No | No | No |
+
+RusDox does not claim complete OOXML coverage. Check the [compatibility matrix](docs/compatibility.md) for supported, partial, and intentionally unsupported behavior.
+
 ## Benchmark Proof
 
 ![RusDox stress benchmark](assets/benchmark-stress-1000-pages.svg)
@@ -51,13 +113,7 @@ Latest 1000-page YAML stress run:
 
 That is the real value proposition: RusDox is for generating very large Word and PDF files programmatically without the usual office stack overhead.
 
-## First Demo
-
-Install the CLI:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh
-```
+## First document
 
 Create a starter doc:
 
@@ -179,7 +235,8 @@ Start here:
 - [docs/cli.md](docs/cli.md)
 - [docs/gallery.md](docs/gallery.md)
 - [docs/rust-api.md](docs/rust-api.md)
-- [docs/github-setup.md](docs/github-setup.md)
+- [docs/compatibility.md](docs/compatibility.md)
+- [docs/troubleshooting.md](docs/troubleshooting.md)
 
 ## Configuration
 
@@ -242,6 +299,8 @@ If you want to contribute or report something:
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - [SECURITY.md](SECURITY.md)
 - [SUPPORT.md](SUPPORT.md)
+- [GitHub Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+- [ROADMAP.md](ROADMAP.md)
 
 ## Status
 
@@ -256,7 +315,7 @@ The current foundation focuses on fast, typed support for:
 - config-driven composition
 - YAML/JSON/TOML document specs
 
-Deferred areas include comments, tracked changes, richer metadata, and broader table-style coverage.
+Current limitations are documented rather than hidden. High-level specs do not yet expose hyperlinks, bookmarks, footnotes, comments, tracked changes, automatic tables of contents, merged cells, or Word-native placeholder templates. PDF currently uses its own configured page geometry and does not yet mirror DOCX headers, footers, or page-number fields. Follow the [compatibility matrix](docs/compatibility.md) and [roadmap](ROADMAP.md) for the exact contract and planned parity work.
 
 ## Development
 

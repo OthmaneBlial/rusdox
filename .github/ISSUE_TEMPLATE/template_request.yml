@@ -29,7 +29,9 @@ body:
     id: sample
     attributes:
       label: Sample content
-      description: Any sample wording or data that would make the template easier to build.
+      description: Add a compact, sanitized example of the intended input and output. Do not attach private business documents.
+    validations:
+      required: true
   - type: textarea
     id: value
     attributes:

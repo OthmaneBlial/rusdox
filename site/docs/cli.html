@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CLI reference | RusDox Documentation</title>
+    <meta name="description" content="Render, validate, watch, benchmark, initialize, and configure documents." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/cli.html" />
+    <meta property="og:title" content="CLI reference | RusDox" />
+    <meta property="og:description" content="Render, validate, watch, benchmark, initialize, and configure documents." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/cli.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox CLI reference","description":"Render, validate, watch, benchmark, initialize, and configure documents.","url":"https://othmaneblial.github.io/rusdox/docs/cli.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Reference</p>
+            <h1>CLI reference</h1>
+            <p class="lede">Render, validate, watch, benchmark, initialize, and configure documents.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/cli.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#watch-mode">Watch Mode</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox renders document specs into <code>.docx</code> and <code>.pdf</code>, validates them before render, can rebuild while you edit, and can benchmark the full pipeline.</p>
+<h2 id="most-common-commands">Most Common Commands</h2>
+<p>Render one document:</p>
+<pre><code class="language-bash">rusdox mydoc.yaml</code></pre>
+<p>Render every spec in a folder:</p>
+<pre><code class="language-bash">rusdox examples</code></pre>
+<p>Create a starter YAML document:</p>
+<pre><code class="language-bash">rusdox init-doc mydoc.yaml</code></pre>
+<p>Validate a file before render:</p>
+<pre><code class="language-bash">rusdox validate mydoc.yaml</code></pre>
+<p>Watch a file and rebuild on change:</p>
+<pre><code class="language-bash">rusdox watch mydoc.yaml</code></pre>
+<p>Benchmark a spec:</p>
+<pre><code class="language-bash">rusdox bench mydoc.yaml --iterations 5 --warmup 1</code></pre>
+<h2 id="validation">Validation</h2>
+<p>Check one file:</p>
+<pre><code class="language-bash">rusdox validate mydoc.yaml</code></pre>
+<p>Check every spec in a folder and emit JSON for CI:</p>
+<pre><code class="language-bash">rusdox validate examples --format json</code></pre>
+<p>Validation catches semantic issues before render, including invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets.</p>
+<p>Render commands also run the same semantic validation before they write output.</p>
+<h2 id="watch-mode">Watch Mode</h2>
+<p>Watch one file with the default poller:</p>
+<pre><code class="language-bash">rusdox watch mydoc.yaml</code></pre>
+<p>Watch a file with faster polling and DOCX-only output:</p>
+<pre><code class="language-bash">rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250</code></pre>
+<p>Watch a whole folder and keep PDF generation enabled:</p>
+<pre><code class="language-bash">rusdox watch examples --with-pdf</code></pre>
+<p>Use <code>--max-builds 2</code> or another small number when you want the watcher to stop automatically, which is useful for tests and scripted workflows.</p>
+<p>RusDox watches the spec input plus the active config path. Without <code>--config</code>, it tracks <code>./rusdox.toml</code> and the user config fallback automatically.</p>
+<h2 id="benchmarking">Benchmarking</h2>
+<p>Benchmark one spec:</p>
+<pre><code class="language-bash">rusdox bench mydoc.yaml --iterations 5 --warmup 1</code></pre>
+<p>Benchmark a folder and emit machine-readable output:</p>
+<pre><code class="language-bash">rusdox bench examples --format json</code></pre>
+<p>Keep the generated artifacts instead of using a temporary output workspace:</p>
+<pre><code class="language-bash">rusdox bench mydoc.yaml --keep-output</code></pre>
+<p>Bench reports parse, validation, compose, DOCX write, PDF render, total runtime, and output byte sizes.</p>
+<h2 id="output-control">Output Control</h2>
+<p>Write DOCX only:</p>
+<pre><code class="language-bash">rusdox mydoc.yaml --docx-only</code></pre>
+<p>Force PDF generation even if config disables it:</p>
+<pre><code class="language-bash">rusdox mydoc.yaml --with-pdf</code></pre>
+<p>Write a single input file to an explicit DOCX path:</p>
+<pre><code class="language-bash">rusdox mydoc.yaml --output ./out/custom-name.docx</code></pre>
+<h2 id="config-commands">Config Commands</h2>
+<p>Create a config:</p>
+<pre><code class="language-bash">rusdox config init --template</code></pre>
+<p>Launch the simple wizard:</p>
+<pre><code class="language-bash">rusdox config wizard --level basic</code></pre>
+<p>Launch the full wizard:</p>
+<pre><code class="language-bash">rusdox config wizard --level advanced</code></pre>
+<p>Print the active user config path:</p>
+<pre><code class="language-bash">rusdox config path</code></pre>
+<p>Print the effective config:</p>
+<pre><code class="language-bash">rusdox config show</code></pre>
+<h2 id="local-project-config">Local Project Config</h2>
+<p>Create a local override:</p>
+<pre><code class="language-bash">rusdox config wizard --path ./rusdox.toml --level basic</code></pre>
+<p>That file overrides <code>~/rusdox/config.toml</code> for the current project.</p>
+<h2 id="other-supported-spec-formats">Other Supported Spec Formats</h2>
+<p>YAML is the recommended format, but these also work:</p>
+<ul><li><code>.yml</code></li><li><code>.json</code></li><li><code>.toml</code></li></ul>
+<h2 id="advanced-script-mode">Advanced Script Mode</h2>
+<p>RusDox also supports a <code>.rs</code> entrypoint for advanced workflows:</p>
+<pre><code class="language-bash">rusdox init-script mydoc.rs
+rusdox mydoc.rs</code></pre>
+<p>This is useful when you need loops, conditional logic, API calls, or generated content that would be awkward in YAML.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="configuration.html"><span>Previous</span><strong>Configuration</strong></a>
+    <a class="docs-pager-next" href="rust-api.html"><span>Next</span><strong>Rust API</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

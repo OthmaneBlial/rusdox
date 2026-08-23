@@ -10,6 +10,10 @@ Before opening an issue, check:
 - [docs/yaml-guide.md](docs/yaml-guide.md)
 - [docs/configuration.md](docs/configuration.md)
 - [examples/README.md](examples/README.md)
+- [docs/compatibility.md](docs/compatibility.md)
+- [docs/troubleshooting.md](docs/troubleshooting.md)
+
+For usage and authoring questions, start a thread in [GitHub Discussions Q&A](https://github.com/OthmaneBlial/rusdox/discussions/categories/q-a). Keep Issues for reproducible bugs and scoped feature work.
 
 ## Use Issues For
 

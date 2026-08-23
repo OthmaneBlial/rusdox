@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Examples guide | RusDox Documentation</title>
+    <meta name="description" content="Understand every bundled document fixture and how to render it." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/examples.html" />
+    <meta property="og:title" content="Examples guide | RusDox" />
+    <meta property="og:description" content="Understand every bundled document fixture and how to render it." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/examples.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Examples guide","description":"Understand every bundled document fixture and how to render it.","url":"https://othmaneblial.github.io/rusdox/docs/examples.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Examples</p>
+            <h1>Examples guide</h1>
+            <p class="lede">Understand every bundled document fixture and how to render it.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/examples/README.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a class="is-active" aria-current="page" href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            
+            <div class="docs-content prose"><p><code>examples/</code> is now a folder of document spec files, not Rust programs.</p>
+<p>For the full user docs, start with <a href="../docs.html">../docs/README.md</a>.</p>
+<p>You can also browse visual previews in <a href="gallery.html">../docs/gallery.md</a>.</p>
+<p>Each example renders to:</p>
+<ul><li><code>.docx</code> files in <code>generated/</code></li><li><code>.pdf</code> previews in <code>rendered/</code></li></ul>
+<p>All examples inherit styling from config. The easiest way to tweak it is:</p>
+<pre><code class="language-bash">cargo run -- config wizard --level basic</code></pre>
+<p>That updates the user config at <code>~/rusdox/config.toml</code>. If you want this repo only to use a local override, run:</p>
+<pre><code class="language-bash">cargo run -- config wizard --path ./rusdox.toml --level basic</code></pre>
+<p>Local <code>./rusdox.toml</code> overrides the user config.</p>
+<p>Render one example:</p>
+<pre><code class="language-bash">cargo run -- examples/board_report.yaml</code></pre>
+<p>Render every example in the folder:</p>
+<pre><code class="language-bash">cargo run -- examples</code></pre>
+<p>Create your own starter document file:</p>
+<pre><code class="language-bash">cargo run -- init-doc mydoc.yaml</code></pre>
+<p>Example files:</p>
+<ul><li><code>board_report.yaml</code></li><li><code>client_proposal.yaml</code></li><li><code>configured_studio.yaml</code></li><li><code>executive_dashboard.yaml</code></li><li><code>formatting_showcase.yaml</code></li><li><code>hello_world.yaml</code></li><li><code>invoice.yaml</code></li><li><code>meeting_notes.yaml</code></li><li><code>named_styles_showcase.yaml</code></li><li><code>product_launch_brief.yaml</code></li><li><code>project_brief.yaml</code></li><li><code>table_report.yaml</code></li><li><code>talent_profile.yaml</code></li><li><code>visual_assets_showcase.yaml</code></li><li><code>yaml_composition_showcase.yaml</code></li></ul>
+<p>Showcase examples:</p>
+<ul><li><code>executive_dashboard.yaml</code>: multi-section KPI summary with shaded metric cards and status tables</li><li><code>board_report.yaml</code>: two-page leadership report using a cover page and page break</li><li><code>client_proposal.yaml</code>: styled proposal with phases, pricing, and delivery plan</li><li><code>product_launch_brief.yaml</code>: launch narrative, milestones, readiness checks, and metrics</li><li><code>talent_profile.yaml</code>: polished resume/profile style document with experience and skills sections</li><li><code>named_styles_showcase.yaml</code>: reusable paragraph, run, and table styles with inheritance and stable style ids</li><li><code>visual_assets_showcase.yaml</code>: focused regression example for logos, raster images, signatures, and SVG chart assets</li><li><code>yaml_composition_showcase.yaml</code>: variables, fragment includes, repeat blocks, and first-class document metadata in one example</li></ul>
+<p>Benchmark note:</p>
+<ul><li>The generated YAML stress spec lives at <code>examples/stress/stress_1000_pages.yaml</code></li><li>Regenerate it with <code>./scripts/generate_stress_yaml.sh</code></li><li>Run the full stress flow with <code>./scripts/run_stress_yaml.sh</code></li></ul></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="gallery.html"><span>Previous</span><strong>Template gallery</strong></a>
+    <a class="docs-pager-next" href="roadmap.html"><span>Next</span><strong>Roadmap</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

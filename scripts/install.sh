@@ -3,6 +3,7 @@ set -eu
 
 REPO="${RUSDOX_REPO:-OthmaneBlial/rusdox}"
 VERSION="${RUSDOX_VERSION:-latest}"
+DOWNLOAD_BASE="${RUSDOX_DOWNLOAD_BASE:-https://github.com/$REPO/releases}"
 
 if [ -n "${RUSDOX_INSTALL_DIR:-}" ]; then
   INSTALL_DIR="$RUSDOX_INSTALL_DIR"
@@ -53,10 +54,12 @@ TARGET="$ARCH_TARGET-$OS_TARGET"
 ASSET="rusdox-$TARGET.tar.gz"
 
 if [ "$VERSION" = "latest" ]; then
-  URL="https://github.com/$REPO/releases/latest/download/$ASSET"
+  RELEASE_BASE="$DOWNLOAD_BASE/latest/download"
 else
-  URL="https://github.com/$REPO/releases/download/$VERSION/$ASSET"
+  RELEASE_BASE="$DOWNLOAD_BASE/download/$VERSION"
 fi
+URL="$RELEASE_BASE/$ASSET"
+CHECKSUMS_URL="$RELEASE_BASE/SHA256SUMS"
 
 TMP_DIR="$(mktemp -d)"
 cleanup() {
@@ -65,16 +68,41 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 ARCHIVE_PATH="$TMP_DIR/$ASSET"
+CHECKSUMS_PATH="$TMP_DIR/SHA256SUMS"
 
 echo "Downloading $URL"
 if command -v curl >/dev/null 2>&1; then
   curl -fsSL "$URL" -o "$ARCHIVE_PATH"
+  curl -fsSL "$CHECKSUMS_URL" -o "$CHECKSUMS_PATH"
 elif command -v wget >/dev/null 2>&1; then
   wget -qO "$ARCHIVE_PATH" "$URL"
+  wget -qO "$CHECKSUMS_PATH" "$CHECKSUMS_URL"
 else
   echo "Need curl or wget to download release binaries."
   exit 1
 fi
+
+EXPECTED_SHA256="$(awk -v asset="$ASSET" '$2 == asset || $2 == "*" asset { print $1; exit }' "$CHECKSUMS_PATH")"
+if [ -z "$EXPECTED_SHA256" ]; then
+  echo "Checksum for $ASSET was not found in SHA256SUMS."
+  exit 1
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL_SHA256="$(sha256sum "$ARCHIVE_PATH" | awk '{print $1}')"
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL_SHA256="$(shasum -a 256 "$ARCHIVE_PATH" | awk '{print $1}')"
+else
+  echo "Need sha256sum or shasum to verify the release archive."
+  exit 1
+fi
+
+if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+  echo "Checksum verification failed for $ASSET."
+  exit 1
+fi
+
+echo "Verified SHA-256 for $ASSET"
 
 tar -xzf "$ARCHIVE_PATH" -C "$TMP_DIR"
 

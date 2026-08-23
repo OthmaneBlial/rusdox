@@ -1,8 +1,13 @@
 param(
     [string]$Repo = "OthmaneBlial/rusdox",
     [string]$Version = "latest",
-    [string]$InstallDir = "$env:LOCALAPPDATA\Rusdox\bin"
+    [string]$InstallDir = "$env:LOCALAPPDATA\Rusdox\bin",
+    [string]$DownloadBase = ""
 )
+
+if ([string]::IsNullOrWhiteSpace($DownloadBase)) {
+    $DownloadBase = "https://github.com/$Repo/releases"
+}
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
 switch ($arch) {
@@ -12,18 +17,36 @@ switch ($arch) {
 
 $asset = "rusdox-$target.zip"
 if ($Version -eq "latest") {
-    $url = "https://github.com/$Repo/releases/latest/download/$asset"
+    $releaseBase = "$DownloadBase/latest/download"
 } else {
-    $url = "https://github.com/$Repo/releases/download/$Version/$asset"
+    $releaseBase = "$DownloadBase/download/$Version"
 }
+$url = "$releaseBase/$asset"
+$checksumsUrl = "$releaseBase/SHA256SUMS"
 
 $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("rusdox-install-" + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
 try {
     $archivePath = Join-Path $tempDir $asset
+    $checksumsPath = Join-Path $tempDir "SHA256SUMS"
     Write-Host "Downloading $url"
     Invoke-WebRequest -Uri $url -OutFile $archivePath
+    Invoke-WebRequest -Uri $checksumsUrl -OutFile $checksumsPath
+
+    $assetPattern = [regex]::Escape($asset)
+    $checksumLine = Get-Content $checksumsPath | Where-Object {
+        $_ -match "^([A-Fa-f0-9]{64})\s+\*?$assetPattern$"
+    } | Select-Object -First 1
+    if (-not $checksumLine) {
+        throw "Checksum for $asset was not found in SHA256SUMS."
+    }
+    $expectedHash = ($checksumLine -split '\s+')[0].ToUpperInvariant()
+    $actualHash = (Get-FileHash -Path $archivePath -Algorithm SHA256).Hash.ToUpperInvariant()
+    if ($actualHash -ne $expectedHash) {
+        throw "Checksum verification failed for $asset."
+    }
+    Write-Host "Verified SHA-256 for $asset"
 
     Expand-Archive -Path $archivePath -DestinationPath $tempDir -Force
 

@@ -326,11 +326,11 @@ where
                 }
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() {
-                    kind = attribute_value(&start, b"val")
-                        .and_then(|value| ParagraphListKind::from_number_format(&value));
-                }
+            Event::Empty(start)
+                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() =>
+            {
+                kind = attribute_value(&start, b"val")
+                    .and_then(|value| ParagraphListKind::from_number_format(&value));
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"abstractNum" => {
                 break;
@@ -367,11 +367,11 @@ where
                 }
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() {
-                    kind = attribute_value(&start, b"val")
-                        .and_then(|value| ParagraphListKind::from_number_format(&value));
-                }
+            Event::Empty(start)
+                if local_name(start.name().as_ref()) == b"numFmt" && kind.is_none() =>
+            {
+                kind = attribute_value(&start, b"val")
+                    .and_then(|value| ParagraphListKind::from_number_format(&value));
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"lvl" => {
                 break;
@@ -406,11 +406,8 @@ where
                 }
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"abstractNumId" {
-                    abstract_id =
-                        attribute_value(&start, b"val").and_then(|value| value.parse().ok());
-                }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"abstractNumId" => {
+                abstract_id = attribute_value(&start, b"val").and_then(|value| value.parse().ok());
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"num" => {
                 break;
@@ -697,10 +694,8 @@ where
                 }
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"r" {
-                    runs.push(Run::new());
-                }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"r" => {
+                runs.push(Run::new());
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"p" => {
                 break;
@@ -1343,10 +1338,8 @@ where
                 b"tc" => cells.push(parse_table_cell(reader, numbering)?),
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"trPr" {
-                    properties = TableRowProperties::default();
-                }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"trPr" => {
+                properties = TableRowProperties::default();
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"tr" => {
                 break;
@@ -1426,10 +1419,8 @@ where
                 }
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"p" {
-                    paragraphs.push(Paragraph::new());
-                }
+            Event::Empty(start) if local_name(start.name().as_ref()) == b"p" => {
+                paragraphs.push(Paragraph::new());
             }
             Event::End(end) if local_name(end.name().as_ref()) == b"tc" => {
                 break;
@@ -3081,11 +3072,7 @@ where
                 b"r" => text.push_str(&parse_header_footer_run(reader, &mut field_state)?),
                 _ => skip_current_element(reader)?,
             },
-            Event::Empty(start) => {
-                if local_name(start.name().as_ref()) == b"r" {
-                    // Ignore empty runs.
-                }
-            }
+            Event::Empty(_) => {}
             Event::End(end) if local_name(end.name().as_ref()) == b"p" => break,
             Event::Eof => {
                 return Err(DocxError::parse(

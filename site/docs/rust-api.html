@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rust API | RusDox Documentation</title>
+    <meta name="description" content="Choose between DocumentSpec, Studio, and the low-level typed document model." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/rust-api.html" />
+    <meta property="og:title" content="Rust API | RusDox" />
+    <meta property="og:description" content="Choose between DocumentSpec, Studio, and the low-level typed document model." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/rust-api.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Rust API","description":"Choose between DocumentSpec, Studio, and the low-level typed document model.","url":"https://othmaneblial.github.io/rusdox/docs/rust-api.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Reference</p>
+            <h1>Rust API</h1>
+            <p class="lede">Choose between DocumentSpec, Studio, and the low-level typed document model.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/rust-api.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a class="is-active" aria-current="page" href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#choose-the-right-layer">Choose The Right Layer</a></li><li class="toc-level-2"><a href="#install">Install</a></li><li class="toc-level-2"><a href="#config">Config</a></li><li class="toc-level-2"><a href="#high-level-rust-compose-from-a-spec">High-Level Rust: Compose From A Spec</a></li><li class="toc-level-2"><a href="#hybrid-rust-start-with-a-spec-then-add-custom-pieces">Hybrid Rust: Start With A Spec, Then Add Custom Pieces</a></li><li class="toc-level-2"><a href="#reusable-named-styles">Reusable Named Styles</a></li><li class="toc-level-2"><a href="#first-class-metadata">First-Class Metadata</a></li><li class="toc-level-2"><a href="#config-driven-builders-with-studio">Config-Driven Builders With Studio</a></li><li class="toc-level-2"><a href="#low-level-rust-build-the-document-yourself">Low-Level Rust: Build The Document Yourself</a></li><li class="toc-level-2"><a href="#open-existing-docx-files">Open Existing DOCX Files</a></li><li class="toc-level-2"><a href="#use-yaml-specs-from-rust">Use YAML Specs From Rust</a></li><li class="toc-level-2"><a href="#script-mode">Script Mode</a></li><li class="toc-level-2"><a href="#practical-recommendation">Practical Recommendation</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox is YAML-first for everyday authoring, but the Rust API stays available for advanced and programmable workflows.</p>
+<p>Use Rust when you need:</p>
+<ul><li>document content generated from live data</li><li>loops, conditions, or reusable functions</li><li>integration inside a Rust service or CLI</li><li>direct control over document metadata and custom properties</li><li>lower-level formatting beyond the YAML surface</li></ul>
+<h2 id="choose-the-right-layer">Choose The Right Layer</h2>
+<p>For most users:</p>
+<ul><li>write YAML</li><li>style with config</li><li>run <code>rusdox mydoc.yaml</code></li></ul>
+<p>For advanced users:</p>
+<ul><li>use <code>spec::DocumentSpec</code> from Rust when you still want a data-shaped document model</li><li>use <code>studio::Studio</code> helpers when you want config-driven paragraphs and tables</li><li>use <code>Document</code>, <code>Paragraph</code>, <code>Run</code>, <code>Table</code>, and <code>Visual</code> directly when you need full control</li></ul>
+<h2 id="install">Install</h2>
+<pre><code class="language-bash">cargo add rusdox</code></pre>
+<h2 id="config">Config</h2>
+<p>Most users should set config through the CLI wizard:</p>
+<pre><code class="language-bash">rusdox config path
+rusdox config wizard --level basic
+rusdox config wizard --level advanced</code></pre>
+<p>The installer creates <code>~/rusdox/config.toml</code> if it does not exist yet.</p>
+<p>For per-project overrides:</p>
+<pre><code class="language-bash">rusdox config wizard --path ./rusdox.toml --level basic</code></pre>
+<p>Config load order is:</p>
+<ol><li><code>./rusdox.toml</code></li><li><code>~/rusdox/config.toml</code></li><li>built-in defaults</li></ol>
+<p><code>Studio::from_default_file_or_default()</code> follows that same order.</p>
+<h2 id="high-level-rust-compose-from-a-spec">High-Level Rust: Compose From A Spec</h2>
+<p>If you like the YAML model but want to generate it programmatically, use <code>DocumentSpec</code>.</p>
+<pre><code class="language-rust">use rusdox::spec::{body, bullets, section, title, DocumentSpec};
+use rusdox::studio::Studio;
+
+fn main() -&gt; rusdox::Result&lt;()&gt; {
+    let studio = Studio::from_default_file_or_default()?;
+
+    let mut spec = DocumentSpec::new();
+    spec.output_name = Some(&quot;weekly-brief&quot;.to_string());
+    spec.blocks = vec![
+        title(&quot;Weekly Brief&quot;),
+        section(&quot;Summary&quot;),
+        body(&quot;Pipeline grew 14% week over week.&quot;),
+        bullets([
+            &quot;Security review closed&quot;,
+            &quot;Support handoff approved&quot;,
+            &quot;Launch remains on schedule&quot;,
+        ]),
+    ];
+
+    studio.save_spec_named(&amp;spec, &quot;weekly-brief&quot;)?;
+    Ok(())
+}</code></pre>
+<p>This is the best Rust path when:</p>
+<ul><li>the document is mostly standard sections</li><li>content comes from code, not a static YAML file</li><li>you still want the document to stay easy to reason about</li></ul>
+<p><code>DocumentSpec</code> also exposes <code>metadata</code> and <code>styles</code>, so document properties and reusable named styles can be defined once and reused consistently.</p>
+<pre><code class="language-rust">use rusdox::spec::{body, section, title, DocumentSpec};
+use rusdox::{DocumentMetadata};
+
+let mut spec = DocumentSpec::new();
+spec.metadata = DocumentMetadata::new()
+    .title(&quot;Weekly Brief&quot;)
+    .author(&quot;RusDox Studio&quot;)
+    .subject(&quot;Executive update&quot;)
+    .keyword(&quot;weekly&quot;)
+    .custom_property(&quot;Audience&quot;, &quot;Leadership&quot;);
+spec.blocks = vec![
+    title(&quot;Weekly Brief&quot;),
+    section(&quot;Summary&quot;),
+    body(&quot;Pipeline grew 14% week over week.&quot;),
+];</code></pre>
+<h2 id="hybrid-rust-start-with-a-spec-then-add-custom-pieces">Hybrid Rust: Start With A Spec, Then Add Custom Pieces</h2>
+<p>You can also compose a spec and then append lower-level content.</p>
+<pre><code class="language-rust">use rusdox::spec::{body, section, title, DocumentSpec};
+use rusdox::studio::Studio;
+use rusdox::{Paragraph, Run};
+
+fn main() -&gt; rusdox::Result&lt;()&gt; {
+    let studio = Studio::from_default_file_or_default()?;
+
+    let mut spec = DocumentSpec::new();
+    spec.blocks = vec![
+        title(&quot;Launch Packet&quot;),
+        section(&quot;Summary&quot;),
+        body(&quot;Core rollout is approved.&quot;),
+    ];
+
+    let mut document = studio.compose(&amp;spec);
+    document.push_paragraph(
+        Paragraph::new()
+            .add_run(studio.text_run(&quot;Custom note: &quot;).bold())
+            .add_run(studio.text_run(&quot;regional approvals still pending.&quot;)),
+    );
+
+    studio.save_named(&amp;document, &quot;launch-packet&quot;)?;
+    Ok(())
+}</code></pre>
+<p>This is a good middle ground when 90% of the document fits the high-level API and only a few sections need special handling.</p>
+<h2 id="reusable-named-styles">Reusable Named Styles</h2>
+<p>Named styles are available in both the spec layer and the low-level document model.</p>
+<p>Built-in fallback ids:</p>
+<ul><li>paragraph: <code>Normal</code></li><li>run: <code>DefaultParagraphFont</code></li><li>table: <code>TableNormal</code></li></ul>
+<pre><code class="language-rust">use rusdox::{
+    Border, BorderStyle, Document, Paragraph, ParagraphAlignment, ParagraphStyle,
+    ParagraphStyleProperties, Run, RunStyle, RunStyleProperties, Stylesheet, Table, TableBorders,
+    TableCell, TableRow, TableStyle, TableStyleProperties,
+};
+
+fn main() -&gt; rusdox::Result&lt;()&gt; {
+    let border = Border::new(BorderStyle::Single).size(8).color(&quot;CBD5E1&quot;);
+    let styles = Stylesheet::new()
+        .add_paragraph_style(
+            ParagraphStyle::new(&quot;lead&quot;)
+                .based_on(&quot;Normal&quot;)
+                .paragraph(
+                    ParagraphStyleProperties::new()
+                        .alignment(ParagraphAlignment::Center)
+                        .spacing_after(180),
+                )
+                .run(RunStyleProperties::new().bold().color(&quot;0F172A&quot;)),
+        )
+        .add_run_style(
+            RunStyle::new(&quot;accent&quot;)
+                .based_on(&quot;DefaultParagraphFont&quot;)
+                .properties(RunStyleProperties::new().italic().color(&quot;AA5500&quot;)),
+        )
+        .add_table_style(
+            TableStyle::new(&quot;grid&quot;)
+                .based_on(&quot;TableNormal&quot;)
+                .properties(
+                    TableStyleProperties::new()
+                        .width(9_360)
+                        .borders(TableBorders::new().top(border.clone()).bottom(border)),
+                ),
+        );
+
+    let mut document = Document::new().with_styles(styles);
+    document.push_paragraph(
+        Paragraph::new()
+            .with_style(&quot;lead&quot;)
+            .add_run(Run::from_text(&quot;Quarterly &quot;).with_style(&quot;accent&quot;))
+            .add_run(Run::from_text(&quot;review&quot;)),
+    );
+    document.push_table(
+        Table::new().style(&quot;grid&quot;).add_row(
+            TableRow::new().add_cell(
+                TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text(&quot;ARR&quot;))),
+            ),
+        ),
+    );
+
+    document.save(&quot;styled-output.docx&quot;)?;
+    Ok(())
+}</code></pre>
+<p>Use these APIs when:</p>
+<ul><li>multiple paragraphs should share the same typography and spacing rules</li><li>run-level emphasis should stay stable across documents</li><li>table framing should be reusable instead of copied as direct borders and widths</li></ul>
+<h2 id="first-class-metadata">First-Class Metadata</h2>
+<p>Use <code>DocumentMetadata</code> when the generated DOCX should carry clean package properties.</p>
+<pre><code class="language-rust">use rusdox::{Document, DocumentMetadata};
+
+let metadata = DocumentMetadata::new()
+    .title(&quot;Board Report&quot;)
+    .author(&quot;Finance&quot;)
+    .subject(&quot;Q4 review&quot;)
+    .keyword(&quot;board&quot;)
+    .custom_property(&quot;Client&quot;, &quot;Northwind Health&quot;);
+
+let document = Document::new().with_metadata(metadata);</code></pre>
+<p>Metadata works through both <code>DocumentSpec</code> and <code>Document</code>, and RusDox writes it into <code>docProps/core.xml</code> plus <code>docProps/custom.xml</code>.</p>
+<h2 id="config-driven-builders-with-studio">Config-Driven Builders With <code>Studio</code></h2>
+<p><code>Studio</code> is the main advanced entry point.</p>
+<p>It gives you:</p>
+<ul><li>config-aware text runs</li><li>config-aware headings and body paragraphs</li><li>config-aware table helpers</li><li>document saving with DOCX and optional PDF output</li></ul>
+<p>Common helpers include:</p>
+<ul><li><code>studio.title(...)</code></li><li><code>studio.subtitle(...)</code></li><li><code>studio.section(...)</code></li><li><code>studio.body(...)</code></li><li><code>studio.cover_title(...)</code></li><li><code>studio.page_heading(...)</code></li><li><code>studio.tagline(...)</code></li><li><code>studio.label_value(...)</code></li><li><code>studio.metric_cell(...)</code></li><li><code>studio.header_cell(...)</code></li><li><code>studio.data_cell(...)</code></li><li><code>studio.status_cell(...)</code></li><li><code>studio.grid_borders()</code></li><li><code>studio.card_borders()</code></li></ul>
+<p>There are also convenience free functions in <code>rusdox::studio</code> such as <code>title(...)</code>, <code>body(...)</code>, and <code>save_with_pdf(...)</code> that use the configured default <code>Studio</code>.</p>
+<h2 id="low-level-rust-build-the-document-yourself">Low-Level Rust: Build The Document Yourself</h2>
+<p>When you need full control, use the core document model directly.</p>
+<pre><code class="language-rust">use rusdox::{
+    Border, BorderStyle, Document, Paragraph, Run, Table, TableBorders, TableCell, TableRow,
+    UnderlineStyle, Visual,
+};
+
+fn main() -&gt; rusdox::Result&lt;()&gt; {
+    let accent = TableBorders::new()
+        .top(Border::new(BorderStyle::Single).size(8).color(&quot;1F2937&quot;))
+        .bottom(Border::new(BorderStyle::Single).size(8).color(&quot;1F2937&quot;));
+
+    let mut doc = Document::new();
+    doc.push_paragraph(
+        Paragraph::new()
+            .add_run(Run::from_text(&quot;This is &quot;).bold())
+            .add_run(Run::from_text(&quot;blazing fast&quot;).italic().color(&quot;DC2626&quot;))
+            .add_run(Run::from_text(&quot; and &quot;).underline(UnderlineStyle::Single))
+            .add_run(Run::from_text(&quot;typed.&quot;).small_caps()),
+    );
+
+    doc.push_table(
+        Table::new()
+            .width(9_360)
+            .borders(accent)
+            .add_row(
+                TableRow::new()
+                    .add_cell(TableCell::new().width(4_680).add_paragraph(
+                        Paragraph::new().add_run(Run::from_text(&quot;Header A&quot;).bold()),
+                    ))
+                    .add_cell(TableCell::new().width(4_680).add_paragraph(
+                        Paragraph::new().add_run(Run::from_text(&quot;Header B&quot;).bold()),
+                    )),
+            ),
+    );
+
+    doc.push_visual(
+        Visual::logo(&quot;assets/rusdox-mark.svg&quot;)
+            .alt_text_text(&quot;RusDox logo&quot;)
+            .max_width_twips(2_200),
+    );
+
+    doc.save(&quot;output.docx&quot;)?;
+    Ok(())
+}</code></pre>
+<p>Use this layer when:</p>
+<ul><li>you need exact run-level formatting</li><li>you want reusable styles through <code>Document::with_styles(...)</code></li><li>you want to open and modify existing DOCX files</li><li>you are building custom abstractions on top of RusDox</li></ul>
+<h2 id="open-existing-docx-files">Open Existing DOCX Files</h2>
+<p>RusDox can also read and preserve existing packages:</p>
+<ul><li><code>Document::open(...)</code></li><li><code>Document::open_read_only(...)</code></li></ul>
+<p>This is useful when you want to:</p>
+<ul><li>inspect document text</li><li>modify a document in place</li><li>preserve package parts you are not touching</li></ul>
+<h2 id="use-yaml-specs-from-rust">Use YAML Specs From Rust</h2>
+<p>You can load and save specs in Rust too:</p>
+<pre><code class="language-rust">use rusdox::spec::DocumentSpec;
+
+fn main() -&gt; rusdox::Result&lt;()&gt; {
+    let spec = DocumentSpec::load_from_path(&quot;examples/board_report.yaml&quot;)?;
+    let yaml = spec.to_yaml_string()?;
+    let json = spec.to_json_pretty()?;
+    let toml = spec.to_toml_pretty()?;
+
+    assert!(!yaml.is_empty());
+    assert!(!json.is_empty());
+    assert!(!toml.is_empty());
+    Ok(())
+}</code></pre>
+<p>That makes it easy to:</p>
+<ul><li>generate YAML specs from application data</li><li>validate specs before rendering</li><li>convert between YAML, JSON, and TOML</li></ul>
+<h2 id="script-mode">Script Mode</h2>
+<p>If you want a programmable entrypoint without creating a full Rust crate, RusDox still supports <code>.rs</code> scripts:</p>
+<pre><code class="language-bash">rusdox init-script mydoc.rs
+rusdox mydoc.rs</code></pre>
+<p>Your script must expose:</p>
+<pre><code class="language-rust">pub fn build_document(studio: &amp;rusdox::studio::Studio) -&gt; rusdox::Result&lt;rusdox::Document&gt;</code></pre>
+<p>This is good for quick internal tools and local automation.</p>
+<h2 id="practical-recommendation">Practical Recommendation</h2>
+<p>The best progression is:</p>
+<ol><li>Start with YAML</li><li>Move to <code>DocumentSpec</code> in Rust if content becomes dynamic</li><li>Drop to <code>Document</code> and <code>Run</code> only where the higher-level layers stop being enough</li></ol>
+<p>That keeps the product simple for most documents while preserving a real escape hatch for power users.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="cli.html"><span>Previous</span><strong>CLI reference</strong></a>
+    <a class="docs-pager-next" href="compatibility.html"><span>Next</span><strong>Compatibility matrix</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

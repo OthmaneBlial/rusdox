@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security policy | RusDox Documentation</title>
+    <meta name="description" content="Understand supported releases, reporting scope, and private disclosure." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/security.html" />
+    <meta property="og:title" content="Security policy | RusDox" />
+    <meta property="og:description" content="Understand supported releases, reporting scope, and private disclosure." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/security.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Security policy","description":"Understand supported releases, reporting scope, and private disclosure.","url":"https://othmaneblial.github.io/rusdox/docs/security.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>Security policy</h1>
+            <p class="lede">Understand supported releases, reporting scope, and private disclosure.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/SECURITY.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a class="is-active" aria-current="page" href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#supported-versions">Supported Versions</a></li><li class="toc-level-2"><a href="#reporting-a-vulnerability">Reporting A Vulnerability</a></li><li class="toc-level-2"><a href="#what-to-expect">What To Expect</a></li><li class="toc-level-2"><a href="#scope">Scope</a></li></ol></nav>
+            <div class="docs-content prose"><h2 id="supported-versions">Supported Versions</h2>
+<p>RusDox is currently maintained as a fast-moving project.</p>
+<p>Security fixes are most likely to land in:</p>
+<ul><li>the latest release line</li><li>the current <code>main</code> branch</li></ul>
+<p>Older versions may not receive fixes.</p>
+<h2 id="reporting-a-vulnerability">Reporting A Vulnerability</h2>
+<p>Please do not publish sensitive vulnerability details in a public issue.</p>
+<p>Preferred path:</p>
+<ol><li>Use <a href="https://github.com/OthmaneBlial/rusdox/security/advisories/new" target="_blank" rel="noreferrer">GitHub private vulnerability reporting</a>.</li><li>Do not open a public issue containing exploit details, private document content, or sensitive fixtures.</li></ol>
+<p>When reporting, include:</p>
+<ul><li>affected version or commit</li><li>impact summary</li><li>reproduction steps</li><li>whether the issue affects DOCX parsing, DOCX writing, YAML parsing, PDF rendering, or the CLI</li><li>any proof-of-concept details that help confirm the issue</li></ul>
+<h2 id="what-to-expect">What To Expect</h2>
+<ul><li>an acknowledgement as soon as practical</li><li>clarification questions if needed</li><li>a fix or mitigation plan when the report is confirmed</li></ul>
+<h2 id="scope">Scope</h2>
+<p>Examples of relevant security issues:</p>
+<ul><li>unsafe parsing behavior with untrusted input</li><li>archive handling bugs that could overwrite files unexpectedly</li><li>vulnerabilities caused by generated output or package preservation behavior</li></ul>
+<p>Non-security bugs should go through the normal issue tracker.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="support.html"><span>Previous</span><strong>Support</strong></a>
+    <a class="docs-pager-next" href="code-of-conduct.html"><span>Next</span><strong>Code of conduct</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
