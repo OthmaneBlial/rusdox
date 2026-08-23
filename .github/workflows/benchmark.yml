@@ -1,0 +1,55 @@
+name: Scheduled benchmarks
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-benchmarks
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release benchmark binary
+        run: cargo build --release --locked --bin rusdox
+
+      - name: Run isolated benchmark protocol
+        run: node scripts/run_benchmark_protocol.mjs --output target/benchmarks/ubuntu-latest.json
+
+      - name: Check material regressions
+        shell: bash
+        run: |
+          if [[ -f benchmarks/baselines/ubuntu-latest.json ]]; then
+            node scripts/check_benchmark_regression.mjs \
+              --current target/benchmarks/ubuntu-latest.json \
+              --baseline benchmarks/baselines/ubuntu-latest.json \
+              > target/benchmarks/regression.json
+          else
+            printf '%s\n' '{"passed":null,"reason":"No checked-in Ubuntu baseline yet"}' \
+              > target/benchmarks/regression.json
+            echo '::notice::No Ubuntu baseline exists yet; this run is baseline evidence only.'
+          fi
+
+      - name: Upload protocol data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rusdox-benchmark-${{ github.run_id }}
+          path: target/benchmarks/
+          if-no-files-found: error
+          retention-days: 90

@@ -13,12 +13,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
 - Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
 - Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
+- Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
 
 ### Changed
 
 - `PageSetup`, `Run`, `RowSpec`, and related low-level constructors now carry the expanded dual-output contract; this is a breaking Rust API change planned for `v0.2.0`.
 - PDF page geometry now comes from the document's `PageSetup`; PDF config geometry remains a compatibility fallback when no document-level value is supplied.
 - PDF nested tables use a bounded flattened-row representation and do not claim exact nested-grid geometry.
+- Benchmark summaries now report true extrema plus medians; the previous multi-iteration maximum accidentally reported the sum of samples.
 
 ### Fixed
 

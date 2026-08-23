@@ -22,6 +22,7 @@ const pages = [
   ["docs/compatibility-scorecard.md", "docs/compatibility-scorecard.html", "Viewer compatibility scorecard", "Trust", "Review dated, hash-pinned evidence from real document viewers without universal claims.", "Trust & operations"],
   ["docs/input-safety.md", "docs/input-safety.html", "Input safety and limits", "Security", "Understand resource ceilings, fuzz targets, and atomic output recovery for untrusted inputs.", "Trust & operations"],
   ["docs/parity.md", "docs/parity.html", "Parity verification", "Trust", "Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.", "Trust & operations"],
+  ["docs/performance.md", "docs/performance.html", "Reproducible performance", "Trust", "Reproduce isolated benchmark tiers, inspect raw evidence, and understand material regression thresholds.", "Trust & operations"],
   ["docs/troubleshooting.md", "docs/troubleshooting.html", "Troubleshooting", "Operations", "Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.", "Trust & operations"],
   ["docs/gallery.md", "docs/gallery.html", "Template gallery", "Examples", "Browse real YAML inputs and generated DOCX/PDF output previews.", "Examples"],
   ["examples/README.md", "docs/examples.html", "Examples guide", "Examples", "Understand every bundled document fixture and how to render it.", "Examples"],
@@ -55,6 +56,9 @@ generated.set("robots.txt", `User-agent: *\nAllow: /\nSitemap: ${baseUrl}sitemap
 generated.set("llms.txt", renderLlmsIndex());
 generated.set("llms-full.txt", renderLlmsFull());
 generated.set("assets/quick-demo.svg", fs.readFileSync(path.join(root, "assets/quick-demo.svg"), "utf8"));
+if (fs.existsSync(path.join(root, "assets/benchmark-history.svg"))) {
+  generated.set("assets/benchmark-history.svg", fs.readFileSync(path.join(root, "assets/benchmark-history.svg"), "utf8"));
+}
 
 const paritySource = path.join(root, "reports", "gallery");
 if (fs.existsSync(paritySource)) {
@@ -85,6 +89,12 @@ const sourceCopies = [
     .filter((file) => file.endsWith(".md") || file.endsWith(".yaml"))
     .map((file) => normalize(path.relative(root, file))),
   "fuzz/README.md",
+  ...walkFiles(path.join(root, "benchmarks"))
+    .filter((file) => file.endsWith(".json") || file.endsWith(".md"))
+    .map((file) => normalize(path.relative(root, file))),
+  "scripts/check_benchmark_regression.mjs",
+  "scripts/render_benchmark_history.mjs",
+  "scripts/run_benchmark_protocol.mjs",
 ];
 
 for (const source of sourceCopies) {

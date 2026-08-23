@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "protocol_version": "2026-08-24",
+  "iterations": 5,
+  "warmup": 1,
+  "pipelines": ["validation", "docx", "pdf", "dual"],
+  "tiers": [
+    {
+      "id": "small",
+      "label": "Small (1 page)",
+      "input": "examples/hello_world.yaml",
+      "logical_pages": 1
+    },
+    {
+      "id": "medium",
+      "label": "Medium (4 PDF pages)",
+      "input": "examples/dual_output_contract.yaml",
+      "logical_pages": 4
+    },
+    {
+      "id": "pages-1000",
+      "label": "Stress (1,000 logical pages)",
+      "input": "examples/stress/stress_1000_pages.yaml",
+      "logical_pages": 1000
+    }
+  ],
+  "existing_docx": {
+    "id": "external-docx-open-save",
+    "label": "External DOCX open/save",
+    "input": "tests/fixtures/external-macos-textutil.docx"
+  },
+  "regression_policy": {
+    "runtime_relative": 0.2,
+    "runtime_absolute_ms": 5,
+    "memory_relative": 0.25,
+    "memory_absolute_bytes": 16777216
+  }
+}

@@ -590,6 +590,13 @@ fn bench_outputs_json_summary_without_leaving_artifacts_by_default() {
 
     let json: serde_json::Value =
         serde_json::from_slice(&output.stdout).expect("valid benchmark json");
+    assert_eq!(json["schema_version"], 2);
+    assert_eq!(json["pipeline"], "docx");
+    assert_eq!(
+        json["input_sha256"].as_str().map(str::len),
+        Some(64),
+        "input hash should be a full SHA-256"
+    );
     assert_eq!(json["specs"], 1);
     assert_eq!(json["iterations"], 2);
     assert_eq!(json["warmup"], 1);
@@ -598,9 +605,92 @@ fn bench_outputs_json_summary_without_leaving_artifacts_by_default() {
     assert!(json["validate_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
     assert!(json["compose_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
     assert!(json["docx_ms"]["avg"].as_f64().unwrap_or_default() >= 0.0);
+    assert!(json["docx_ms"]["median"].as_f64().unwrap_or_default() >= 0.0);
     assert_eq!(json["pdf_ms"]["avg"].as_f64().unwrap_or_default(), 0.0);
     assert!(!temp.path().join("generated").exists());
     assert!(!temp.path().join("rendered").exists());
+}
+
+#[test]
+fn bench_isolates_pdf_dual_validation_and_existing_docx_pipelines() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    for pipeline in ["validation", "pdf", "dual"] {
+        let output = run_cli(
+            &[
+                "bench",
+                spec_path.to_string_lossy().as_ref(),
+                "--pipeline",
+                pipeline,
+                "--iterations",
+                "1",
+                "--format",
+                "json",
+            ],
+            temp.path(),
+        );
+        assert!(
+            output.status.success(),
+            "{pipeline} stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let json: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("valid benchmark json");
+        assert_eq!(json["pipeline"], pipeline);
+        match pipeline {
+            "validation" => {
+                assert_eq!(json["docx_bytes"]["avg"], 0.0);
+                assert_eq!(json["pdf_bytes"]["avg"], 0.0);
+            }
+            "pdf" => {
+                assert_eq!(json["docx_bytes"]["avg"], 0.0);
+                assert!(json["pdf_bytes"]["avg"].as_f64().unwrap_or_default() > 0.0);
+            }
+            "dual" => {
+                assert!(json["docx_bytes"]["avg"].as_f64().unwrap_or_default() > 0.0);
+                assert!(json["pdf_bytes"]["avg"].as_f64().unwrap_or_default() > 0.0);
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/external-macos-textutil.docx");
+    let output = run_cli(
+        &[
+            "bench",
+            fixture.to_string_lossy().as_ref(),
+            "--pipeline",
+            "existing-docx",
+            "--iterations",
+            "1",
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "existing-docx stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("valid benchmark json");
+    assert_eq!(json["pipeline"], "existing-docx");
+    assert!(
+        json["existing_docx_open_ms"]["avg"]
+            .as_f64()
+            .unwrap_or_default()
+            > 0.0
+    );
+    assert!(
+        json["existing_docx_save_ms"]["avg"]
+            .as_f64()
+            .unwrap_or_default()
+            > 0.0
+    );
 }
 
 #[test]

@@ -12,10 +12,11 @@ use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection,
 use rusdox::spec::DocumentSpec;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
 use rusdox::{
-    validate_config, validate_spec, DocxError, Result, ValidationIssue, ValidationReport,
+    validate_config, validate_spec, Document, DocxError, Result, ValidationIssue, ValidationReport,
     ValidationSeverity,
 };
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 
 #[derive(Debug, Parser)]
@@ -62,7 +63,7 @@ enum Commands {
     Validate(ValidateArgs),
     /// Rebuild a document spec automatically when the spec or config changes.
     Watch(WatchArgs),
-    /// Measure parse, validate, compose, DOCX, and PDF timings for a spec or spec directory.
+    /// Reproducibly measure one validation or rendering pipeline.
     Bench(BenchArgs),
     /// Generate DOCX, native PDF, deterministic page snapshots, and parity evidence.
     Verify(VerifyArgs),
@@ -222,7 +223,7 @@ struct WatchArgs {
 
 #[derive(Debug, Args)]
 struct BenchArgs {
-    /// Spec file or directory to benchmark.
+    /// Spec file/directory, or a DOCX file with --pipeline existing-docx.
     input: PathBuf,
     /// Optional config path used while benchmarking.
     #[arg(long)]
@@ -233,6 +234,9 @@ struct BenchArgs {
     /// Force PDF generation (overrides config if disabled).
     #[arg(long, conflicts_with = "docx_only")]
     with_pdf: bool,
+    /// Pipeline to isolate. Without this flag, legacy DOCX/PDF config behavior is preserved.
+    #[arg(long, value_enum, conflicts_with_all = ["docx_only", "with_pdf"])]
+    pipeline: Option<BenchPipeline>,
     /// Number of measured iterations.
     #[arg(long, default_value_t = 3)]
     iterations: u32,
@@ -245,6 +249,27 @@ struct BenchArgs {
     /// Keep benchmark artifacts in the configured output folders instead of using a temporary workspace.
     #[arg(long)]
     keep_output: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum BenchPipeline {
+    Validation,
+    Docx,
+    Pdf,
+    Dual,
+    ExistingDocx,
+}
+
+impl BenchPipeline {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Validation => "validation",
+            Self::Docx => "docx",
+            Self::Pdf => "pdf",
+            Self::Dual => "dual",
+            Self::ExistingDocx => "existing-docx",
+        }
+    }
 }
 
 #[derive(Debug, Args)]
@@ -297,6 +322,8 @@ struct BenchSample {
     total_duration: Duration,
     docx_bytes: u64,
     pdf_bytes: u64,
+    existing_docx_open_duration: Duration,
+    existing_docx_save_duration: Duration,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -321,12 +348,17 @@ struct ValidationCommandResult {
 struct NumericSummary {
     avg: f64,
     min: f64,
+    median: f64,
     max: f64,
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct BenchCommandResult {
+    schema_version: u32,
     target: String,
+    pipeline: String,
+    input_sha256: String,
+    input_bytes: u64,
     specs: usize,
     iterations: u32,
     warmup: u32,
@@ -337,6 +369,8 @@ struct BenchCommandResult {
     compose_ms: NumericSummary,
     docx_ms: NumericSummary,
     pdf_ms: NumericSummary,
+    existing_docx_open_ms: NumericSummary,
+    existing_docx_save_ms: NumericSummary,
     total_ms: NumericSummary,
     docx_bytes: NumericSummary,
     pdf_bytes: NumericSummary,
@@ -647,8 +681,32 @@ fn run_bench(args: BenchArgs) -> Result<()> {
         ));
     }
 
-    let spec_paths = collect_spec_inputs(&args.input)?;
     let mut config = runtime_config(args.config.as_deref(), args.docx_only, args.with_pdf)?;
+    let pipeline = args.pipeline.unwrap_or({
+        if config.output.emit_pdf_preview {
+            BenchPipeline::Dual
+        } else {
+            BenchPipeline::Docx
+        }
+    });
+    let inputs = if pipeline == BenchPipeline::ExistingDocx {
+        if !args.input.is_file()
+            || args
+                .input
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_none_or(|extension| !extension.eq_ignore_ascii_case("docx"))
+        {
+            return Err(DocxError::Parse(
+                "--pipeline existing-docx requires one .docx file".to_string(),
+            ));
+        }
+        vec![args.input.clone()]
+    } else {
+        collect_spec_inputs(&args.input)?
+    };
+
+    config.output.emit_pdf_preview = pipeline == BenchPipeline::Dual;
     let temp = if args.keep_output {
         None
     } else {
@@ -658,32 +716,39 @@ fn run_bench(args: BenchArgs) -> Result<()> {
         Some(temp)
     };
 
-    let config_report = validate_config(&config);
-    handle_validation_issues(
-        "config",
-        &config_report,
-        true,
-        "benchmark target has validation errors",
-    )?;
+    if pipeline != BenchPipeline::ExistingDocx {
+        let config_report = validate_config(&config);
+        handle_validation_issues(
+            "config",
+            &config_report,
+            true,
+            "benchmark target has validation errors",
+        )?;
+    }
 
     for _ in 0..args.warmup {
-        let _ = bench_once(&spec_paths, &config, false)?;
+        let _ = bench_once(&inputs, &config, pipeline, false)?;
     }
 
     let mut samples = Vec::with_capacity(args.iterations as usize);
     for iteration in 0..args.iterations {
-        let sample = bench_once(&spec_paths, &config, iteration == 0)?;
+        let sample = bench_once(&inputs, &config, pipeline, iteration == 0)?;
         samples.push(sample);
     }
 
     drop(temp);
+    let (input_sha256, input_bytes) = input_fingerprint(&args.input, &inputs)?;
 
     let result = BenchCommandResult {
+        schema_version: 2,
         target: args.input.display().to_string(),
-        specs: spec_paths.len(),
+        pipeline: pipeline.as_str().to_string(),
+        input_sha256,
+        input_bytes,
+        specs: inputs.len(),
         iterations: args.iterations,
         warmup: args.warmup,
-        emit_pdf: config.output.emit_pdf_preview,
+        emit_pdf: matches!(pipeline, BenchPipeline::Pdf | BenchPipeline::Dual),
         keep_output: args.keep_output,
         parse_ms: summarize_f64(
             samples
@@ -709,6 +774,16 @@ fn run_bench(args: BenchArgs) -> Result<()> {
             samples
                 .iter()
                 .map(|sample| duration_ms(sample.pdf_duration)),
+        ),
+        existing_docx_open_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.existing_docx_open_duration)),
+        ),
+        existing_docx_save_ms: summarize_f64(
+            samples
+                .iter()
+                .map(|sample| duration_ms(sample.existing_docx_save_duration)),
         ),
         total_ms: summarize_f64(
             samples
@@ -1043,8 +1118,9 @@ fn build_spec_file(
 }
 
 fn bench_once(
-    spec_paths: &[PathBuf],
+    inputs: &[PathBuf],
     config: &RusdoxConfig,
+    pipeline: BenchPipeline,
     print_warnings: bool,
 ) -> Result<BenchSample> {
     let started = Instant::now();
@@ -1055,16 +1131,80 @@ fn bench_once(
     let mut pdf_duration = Duration::ZERO;
     let mut docx_bytes = 0_u64;
     let mut pdf_bytes = 0_u64;
+    let mut existing_docx_open_duration = Duration::ZERO;
+    let mut existing_docx_save_duration = Duration::ZERO;
 
-    for spec_path in spec_paths {
-        let summary = build_spec_file(spec_path, None, config, false, print_warnings)?;
-        parse_duration += summary.parse_duration;
-        validation_duration += summary.validation_duration;
-        compose_duration += summary.compose_duration;
-        docx_duration += summary.output_stats.docx_write;
-        pdf_duration += summary.output_stats.pdf_render;
-        docx_bytes += summary.output_stats.docx_bytes;
-        pdf_bytes += summary.output_stats.pdf_bytes;
+    for input in inputs {
+        if pipeline == BenchPipeline::ExistingDocx {
+            let open_start = Instant::now();
+            let document = Document::open(input)?;
+            existing_docx_open_duration += open_start.elapsed();
+
+            let output_path = Path::new(&config.output.docx_dir).join(format!(
+                "{}-roundtrip.docx",
+                input
+                    .file_stem()
+                    .and_then(|stem| stem.to_str())
+                    .unwrap_or("existing")
+            ));
+            let save_start = Instant::now();
+            document.save(&output_path)?;
+            existing_docx_save_duration += save_start.elapsed();
+            docx_bytes += fs::metadata(output_path)?.len();
+            continue;
+        }
+
+        let inspection = inspect_spec(input)?;
+        parse_duration += inspection.parse_duration;
+        validation_duration += inspection.validation_duration;
+        handle_validation_issues(
+            &input.display().to_string(),
+            &inspection.report,
+            print_warnings,
+            "benchmark target has validation errors",
+        )?;
+
+        if pipeline == BenchPipeline::Validation {
+            continue;
+        }
+
+        let studio = Studio::new(config.clone());
+        let compose_start = Instant::now();
+        let document = studio.compose(&inspection.spec);
+        compose_duration += compose_start.elapsed();
+        let output_name = inspection
+            .spec
+            .output_name
+            .clone()
+            .unwrap_or_else(|| default_output_name_for_spec(input));
+
+        match pipeline {
+            BenchPipeline::Docx => {
+                let docx_path =
+                    Path::new(&config.output.docx_dir).join(format!("{output_name}.docx"));
+                let write_start = Instant::now();
+                document.save(&docx_path)?;
+                docx_duration += write_start.elapsed();
+                docx_bytes += fs::metadata(docx_path)?.len();
+            }
+            BenchPipeline::Pdf => {
+                let pdf_path = Path::new(&config.output.pdf_dir).join(format!("{output_name}.pdf"));
+                let render_start = Instant::now();
+                let _evidence = studio.render_pdf_with_evidence(&document, &pdf_path, None)?;
+                pdf_duration += render_start.elapsed();
+                pdf_bytes += fs::metadata(pdf_path)?.len();
+            }
+            BenchPipeline::Dual => {
+                let docx_path =
+                    Path::new(&config.output.docx_dir).join(format!("{output_name}.docx"));
+                let stats = studio.save_with_pdf_stats_quiet(&document, docx_path)?;
+                docx_duration += stats.docx_write;
+                pdf_duration += stats.pdf_render;
+                docx_bytes += stats.docx_bytes;
+                pdf_bytes += stats.pdf_bytes;
+            }
+            BenchPipeline::Validation | BenchPipeline::ExistingDocx => unreachable!(),
+        }
     }
 
     Ok(BenchSample {
@@ -1076,7 +1216,36 @@ fn bench_once(
         total_duration: started.elapsed(),
         docx_bytes,
         pdf_bytes,
+        existing_docx_open_duration,
+        existing_docx_save_duration,
     })
+}
+
+fn input_fingerprint(input: &Path, inputs: &[PathBuf]) -> Result<(String, u64)> {
+    if !input.is_dir() && inputs.len() == 1 {
+        let bytes = fs::read(&inputs[0])?;
+        return Ok((format!("{:x}", Sha256::digest(&bytes)), bytes.len() as u64));
+    }
+
+    let mut digest = Sha256::new();
+    let mut total_bytes = 0_u64;
+
+    for path in inputs {
+        let relative = if input.is_dir() {
+            path.strip_prefix(input).unwrap_or(path.as_path())
+        } else {
+            path.file_name().map(Path::new).unwrap_or(path.as_path())
+        };
+        let bytes = fs::read(path)?;
+        let relative = relative.to_string_lossy();
+        digest.update((relative.len() as u64).to_le_bytes());
+        digest.update(relative.as_bytes());
+        digest.update((bytes.len() as u64).to_le_bytes());
+        digest.update(&bytes);
+        total_bytes += bytes.len() as u64;
+    }
+
+    Ok((format!("{:x}", digest.finalize()), total_bytes))
 }
 
 fn collect_spec_inputs(input: &Path) -> Result<Vec<PathBuf>> {
@@ -1232,22 +1401,23 @@ fn format_issue_line(issue: &ValidationIssue) -> String {
 }
 
 fn summarize_f64(values: impl Iterator<Item = f64>) -> NumericSummary {
-    let collected = values.collect::<Vec<_>>();
+    let mut collected = values.collect::<Vec<_>>();
+    collected.sort_by(f64::total_cmp);
     let count = collected.len().max(1) as f64;
     let sum = collected.iter().sum::<f64>();
-    let min = collected
-        .iter()
-        .copied()
-        .fold(f64::INFINITY, f64::min)
-        .min(sum);
-    let max = collected
-        .iter()
-        .copied()
-        .fold(f64::NEG_INFINITY, f64::max)
-        .max(sum);
+    let min = collected.iter().copied().fold(f64::INFINITY, f64::min);
+    let max = collected.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     NumericSummary {
         avg: sum / count,
         min: if collected.is_empty() { 0.0 } else { min },
+        median: if collected.is_empty() {
+            0.0
+        } else if collected.len() % 2 == 0 {
+            let upper = collected.len() / 2;
+            (collected[upper - 1] + collected[upper]) / 2.0
+        } else {
+            collected[collected.len() / 2]
+        },
         max: if collected.is_empty() { 0.0 } else { max },
     }
 }
@@ -1255,45 +1425,68 @@ fn summarize_f64(values: impl Iterator<Item = f64>) -> NumericSummary {
 fn format_bench_result_text(result: &BenchCommandResult) -> String {
     [
         format!("benchmark target: {}", result.target),
+        format!("pipeline: {}", result.pipeline),
+        format!("input sha256: {}", result.input_sha256),
+        format!("input bytes: {}", result.input_bytes),
         format!("specs: {}", result.specs),
         format!("iterations: {}", result.iterations),
         format!("warmup: {}", result.warmup),
         format!("pdf enabled: {}", result.emit_pdf),
         format!("keep output: {}", result.keep_output),
         format!(
-            "parse: {} avg, {} min, {} max",
+            "parse: {} avg, {} min, {} median, {} max",
             format_ms(result.parse_ms.avg),
             format_ms(result.parse_ms.min),
+            format_ms(result.parse_ms.median),
             format_ms(result.parse_ms.max)
         ),
         format!(
-            "validate: {} avg, {} min, {} max",
+            "validate: {} avg, {} min, {} median, {} max",
             format_ms(result.validate_ms.avg),
             format_ms(result.validate_ms.min),
+            format_ms(result.validate_ms.median),
             format_ms(result.validate_ms.max)
         ),
         format!(
-            "compose: {} avg, {} min, {} max",
+            "compose: {} avg, {} min, {} median, {} max",
             format_ms(result.compose_ms.avg),
             format_ms(result.compose_ms.min),
+            format_ms(result.compose_ms.median),
             format_ms(result.compose_ms.max)
         ),
         format!(
-            "docx write: {} avg, {} min, {} max",
+            "docx write: {} avg, {} min, {} median, {} max",
             format_ms(result.docx_ms.avg),
             format_ms(result.docx_ms.min),
+            format_ms(result.docx_ms.median),
             format_ms(result.docx_ms.max)
         ),
         format!(
-            "pdf render: {} avg, {} min, {} max",
+            "pdf render: {} avg, {} min, {} median, {} max",
             format_ms(result.pdf_ms.avg),
             format_ms(result.pdf_ms.min),
+            format_ms(result.pdf_ms.median),
             format_ms(result.pdf_ms.max)
         ),
         format!(
-            "total: {} avg, {} min, {} max",
+            "existing DOCX open: {} avg, {} min, {} median, {} max",
+            format_ms(result.existing_docx_open_ms.avg),
+            format_ms(result.existing_docx_open_ms.min),
+            format_ms(result.existing_docx_open_ms.median),
+            format_ms(result.existing_docx_open_ms.max)
+        ),
+        format!(
+            "existing DOCX save: {} avg, {} min, {} median, {} max",
+            format_ms(result.existing_docx_save_ms.avg),
+            format_ms(result.existing_docx_save_ms.min),
+            format_ms(result.existing_docx_save_ms.median),
+            format_ms(result.existing_docx_save_ms.max)
+        ),
+        format!(
+            "total: {} avg, {} min, {} median, {} max",
             format_ms(result.total_ms.avg),
             format_ms(result.total_ms.min),
+            format_ms(result.total_ms.median),
             format_ms(result.total_ms.max)
         ),
         format!(
@@ -2006,8 +2199,17 @@ mod tests {
 
     use super::{
         build_runner_manifest, build_runner_source, default_script_template, escape_rust_string,
-        normalize_color_hex, resolve_path, ConfigFormat,
+        normalize_color_hex, resolve_path, summarize_f64, ConfigFormat,
     };
+
+    #[test]
+    fn numeric_summary_reports_real_extrema_and_median() {
+        let summary = summarize_f64([9.0, 1.0, 5.0, 3.0].into_iter());
+        assert_eq!(summary.avg, 4.5);
+        assert_eq!(summary.min, 1.0);
+        assert_eq!(summary.median, 4.0);
+        assert_eq!(summary.max, 9.0);
+    }
 
     #[test]
     fn normalize_color_hex_accepts_hash_and_lowercase() {

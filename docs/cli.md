@@ -126,13 +126,23 @@ Benchmark a folder and emit machine-readable output:
 rusdox bench examples --format json
 ```
 
+Isolate one pipeline for reproducible measurement:
+
+```bash
+rusdox bench mydoc.yaml --pipeline validation --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline docx --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline pdf --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline dual --iterations 5 --warmup 1
+rusdox bench existing.docx --pipeline existing-docx --iterations 5 --warmup 1
+```
+
 Keep the generated artifacts instead of using a temporary output workspace:
 
 ```bash
 rusdox bench mydoc.yaml --keep-output
 ```
 
-Bench reports parse, validation, compose, DOCX write, PDF render, total runtime, and output byte sizes.
+Bench JSON reports include the pipeline, input SHA-256 and byte size, parse, validation, compose, DOCX write, PDF render, existing-DOCX open/save, total runtime, output byte sizes, and average/minimum/median/maximum summaries. The complete host and peak-memory protocol is documented in [Reproducible Performance](performance.md).
 
 ## Output Control
 
