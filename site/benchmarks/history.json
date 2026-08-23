@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "generated_from": "benchmarks/results/*.json",
+  "runs": [
+    {
+      "generated_at_utc": "2026-08-23T23:17:31.988Z",
+      "git_commit": "49fa5a5fd0d0fc433f4ee34340c0b9bc3e4acd7e",
+      "protocol_version": "2026-08-24",
+      "host": {
+        "platform": "darwin",
+        "os_release": "25.6.0",
+        "os_version": "Darwin Kernel Version 25.6.0: Sat Jul 11 15:27:02 PDT 2026; root:xnu-12377.161.13~4/RELEASE_ARM64_T8112",
+        "architecture": "arm64",
+        "cpu": "Apple M2",
+        "logical_cpu_count": 8,
+        "total_memory_bytes": 17179869184,
+        "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: aarch64-apple-darwin\nrelease: 1.95.0\nLLVM version: 22.1.2",
+        "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)"
+      },
+      "scenarios": [
+        {
+          "id": "small-validation",
+          "tier": "small",
+          "pipeline": "validation",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 0.098916,
+          "peak_memory_bytes": 4440064,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "small-docx",
+          "tier": "small",
+          "pipeline": "docx",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 7.009542,
+          "peak_memory_bytes": 5996544,
+          "docx_bytes": 3662,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "small-pdf",
+          "tier": "small",
+          "pipeline": "pdf",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 16.997999999999998,
+          "peak_memory_bytes": 106332160,
+          "docx_bytes": 0,
+          "pdf_bytes": 2085500
+        },
+        {
+          "id": "small-dual",
+          "tier": "small",
+          "pipeline": "dual",
+          "input_sha256": "695804dc739bc192c84f877c8d264f711726e6bd12eabc2d3976f4e57a162c7b",
+          "median_total_ms": 24.127792,
+          "peak_memory_bytes": 105529344,
+          "docx_bytes": 3662,
+          "pdf_bytes": 2085500
+        },
+        {
+          "id": "medium-validation",
+          "tier": "medium",
+          "pipeline": "validation",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 0.32275000000000004,
+          "peak_memory_bytes": 5062656,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "medium-docx",
+          "tier": "medium",
+          "pipeline": "docx",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 9.028583,
+          "peak_memory_bytes": 6635520,
+          "docx_bytes": 6436,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "medium-pdf",
+          "tier": "medium",
+          "pipeline": "pdf",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 19.966082999999998,
+          "peak_memory_bytes": 105578496,
+          "docx_bytes": 0,
+          "pdf_bytes": 2103843
+        },
+        {
+          "id": "medium-dual",
+          "tier": "medium",
+          "pipeline": "dual",
+          "input_sha256": "c9bf4c161d04e598a809d5d638b26786f64968fc9256eeb9ede26b1f506db499",
+          "median_total_ms": 28.044249999999998,
+          "peak_memory_bytes": 106250240,
+          "docx_bytes": 6436,
+          "pdf_bytes": 2103843
+        },
+        {
+          "id": "pages-1000-validation",
+          "tier": "pages-1000",
+          "pipeline": "validation",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 229.630625,
+          "peak_memory_bytes": 165625856,
+          "docx_bytes": 0,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "pages-1000-docx",
+          "tier": "pages-1000",
+          "pipeline": "docx",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 348.88025,
+          "peak_memory_bytes": 286670848,
+          "docx_bytes": 731129,
+          "pdf_bytes": 0
+        },
+        {
+          "id": "pages-1000-pdf",
+          "tier": "pages-1000",
+          "pipeline": "pdf",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 1414.943334,
+          "peak_memory_bytes": 314310656,
+          "docx_bytes": 0,
+          "pdf_bytes": 15228539
+        },
+        {
+          "id": "pages-1000-dual",
+          "tier": "pages-1000",
+          "pipeline": "dual",
+          "input_sha256": "59949fe47a1e4b57ae5a3510ed0b7f5e45ada79d3e8ce1c1f18ddd01ae65ef8f",
+          "median_total_ms": 1573.6213750000002,
+          "peak_memory_bytes": 350339072,
+          "docx_bytes": 731129,
+          "pdf_bytes": 15228539
+        },
+        {
+          "id": "external-docx-open-save",
+          "tier": "existing-docx",
+          "pipeline": "existing-docx",
+          "input_sha256": "61ffe1ddca7882b6ebf17c2957d035a39518b0e1a509de3c6946fccc3ac283ba",
+          "median_total_ms": 6.9803749999999996,
+          "peak_memory_bytes": 5210112,
+          "docx_bytes": 5163,
+          "pdf_bytes": 0
+        }
+      ]
+    }
+  ]
+}

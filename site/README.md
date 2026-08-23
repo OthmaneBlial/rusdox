@@ -27,7 +27,7 @@ If you have ever tried to create Word or PDF files in code, you already know the
 - poor control over layout
 - painful scaling when documents get large
 
-RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. The latest recorded 1,000-page stress run renders both DOCX and PDF in `679.86 ms` in release mode. See the [benchmark methodology and limitations](#benchmark-proof) before comparing it with another system.
+RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Performance evidence now comes from a versioned small/medium/1,000-page protocol that records the exact host, toolchain, inputs, output sizes, timings, and peak memory. See [Benchmark proof](#benchmark-proof) before comparing it with another system.
 
 ## Install in 10 seconds
 
@@ -70,7 +70,7 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 
 ## Why It Lands
 
-- Generate a 1000-page DOCX and PDF pair in under a second in release mode.
+- Exercise a checked-in 1,000-page DOCX/PDF stress tier with independently reproducible evidence.
 - Create large files without Word, LibreOffice, or an external office runtime.
 - Keep authoring readable with YAML while the heavy lifting stays in Rust.
 - Validate specs before render so semantic issues fail early in CI and local workflows.
@@ -95,23 +95,24 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 | Word/LibreOffice runtime required | No | Yes | No | No |
 | Human-readable document spec | Yes | Varies | Code-first | Varies |
 | Same typed model for both outputs | Yes | No | No | No |
-| Automated DOCX/PDF parity report | [Planned for v0.2](ROADMAP.md#milestone-1--make-trust-measurable) | No | No | No |
+| Automated DOCX/PDF parity report | Yes | No | No | No |
 
 RusDox does not claim complete OOXML coverage. Check the [compatibility matrix](docs/compatibility.md) for supported, partial, and intentionally unsupported behavior.
 
 ## Benchmark Proof
 
-![RusDox stress benchmark](assets/benchmark-stress-1000-pages.svg)
+![RusDox reproducible benchmark history](assets/benchmark-history.svg)
 
-Latest 1000-page YAML stress run:
+The benchmark lab runs small (1 page), medium (4 rendered pages), and 1,000-page fixtures through validation-only, DOCX-only, PDF-only, and dual-output pipelines. Existing-DOCX open/save is measured separately. Each raw JSON report records CPU, OS, architecture, Rust version, input SHA-256, exact flags, output sizes, median timings, and peak resident memory.
 
-- Generator: `./scripts/generate_stress_yaml.sh`
-- Dev: `./scripts/run_stress_yaml.sh`
-- Dev timings: `176.81 ms` parse, `34.23 ms` compose, `285.66 ms` DOCX, `289.04 ms` PDF, `785.78 ms` total
-- Release: `./scripts/run_stress_yaml.sh --release`
-- Release timings: `132.78 ms` parse, `27.78 ms` compose, `234.32 ms` DOCX, `284.91 ms` PDF, `679.86 ms` total
+Reproduce the full release-mode protocol:
 
-That is the real value proposition: RusDox is for generating very large Word and PDF files programmatically without the usual office stack overhead.
+```bash
+cargo build --release --locked --bin rusdox
+node scripts/run_benchmark_protocol.mjs --output target/benchmarks/local.json
+```
+
+Read the [methodology, regression thresholds, and limitations](docs/performance.md), inspect the derived [history data](benchmarks/history.json), or open the unrounded [raw reports](benchmarks/results/). Results from different machines are not presented as directly comparable scores.
 
 ## First document
 

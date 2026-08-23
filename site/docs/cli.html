@@ -47,7 +47,7 @@
         <div class="docs-static-layout">
           <aside class="docs-static-nav" aria-label="Documentation navigation">
     <p class="docs-nav-label">Field guide</p>
-    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
@@ -99,9 +99,15 @@
 <pre><code class="language-bash">rusdox bench mydoc.yaml --iterations 5 --warmup 1</code></pre>
 <p>Benchmark a folder and emit machine-readable output:</p>
 <pre><code class="language-bash">rusdox bench examples --format json</code></pre>
+<p>Isolate one pipeline for reproducible measurement:</p>
+<pre><code class="language-bash">rusdox bench mydoc.yaml --pipeline validation --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline docx --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline pdf --iterations 5 --warmup 1
+rusdox bench mydoc.yaml --pipeline dual --iterations 5 --warmup 1
+rusdox bench existing.docx --pipeline existing-docx --iterations 5 --warmup 1</code></pre>
 <p>Keep the generated artifacts instead of using a temporary output workspace:</p>
 <pre><code class="language-bash">rusdox bench mydoc.yaml --keep-output</code></pre>
-<p>Bench reports parse, validation, compose, DOCX write, PDF render, total runtime, and output byte sizes.</p>
+<p>Bench JSON reports include the pipeline, input SHA-256 and byte size, parse, validation, compose, DOCX write, PDF render, existing-DOCX open/save, total runtime, output byte sizes, and average/minimum/median/maximum summaries. The complete host and peak-memory protocol is documented in <a href="performance.html">Reproducible Performance</a>.</p>
 <h2 id="output-control">Output Control</h2>
 <p>Write DOCX only:</p>
 <pre><code class="language-bash">rusdox mydoc.yaml --docx-only</code></pre>
