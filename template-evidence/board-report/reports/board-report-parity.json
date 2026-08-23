@@ -1,0 +1,314 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "templates/board-report/template.docx",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "BOARD / Q3 2026\nOperating review\nPrepared 24 August 2026\nExecutive signal\nExpansion revenue and delivery quality are ahead of plan; one partner dependency remains the primary schedule risk.\nDecisions required\n1. Approve security acceleration budget - Owner: CFO\n2. Confirm enterprise launch window - Owner: CPO\n3. Authorize partner escalation - Owner: CEO\nRisk requiring attention\nPartner certification is nine business days behind plan. The mitigation preserves the customer launch date but consumes schedule buffer.\nDistribution: Board and executive team only.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 15840,
+      "height_twips": 12240,
+      "margin_top_twips": 720,
+      "margin_right_twips": 900,
+      "margin_bottom_twips": 720,
+      "margin_left_twips": 900,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "BOARD / Q3 2026\nOperating review\nPrepared 24 August 2026\nExecutive signal\nExpansion revenue and delivery quality are ahead of plan; one partner dependency remains the primary schedule risk.\nDecisions required\n1. Approve security acceleration budget - Owner: CFO\n2. Confirm enterprise launch window - Owner: CPO\n3. Authorize partner escalation - Owner: CEO\nRisk requiring attention\nPartner certification is nine business days behind plan. The mitigation preserves the customer launch date but consumes schedule buffer.\nDistribution: Board and executive team only.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 15840,
+      "height_twips": 12240,
+      "margin_top_twips": 720,
+      "margin_right_twips": 900,
+      "margin_bottom_twips": 720,
+      "margin_left_twips": 900,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "BOARD / Q3 2026\nOperating review\nPrepared 24 August 2026\nExecutive signal\nExpansion revenue and delivery quality are ahead of plan; one partner dependency remains the primary schedule risk.\nDecisions required\n1. Approve security acceleration budget - Owner: CFO\n2. Confirm enterprise launch window - Owner: CPO\n3. Authorize partner escalation - Owner: CEO\nRisk requiring attention\nPartner certification is nine business days behind plan. The mitigation preserves the customer launch date but consumes schedule buffer.\nDistribution: Board and executive team only.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [],
+      "images": [],
+      "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 15840,
+        "height_twips": 12240,
+        "margin_top_twips": 720,
+        "margin_right_twips": 900,
+        "margin_bottom_twips": 720,
+        "margin_left_twips": 900,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0,
+        "orientation": "portrait"
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 1,
+    "draw_operations": 12,
+    "text_lines": 12,
+    "image_operations": 0
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/board-report-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/board-report.docx",
+      "bytes": 4047,
+      "sha256": "78b535bcfcbb7cf8bd44b402b55b1d9cad9998e3bf273cc5b47d8011fadf258a"
+    },
+    {
+      "path": "rendered/board-report.pdf",
+      "bytes": 1903664,
+      "sha256": "7e6bac16c975796a4269453067a3919f8226f52aa52b4484bfe31396ee4c5add"
+    }
+  ]
+}

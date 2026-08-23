@@ -12,8 +12,8 @@ use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection,
 use rusdox::spec::DocumentSpec;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
 use rusdox::{
-    validate_config, validate_spec, Document, DocxError, Result, ValidationIssue, ValidationReport,
-    ValidationSeverity,
+    validate_config, validate_spec, Document, DocxError, DocxTemplate, Result, ValidationIssue,
+    ValidationReport, ValidationSeverity,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -65,6 +65,11 @@ enum Commands {
     Watch(WatchArgs),
     /// Reproducibly measure one validation or rendering pipeline.
     Bench(BenchArgs),
+    /// Inspect or render a Word-native DOCX template from JSON data.
+    Template {
+        #[command(subcommand)]
+        command: TemplateCommand,
+    },
     /// Generate DOCX, native PDF, deterministic page snapshots, and parity evidence.
     Verify(VerifyArgs),
 }
@@ -79,6 +84,48 @@ enum ConfigCommand {
     Show(ShowArgs),
     /// Print the default user config path.
     Path,
+}
+
+#[derive(Debug, Subcommand)]
+enum TemplateCommand {
+    /// List placeholders and structural diagnostics without rendering.
+    Inspect(TemplateInspectArgs),
+    /// Generate DOCX, native PDF, page snapshots, and parity evidence.
+    Render(TemplateRenderArgs),
+    /// Render and require every enabled DOCX/PDF parity check to pass.
+    Verify(TemplateRenderArgs),
+}
+
+#[derive(Debug, Args)]
+struct TemplateInspectArgs {
+    /// Word-native `.docx` template.
+    template: PathBuf,
+    /// Inspection report format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
+#[derive(Debug, Args)]
+struct TemplateRenderArgs {
+    /// Word-native `.docx` template.
+    template: PathBuf,
+    /// JSON object containing values and optional `$partials` strings.
+    data: PathBuf,
+    /// Root for generated/, rendered/, and reports/ artifacts.
+    #[arg(long, default_value = ".")]
+    output_root: PathBuf,
+    /// Artifact stem. Defaults to the DOCX template file stem.
+    #[arg(long)]
+    name: Option<String>,
+    /// Fail instead of replacing missing/null values with empty strings.
+    #[arg(long)]
+    strict: bool,
+    /// Optional config path used by the native PDF renderer.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Command summary format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -377,6 +424,25 @@ struct BenchCommandResult {
 }
 
 #[derive(Debug, Clone, Serialize)]
+struct TemplateCommandResult {
+    command: String,
+    template: String,
+    data: String,
+    passed: bool,
+    strict: bool,
+    replacements: usize,
+    expanded_blocks: usize,
+    diagnostics: Vec<rusdox::TemplateDiagnostic>,
+    docx: String,
+    pdf: String,
+    html_report: String,
+    json_report: String,
+    page_snapshots: String,
+    checks: usize,
+    failed_checks: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct VerifyFileResult {
     source: String,
     passed: bool,
@@ -423,6 +489,7 @@ fn run() -> Result<()> {
             Commands::Validate(args) => run_validate(args),
             Commands::Watch(args) => run_watch(args),
             Commands::Bench(args) => run_bench(args),
+            Commands::Template { command } => run_template_command(command),
             Commands::Verify(args) => run_verify(args),
         };
     }
@@ -805,6 +872,245 @@ fn run_bench(args: BenchArgs) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn run_template_command(command: TemplateCommand) -> Result<()> {
+    match command {
+        TemplateCommand::Inspect(args) => run_template_inspect(args),
+        TemplateCommand::Render(args) => run_template_render("render", args),
+        TemplateCommand::Verify(args) => run_template_render("verify", args),
+    }
+}
+
+fn run_template_inspect(args: TemplateInspectArgs) -> Result<()> {
+    let template = DocxTemplate::open(&args.template)?;
+    let inspection = template.inspect();
+    match args.format {
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&inspection).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize template inspection: {error}"))
+            })?
+        ),
+        ReportFormat::Text => {
+            println!("template syntax: v{}", inspection.syntax_version);
+            println!("placeholders: {}", inspection.placeholders.len());
+            for placeholder in &inspection.placeholders {
+                println!(
+                    "  {} · {} · {} · {}",
+                    placeholder.part,
+                    placeholder.location,
+                    placeholder.kind,
+                    placeholder.expression
+                );
+            }
+            for diagnostic in &inspection.diagnostics {
+                eprintln!(
+                    "  [{:?}] {} · {} · {}: {} ({})",
+                    diagnostic.severity,
+                    diagnostic.part,
+                    diagnostic.location,
+                    diagnostic.placeholder,
+                    diagnostic.message,
+                    diagnostic.suggestion
+                );
+            }
+        }
+    }
+    if inspection.has_errors() {
+        Err(DocxError::Parse(
+            "template inspection found structural errors".to_string(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn run_template_render(command: &str, args: TemplateRenderArgs) -> Result<()> {
+    let data_bytes = fs::read(&args.data)?;
+    let max_data_bytes = rusdox::InputLimits::default().max_spec_bytes;
+    if data_bytes.len() as u64 > max_data_bytes {
+        return Err(DocxError::ResourceLimit(format!(
+            "template data is {} bytes; limit is {max_data_bytes} bytes",
+            data_bytes.len()
+        )));
+    }
+    let data: serde_json::Value = serde_json::from_slice(&data_bytes)
+        .map_err(|error| DocxError::Parse(format!("invalid template JSON data: {error}")))?;
+    if !data.is_object() {
+        return Err(DocxError::Parse(
+            "template JSON data must be an object".to_string(),
+        ));
+    }
+
+    let template = DocxTemplate::open(&args.template)?;
+    let inspection = template.inspect();
+    if inspection.has_errors() {
+        return Err(DocxError::Parse(format!(
+            "template inspection failed: {}",
+            inspection
+                .diagnostics
+                .iter()
+                .map(|diagnostic| format!(
+                    "{} · {} · {}",
+                    diagnostic.part, diagnostic.location, diagnostic.message
+                ))
+                .collect::<Vec<_>>()
+                .join("; ")
+        )));
+    }
+
+    let output_root = to_absolute_path(&args.output_root)?;
+    let generated_dir = output_root.join("generated");
+    let rendered_dir = output_root.join("rendered");
+    let reports_dir = output_root.join("reports");
+    fs::create_dir_all(&generated_dir)?;
+    fs::create_dir_all(&rendered_dir)?;
+    fs::create_dir_all(&reports_dir)?;
+    let output_name = args
+        .name
+        .as_deref()
+        .map(safe_output_name)
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| {
+            args.template
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .map(safe_output_name)
+                .filter(|name| !name.is_empty())
+                .unwrap_or_else(|| "rendered-template".to_string())
+        });
+    let docx_path = generated_dir.join(format!("{output_name}.docx"));
+    let pdf_path = rendered_dir.join(format!("{output_name}.pdf"));
+    let page_snapshots_dir = reports_dir.join(format!("{output_name}-pages"));
+    let html_report_path = reports_dir.join(format!("{output_name}-parity.html"));
+    let json_report_path = reports_dir.join(format!("{output_name}-parity.json"));
+
+    let render = template.render_to_path(&data, &docx_path, args.strict)?;
+    if !render.written {
+        match args.format {
+            ReportFormat::Json => println!(
+                "{}",
+                serde_json::to_string_pretty(&render).map_err(|error| {
+                    DocxError::Parse(format!("failed to serialize template render: {error}"))
+                })?
+            ),
+            ReportFormat::Text => {
+                for diagnostic in &render.diagnostics {
+                    eprintln!(
+                        "{} · {} · {}: {} ({})",
+                        diagnostic.part,
+                        diagnostic.location,
+                        diagnostic.placeholder,
+                        diagnostic.message,
+                        diagnostic.suggestion
+                    );
+                }
+            }
+        }
+        return Err(DocxError::Parse(
+            "template render failed; no output was written".to_string(),
+        ));
+    }
+
+    let package = rusdox::validate_docx_package(&docx_path)?;
+    let document = Document::open_read_only(&docx_path)?;
+    let expected = DocumentProjection::from_document(&document);
+    let docx = expected.clone();
+    let mut config = load_runtime_config(args.config.as_deref())?;
+    config.output.emit_pdf_preview = true;
+    handle_validation_issues(
+        "config",
+        &validate_config(&config),
+        true,
+        "template PDF rendering aborted because the active config has validation errors",
+    )?;
+    let studio = Studio::new(config);
+    let pdf = studio.render_pdf_with_evidence(&document, &pdf_path, Some(&page_snapshots_dir))?;
+    let mut visual_diff = compare_visual_pages(&page_snapshots_dir, None, 0.0)?;
+    for page in &mut visual_diff.pages {
+        page.current = format!("reports/{output_name}-pages/page-{:03}.png", page.page);
+    }
+    let mut docx_artifact = ArtifactEvidence::from_path(&docx_path)?;
+    docx_artifact.path = format!("generated/{output_name}.docx");
+    let mut pdf_artifact = ArtifactEvidence::from_path(&pdf_path)?;
+    pdf_artifact.path = format!("rendered/{output_name}.pdf");
+    let report = ParityReport::compare(
+        args.template.display().to_string(),
+        expected,
+        docx,
+        pdf,
+        visual_diff,
+        vec![docx_artifact, pdf_artifact],
+        package.valid,
+        verify_pdf_file(&pdf_path)?,
+    );
+    rusdox::atomic_write_file(&json_report_path, report.to_json_pretty()?.as_bytes())?;
+    let canonical =
+        format!("https://othmaneblial.github.io/rusdox/templates/{output_name}-parity.html");
+    rusdox::atomic_write_file(&html_report_path, report.to_html(&canonical).as_bytes())?;
+
+    let failed_checks = report
+        .checks
+        .iter()
+        .filter(|check| check.status == rusdox::parity::CheckStatus::Failed)
+        .count();
+    let result = TemplateCommandResult {
+        command: command.to_string(),
+        template: args.template.display().to_string(),
+        data: args.data.display().to_string(),
+        passed: report.passed,
+        strict: args.strict,
+        replacements: render.replacements,
+        expanded_blocks: render.expanded_blocks,
+        diagnostics: render.diagnostics,
+        docx: docx_path.display().to_string(),
+        pdf: pdf_path.display().to_string(),
+        html_report: html_report_path.display().to_string(),
+        json_report: json_report_path.display().to_string(),
+        page_snapshots: page_snapshots_dir.display().to_string(),
+        checks: report.checks.len(),
+        failed_checks,
+    };
+    match args.format {
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&result).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize template result: {error}"))
+            })?
+        ),
+        ReportFormat::Text => println!("{}", format_template_result_text(&result)),
+    }
+    if result.passed {
+        Ok(())
+    } else {
+        Err(DocxError::Parity(format!(
+            "template parity failed for {}",
+            args.template.display()
+        )))
+    }
+}
+
+fn format_template_result_text(result: &TemplateCommandResult) -> String {
+    [
+        format!("template {}: {}", result.command, result.template),
+        format!("data: {}", result.data),
+        format!("strict: {}", result.strict),
+        format!("replacements: {}", result.replacements),
+        format!("expanded blocks: {}", result.expanded_blocks),
+        format!("diagnostics: {}", result.diagnostics.len()),
+        format!("docx: {}", result.docx),
+        format!("pdf: {}", result.pdf),
+        format!("parity html: {}", result.html_report),
+        format!("parity json: {}", result.json_report),
+        format!("page snapshots: {}", result.page_snapshots),
+        format!(
+            "checks: {} (failed: {})",
+            result.checks, result.failed_checks
+        ),
+        format!("status: {}", if result.passed { "PASS" } else { "FAIL" }),
+    ]
+    .join("\n")
 }
 
 fn run_verify(args: VerifyArgs) -> Result<()> {

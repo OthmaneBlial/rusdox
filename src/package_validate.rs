@@ -42,9 +42,20 @@ pub fn validate_docx_package_with_limits(
 
 /// Validates a seekable DOCX reader with explicit resource ceilings.
 pub fn validate_docx_reader_with_limits<R>(
-    mut reader: R,
+    reader: R,
     limits: InputLimits,
 ) -> Result<PackageValidationReport>
+where
+    R: Read + Seek,
+{
+    let parts = read_docx_parts_with_limits(reader, limits)?;
+    Ok(validate_parts(&parts))
+}
+
+pub(crate) fn read_docx_parts_with_limits<R>(
+    mut reader: R,
+    limits: InputLimits,
+) -> Result<BTreeMap<String, Vec<u8>>>
 where
     R: Read + Seek,
 {
@@ -101,7 +112,7 @@ where
         parts.insert(name, bytes);
     }
 
-    Ok(validate_parts(&parts))
+    Ok(parts)
 }
 
 fn enforce_entry_limits(

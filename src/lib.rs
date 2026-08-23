@@ -35,6 +35,7 @@ mod spec_expand;
 pub mod studio;
 mod style;
 mod table;
+mod template;
 pub mod validate;
 mod visual;
 mod xml_utils;
@@ -58,6 +59,10 @@ pub use style::{
 pub use table::{
     Border, BorderStyle, Table, TableBorders, TableCell, TableCellProperties, TableProperties,
     TableRow, TableRowProperties,
+};
+pub use template::{
+    DocxTemplate, TemplateDiagnostic, TemplateDiagnosticSeverity, TemplateInspection,
+    TemplatePlaceholder, TemplateRenderReport, TEMPLATE_SYNTAX_VERSION,
 };
 pub use validate::{
     validate_config, validate_spec, validate_spec_with_config, ValidationIssue, ValidationReport,

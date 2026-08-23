@@ -17,7 +17,8 @@ If you are new, read these pages in order:
 9. [Input Safety and Limits](input-safety.md)
 10. [Parity Verification](parity.md)
 11. [Reproducible Performance](performance.md)
-12. [Troubleshooting](troubleshooting.md)
+12. [Word-native Templates](word-templates.md)
+13. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -53,6 +54,7 @@ If you are a developer and want full power:
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
 - how to reproduce performance results and interpret regression evidence
+- how to turn designer-authored Word files into verified JSON-driven outputs
 - how to use the Rust layer for advanced cases
 - exactly which DOCX/PDF features are supported today
 - how to diagnose installation, font, asset, table, and viewer problems
@@ -99,6 +101,15 @@ If you have ever tried to create Word or PDF files in code, you already know the
 - painful scaling when documents get large
 
 RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Performance evidence now comes from a versioned small/medium/1,000-page protocol that records the exact host, toolchain, inputs, output sizes, timings, and peak memory. See [Benchmark proof](#benchmark-proof) before comparing it with another system.
+
+## Bring your own Word design
+
+Keep the layout your team already designed in Word, add readable placeholders, then drive it from JSON:
+
+    rusdox template inspect proposal.docx
+    rusdox template verify proposal.docx data.json --strict
+
+One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
 
 ## Install in 10 seconds
 
@@ -147,6 +158,7 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 - Validate specs before render so semantic issues fail early in CI and local workflows.
 - Rebuild documents automatically while editing specs or config files.
 - Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
+- Turn designer-authored Word files into strict JSON-driven DOCX/PDF/parity bundles.
 - Keep simple authoring in YAML longer with variables, includes, and repeaters.
 - Set document metadata such as title, author, subject, keywords, and custom properties directly from specs or Rust.
 - Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.
@@ -1240,6 +1252,136 @@ rusdox mydoc.yaml --docx-only
 
 ---
 
+# Word-native templates
+
+Source: https://othmaneblial.github.io/rusdox/docs/word-templates.html
+
+RusDox template syntax v1 turns a designer-authored DOCX and a JSON object into an edited DOCX, a native PDF, deterministic page snapshots, and an HTML/JSON parity report in one command.
+
+    rusdox template verify proposal.docx data.json --strict
+
+The renderer edits textual OOXML parts directly. It does not rebuild the package from a blank document, so untouched styles, sections, headers, footers, media, relationships, custom XML, and other package parts keep their exact bytes.
+
+## Inspect Before Rendering
+
+    rusdox template inspect proposal.docx
+    rusdox template inspect proposal.docx --format json
+
+Inspection lists each expression with the exact OOXML part and a human-readable paragraph or table-row location. Unclosed or mismatched blocks fail before output is written.
+
+## Syntax v1
+
+Scalar values use double braces:
+
+    Prepared for {{ customer.name }}
+    Invoice {{ invoice.number }}
+
+Paths traverse nested JSON objects. items.0.name can address an array position. Values are XML-escaped; there is deliberately no raw-XML escape hatch.
+
+Supported deterministic filters are:
+
+    {{ customer.name | title }}
+    {{ report.period | upper }}
+    {{ code | lower }}
+    {{ description | trim }}
+    {{ optional | default("Not provided") }}
+
+Filters run from left to right. An unknown filter is an error instead of silently changing meaning.
+
+### Loops
+
+Loop markers must occupy complete Word paragraphs or complete table rows:
+
+    {{#each items}}
+    {{ @index }}. {{ description }} — {{ quantity }}
+    {{/each}}
+
+this refers to the current item, nested fields resolve against the current item first, and @index is one-based. The start and end markers must use the same container type. This bounded rule makes repetition predictable and keeps the resulting OOXML structurally valid.
+
+### Conditions
+
+Conditions also use complete paragraphs or rows:
+
+    {{#if include_support}}
+    Managed support is included.
+    {{else}}
+    Managed support is optional.
+    {{/if}}
+
+False, null, zero, empty strings, empty arrays, and empty objects are false. Conditions are deliberately truthiness-only in syntax v1; arbitrary code and general-purpose expressions are not supported.
+
+### Reusable partials
+
+JSON can define reusable inline subtemplates under $partials:
+
+    {
+      "client": {"name": "Northstar Operations"},
+      "$partials": {
+        "confidentiality": "Confidential. Prepared for {{ client.name | title }}."
+      }
+    }
+
+Insert one with:
+
+    {{> confidentiality}}
+
+Partials can reuse scalar paths and filters. Recursive partials and block markers inside a partial are errors.
+
+## Missing Values and Strict Mode
+
+Without --strict, a missing or null scalar becomes an empty string and the result includes a warning. This is useful for optional drafts while remaining visible in machine-readable output.
+
+With --strict, every missing reference is an error, the previous DOCX destination remains untouched, and no PDF or parity report is produced:
+
+    rusdox template render invoice.docx invoice.json --strict
+
+Diagnostics include:
+
+- part, such as word/document.xml or word/header1.xml;
+- location, such as paragraph 8 or table row 3;
+- the exact placeholder;
+- the failure and a suggested fix.
+
+## Output Contract
+
+Both template render and template verify produce:
+
+    generated/<name>.docx
+    rendered/<name>.pdf
+    reports/<name>-pages/page-001.png
+    reports/<name>-parity.json
+    reports/<name>-parity.html
+
+template verify is the explicit CI spelling. A completed parity failure exits with code 2; an invalid template, missing strict value, unreadable input, or resource-limit failure exits with code 1.
+
+Use a custom name and output root:
+
+    rusdox template verify template.docx data.json \
+      --name client-proposal \
+      --output-root build \
+      --strict \
+      --format json
+
+## Bundled Designer Templates
+
+The checked-in sources were styled as RTF documents and exported to DOCX by the macOS text system, giving the workflow package evidence authored outside RusDox.
+
+| Template | Features exercised | Source |
+|---|---|---|
+| Invoice | nested values, repeated line items, condition, partial, title filter | [templates/invoice/](../templates/invoice/) |
+| Proposal | string-array loop, condition/else, nested partial, title filter | [templates/proposal/](../templates/proposal/) |
+| Board report | landscape section, object-array loop, nested condition, upper filter, partial | [templates/board-report/](../templates/board-report/) |
+
+Regenerate the external DOCX packages on macOS with ./scripts/generate_word_templates.sh. Render all three samples with ./scripts/verify_word_templates.sh.
+
+## Preservation and Fidelity Boundary
+
+RusDox preserves untouched package parts byte-for-byte and preserves surrounding run nodes when a placeholder is split across multiple Word runs. Automated tests cover sections, headers, footers, styles, media, relationships, complete table-row loops, strict recovery, and an externally authored DOCX.
+
+The native PDF is rendered from the subset of Word body semantics that RusDox can parse. Unsupported arbitrary Word layout features can remain intact in the edited DOCX while not appearing identically in the native PDF. The parity report describes the semantics actually compared; it does not claim universal Word fidelity. Test representative templates in the viewer versions used by recipients.
+
+---
+
 # CLI reference
 
 Source: https://othmaneblial.github.io/rusdox/docs/cli.html
@@ -1387,6 +1529,20 @@ rusdox bench mydoc.yaml --keep-output
 ```
 
 Bench JSON reports include the pipeline, input SHA-256 and byte size, parse, validation, compose, DOCX write, PDF render, existing-DOCX open/save, total runtime, output byte sizes, and average/minimum/median/maximum summaries. The complete host and peak-memory protocol is documented in [Reproducible Performance](performance.md).
+
+## Word-native templates
+
+Inspect placeholders and structural errors:
+
+    rusdox template inspect proposal.docx
+    rusdox template inspect proposal.docx --format json
+
+Render from JSON and generate the edited DOCX, native PDF, page snapshots, and parity report:
+
+    rusdox template render proposal.docx data.json --strict
+    rusdox template verify proposal.docx data.json --strict --format json
+
+Use --name for the artifact stem, --output-root for the complete evidence root, and --config for PDF renderer configuration. See [Word-native Templates](word-templates.md) for syntax v1, strict behavior, loops, conditions, partials, preservation guarantees, and limitations.
 
 ## Output Control
 
@@ -1910,7 +2066,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Variables | Supported in YAML | Scalar interpolation through the YAML expansion layer. |
 | Includes | Supported in YAML | Relative includes with cycle detection. |
 | Repeaters | Supported in YAML | Sequence expansion with index and item variables. |
-| Conditions and filters | Planned | Targeted for the schema/template milestone. |
+| Conditions and filters | Supported | Word-native template syntax v1 supports bounded truthy conditions plus upper, lower, title, trim, and default filters. Declarative spec conditions remain in the schema milestone. |
 | Stable spec version field | Planned | Pre-1.0 specs do not yet declare a schema version. |
 | JSON Schema / editor completion | Planned | Targeted for v0.3. |
 
@@ -1940,7 +2096,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Automatic table of contents | Supported | Supported fallback | Yes |  | DOCX emits an updateable TOC field. PDF freezes the spec heading list at render time without computed page numbers. |
 | Footnotes | Supported | Supported fallback | Yes |  | DOCX emits a real footnotes part. PDF uses inline markers plus a deterministic endnotes page. |
 | Comments and tracked changes | No | No | No | Yes | Deliberately deferred beyond common generated-report features. |
-| Word-native placeholders | No | No | No |  | Existing DOCX packages can be opened; template rendering is planned. |
+| Word-native placeholders | Supported | Supported subset | Yes |  | Scalars, nested values, complete paragraph/row loops, conditions, and partials preserve untouched DOCX parts; PDF covers the parsed body subset. |
 
 ## Existing DOCX packages
 
@@ -2855,13 +3011,15 @@ rusdox template render proposal.docx data.json
 rusdox template verify proposal.docx data.json
 ```
 
-- [ ] Define a minimal, versioned placeholder syntax.
-- [ ] Support scalar replacements, nested values, loops, conditions, and reusable subtemplates.
-- [ ] Preserve designer-authored styles, sections, headers/footers, media, relationships, and untouched package parts.
-- [ ] Report template errors with part name, paragraph/table location, placeholder, and suggested fix.
-- [ ] Add safe handling for missing values and an explicit strict mode.
-- [ ] Generate the edited DOCX, native PDF, and parity report from one command.
-- [ ] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
+- [x] Define a minimal, versioned placeholder syntax.
+- [x] Support scalar replacements, nested values, loops, conditions, and reusable subtemplates.
+- [x] Preserve designer-authored styles, sections, headers/footers, media, relationships, and untouched package parts.
+- [x] Report template errors with part name, paragraph/table location, placeholder, and suggested fix.
+- [x] Add safe handling for missing values and an explicit strict mode.
+- [x] Generate the edited DOCX, native PDF, and parity report from one command.
+- [x] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
+
+Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and 19-check green parity reports.
 
 This is a higher-value differentiator than adding dozens of low-level OOXML builders with no end-user workflow.
 
@@ -3103,6 +3261,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
 - Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 - Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
+- Word-native DOCX template inspection and strict/lenient rendering from JSON, including split-run placeholders, nested values, complete paragraph/table-row loops, conditions, deterministic filters, reusable partials, native PDF output, and parity reports.
+- Three externally authored starter templates for invoices, proposals, and board/compliance reporting.
 
 ### Changed
 

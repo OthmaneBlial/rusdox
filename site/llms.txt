@@ -9,6 +9,7 @@
 - [Getting started](https://othmaneblial.github.io/rusdox/docs/getting-started.html): Install RusDox and generate the first editable DOCX and native PDF in minutes.
 - [YAML guide](https://othmaneblial.github.io/rusdox/docs/yaml-guide.html): Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.
 - [Configuration](https://othmaneblial.github.io/rusdox/docs/configuration.html): Control typography, spacing, color, tables, output paths, and PDF rendering.
+- [Word-native templates](https://othmaneblial.github.io/rusdox/docs/word-templates.html): Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.
 - [CLI reference](https://othmaneblial.github.io/rusdox/docs/cli.html): Render, validate, watch, benchmark, initialize, and configure documents.
 - [Rust API](https://othmaneblial.github.io/rusdox/docs/rust-api.html): Choose between DocumentSpec, Studio, and the low-level typed document model.
 - [Compatibility matrix](https://othmaneblial.github.io/rusdox/docs/compatibility.html): See exactly what works in DOCX, PDF, both outputs, or not yet.

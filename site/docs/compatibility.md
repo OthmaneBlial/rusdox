@@ -21,7 +21,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Variables | Supported in YAML | Scalar interpolation through the YAML expansion layer. |
 | Includes | Supported in YAML | Relative includes with cycle detection. |
 | Repeaters | Supported in YAML | Sequence expansion with index and item variables. |
-| Conditions and filters | Planned | Targeted for the schema/template milestone. |
+| Conditions and filters | Supported | Word-native template syntax v1 supports bounded truthy conditions plus upper, lower, title, trim, and default filters. Declarative spec conditions remain in the schema milestone. |
 | Stable spec version field | Planned | Pre-1.0 specs do not yet declare a schema version. |
 | JSON Schema / editor completion | Planned | Targeted for v0.3. |
 
@@ -51,7 +51,7 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Automatic table of contents | Supported | Supported fallback | Yes |  | DOCX emits an updateable TOC field. PDF freezes the spec heading list at render time without computed page numbers. |
 | Footnotes | Supported | Supported fallback | Yes |  | DOCX emits a real footnotes part. PDF uses inline markers plus a deterministic endnotes page. |
 | Comments and tracked changes | No | No | No | Yes | Deliberately deferred beyond common generated-report features. |
-| Word-native placeholders | No | No | No |  | Existing DOCX packages can be opened; template rendering is planned. |
+| Word-native placeholders | Supported | Supported subset | Yes |  | Scalars, nested values, complete paragraph/row loops, conditions, and partials preserve untouched DOCX parts; PDF covers the parsed body subset. |
 
 ## Existing DOCX packages
 

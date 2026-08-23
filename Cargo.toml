@@ -27,6 +27,7 @@ include = [
   "/examples/*.yaml",
   "/examples/fragments/**",
   "/examples/README.md",
+  "/templates/**",
   "/assets/rusdox-mark.svg",
   "/assets/signature-demo.svg",
 ]

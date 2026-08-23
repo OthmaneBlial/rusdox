@@ -14,6 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
 - Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 - Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
+- Word-native DOCX template inspection and strict/lenient rendering from JSON, including split-run placeholders, nested values, complete paragraph/table-row loops, conditions, deterministic filters, reusable partials, native PDF output, and parity reports.
+- Three externally authored starter templates for invoices, proposals, and board/compliance reporting.
 
 ### Changed
 

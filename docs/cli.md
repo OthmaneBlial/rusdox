@@ -144,6 +144,20 @@ rusdox bench mydoc.yaml --keep-output
 
 Bench JSON reports include the pipeline, input SHA-256 and byte size, parse, validation, compose, DOCX write, PDF render, existing-DOCX open/save, total runtime, output byte sizes, and average/minimum/median/maximum summaries. The complete host and peak-memory protocol is documented in [Reproducible Performance](performance.md).
 
+## Word-native templates
+
+Inspect placeholders and structural errors:
+
+    rusdox template inspect proposal.docx
+    rusdox template inspect proposal.docx --format json
+
+Render from JSON and generate the edited DOCX, native PDF, page snapshots, and parity report:
+
+    rusdox template render proposal.docx data.json --strict
+    rusdox template verify proposal.docx data.json --strict --format json
+
+Use --name for the artifact stem, --output-root for the complete evidence root, and --config for PDF renderer configuration. See [Word-native Templates](word-templates.md) for syntax v1, strict behavior, loops, conditions, partials, preservation guarantees, and limitations.
+
 ## Output Control
 
 Write DOCX only:

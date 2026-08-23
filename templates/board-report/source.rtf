@@ -1,0 +1,25 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Arial;}{\f1 Georgia;}}
+{\colortbl;\red180\green83\blue9;\red15\green23\blue42;\red71\green85\blue105;}
+\paperw15840\paperh12240\landscape\margl900\margr900\margt720\margb720
+\f0\fs18\cf1 BOARD / \{\{ report.period | upper \}\}\par
+\f1\fs46\b\cf2 \{\{ report.title \}\}\b0\par
+\f0\fs21\cf3 Prepared \{\{ report.prepared_at \}\}\par
+\par
+\fs28\b\cf2 Executive signal\b0\fs21\par
+\{\{ report.signal \}\}\par
+\par
+\fs25\b Decisions required\b0\fs20\par
+\{\{#each decisions\}\}\par
+\{\{ @index \}\}. \{\{ title \}\} - Owner: \{\{ owner \}\}\par
+\{\{/each\}\}\par
+\par
+\{\{#if risk.active\}\}\par
+\fs24\b Risk requiring attention\b0\fs20\par
+\{\{ risk.summary \}\}\par
+\{\{else\}\}\par
+No material risk requires board escalation.\par
+\{\{/if\}\}\par
+\par
+\cf3 \{\{> distribution\}\}\par
+}

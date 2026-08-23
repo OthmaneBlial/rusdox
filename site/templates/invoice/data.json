@@ -1,0 +1,33 @@
+{
+  "invoice": {
+    "number": "INV-2026-1042",
+    "date": "24 August 2026",
+    "due_date": "23 September 2026",
+    "total": "EUR 14,850"
+  },
+  "customer": {
+    "name": "atlas research group",
+    "address": "18 Rue du Sentier, 75002 Paris"
+  },
+  "items": [
+    {
+      "description": "Document automation discovery",
+      "quantity": 1,
+      "unit_price": "EUR 2,400"
+    },
+    {
+      "description": "Word-native template implementation",
+      "quantity": 3,
+      "unit_price": "EUR 3,750"
+    },
+    {
+      "description": "Viewer acceptance and handoff",
+      "quantity": 1,
+      "unit_price": "EUR 1,200"
+    }
+  ],
+  "notes": "Thank you for the precise feedback during implementation.",
+  "$partials": {
+    "payment_terms": "Payment terms: net 30 days. Please include the invoice number with the transfer."
+  }
+}

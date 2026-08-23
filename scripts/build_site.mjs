@@ -16,6 +16,7 @@ const pages = [
   ["docs/getting-started.md", "docs/getting-started.html", "Getting started", "Guide", "Install RusDox and generate the first editable DOCX and native PDF in minutes.", "Authoring"],
   ["docs/yaml-guide.md", "docs/yaml-guide.html", "YAML guide", "Guide", "Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.", "Authoring"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
+  ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
@@ -76,6 +77,20 @@ if (fs.existsSync(compatibilitySource)) {
   }
 }
 
+for (const [sourceName, outputName] of [
+  ["templates", "templates"],
+  ["template-evidence", "template-evidence"],
+]) {
+  const sourceRoot = path.join(root, sourceName);
+  if (fs.existsSync(sourceRoot)) {
+    for (const file of walkFiles(sourceRoot)) {
+      if (file.endsWith("-summary.json")) continue;
+      const relative = normalize(path.relative(sourceRoot, file));
+      generated.set(`${outputName}/${relative}`, fs.readFileSync(file));
+    }
+  }
+}
+
 const sourceCopies = [
   "README.md",
   "ROADMAP.md",
@@ -95,6 +110,8 @@ const sourceCopies = [
   "scripts/check_benchmark_regression.mjs",
   "scripts/render_benchmark_history.mjs",
   "scripts/run_benchmark_protocol.mjs",
+  "scripts/generate_word_templates.sh",
+  "scripts/verify_word_templates.sh",
 ];
 
 for (const source of sourceCopies) {

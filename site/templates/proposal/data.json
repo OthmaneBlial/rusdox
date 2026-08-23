@@ -1,0 +1,20 @@
+{
+  "proposal": {
+    "title": "Verified document delivery system",
+    "valid_until": "30 September 2026",
+    "outcome": "A repeatable document workflow that creates editable Word files, native PDFs, and machine-readable parity evidence.",
+    "price": "EUR 28,000"
+  },
+  "client": {
+    "name": "northstar operations"
+  },
+  "scope": [
+    "Map existing Word documents into reusable templates",
+    "Implement JSON-driven rendering and strict validation",
+    "Deliver viewer evidence, training, and rollout documentation"
+  ],
+  "include_support": true,
+  "$partials": {
+    "confidentiality": "Confidential. Prepared exclusively for {{ client.name | title }}."
+  }
+}

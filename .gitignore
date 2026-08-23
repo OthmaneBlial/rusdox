@@ -2,3 +2,4 @@ base/
 /target/
 /generated/
 /rendered/
+/template-evidence/*-summary.json

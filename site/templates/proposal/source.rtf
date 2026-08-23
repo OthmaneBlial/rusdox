@@ -1,0 +1,27 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Arial;}{\f1 Georgia;}}
+{\colortbl;\red29\green78\blue216;\red15\green23\blue42;\red71\green85\blue105;}
+\paperw12240\paperh15840\margl1080\margr1080\margt900\margb900
+\f0\fs18\cf1 NORTHSTAR / PROPOSAL\par
+\f1\fs48\b\cf2 \{\{ proposal.title \}\}\b0\par
+\f0\fs22\cf3 Prepared for \{\{ client.name | title \}\}\par
+\fs18 Valid until \{\{ proposal.valid_until \}\}\par
+\par
+\fs28\b\cf2 Outcome\b0\fs21\par
+\{\{ proposal.outcome \}\}\par
+\par
+\fs28\b Scope\b0\fs20\par
+\{\{#each scope\}\}\par
+- \{\{ this \}\}\par
+\{\{/each\}\}\par
+\par
+\{\{#if include_support\}\}\par
+\fs24\b Managed support included\b0\fs20\par
+The delivery includes a 30-day supported rollout and weekly office hours.\par
+\{\{else\}\}\par
+Managed support is available as an optional add-on.\par
+\{\{/if\}\}\par
+\par
+\fs26\b Investment: \{\{ proposal.price \}\}\b0\par
+\cf3 \{\{> confidentiality\}\}\par
+}

@@ -243,13 +243,15 @@ rusdox template render proposal.docx data.json
 rusdox template verify proposal.docx data.json
 ```
 
-- [ ] Define a minimal, versioned placeholder syntax.
-- [ ] Support scalar replacements, nested values, loops, conditions, and reusable subtemplates.
-- [ ] Preserve designer-authored styles, sections, headers/footers, media, relationships, and untouched package parts.
-- [ ] Report template errors with part name, paragraph/table location, placeholder, and suggested fix.
-- [ ] Add safe handling for missing values and an explicit strict mode.
-- [ ] Generate the edited DOCX, native PDF, and parity report from one command.
-- [ ] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
+- [x] Define a minimal, versioned placeholder syntax.
+- [x] Support scalar replacements, nested values, loops, conditions, and reusable subtemplates.
+- [x] Preserve designer-authored styles, sections, headers/footers, media, relationships, and untouched package parts.
+- [x] Report template errors with part name, paragraph/table location, placeholder, and suggested fix.
+- [x] Add safe handling for missing values and an explicit strict mode.
+- [x] Generate the edited DOCX, native PDF, and parity report from one command.
+- [x] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
+
+Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and 19-check green parity reports.
 
 This is a higher-value differentiator than adding dozens of low-level OOXML builders with no end-user workflow.
 

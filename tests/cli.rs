@@ -723,6 +723,124 @@ fn bench_keep_output_writes_artifacts_when_requested() {
 }
 
 #[test]
+fn template_cli_inspects_and_verifies_word_native_docx() {
+    let temp = tempdir().expect("temp dir");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let template = root.join("templates/proposal/template.docx");
+    let data = root.join("templates/proposal/data.json");
+
+    let inspect = run_cli(
+        &[
+            "template",
+            "inspect",
+            template.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        inspect.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    let inspection: serde_json::Value =
+        serde_json::from_slice(&inspect.stdout).expect("inspection JSON");
+    assert_eq!(inspection["syntax_version"], "1");
+    assert!(inspection["placeholders"].as_array().is_some_and(|items| {
+        items
+            .iter()
+            .any(|item| item["expression"] == "proposal.title")
+    }));
+    assert_eq!(inspection["diagnostics"].as_array().map(Vec::len), Some(0));
+
+    let verify = run_cli(
+        &[
+            "template",
+            "verify",
+            template.to_string_lossy().as_ref(),
+            data.to_string_lossy().as_ref(),
+            "--name",
+            "proposal",
+            "--strict",
+            "--output-root",
+            temp.path().to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        verify.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&verify.stderr)
+    );
+    let result: serde_json::Value =
+        serde_json::from_slice(&verify.stdout).expect("template result JSON");
+    assert_eq!(result["command"], "verify");
+    assert_eq!(result["passed"], true);
+    assert_eq!(result["strict"], true);
+    assert_eq!(result["checks"], 19);
+    assert_eq!(result["failed_checks"], 0);
+    assert!(result["replacements"].as_u64().unwrap_or_default() > 0);
+    assert!(result["expanded_blocks"].as_u64().unwrap_or_default() > 0);
+    assert!(temp.path().join("generated/proposal.docx").is_file());
+    assert!(temp.path().join("rendered/proposal.pdf").is_file());
+    assert!(temp.path().join("reports/proposal-parity.html").is_file());
+    assert!(temp.path().join("reports/proposal-parity.json").is_file());
+    assert!(temp
+        .path()
+        .join("reports/proposal-pages/page-001.png")
+        .is_file());
+}
+
+#[test]
+fn template_cli_strict_failure_preserves_previous_docx() {
+    let temp = tempdir().expect("temp dir");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let template = root.join("templates/proposal/template.docx");
+    let data = temp.path().join("missing.json");
+    let output = temp.path().join("generated/proposal.docx");
+    fs::create_dir_all(output.parent().expect("output parent")).expect("create output parent");
+    fs::write(&data, "{}").expect("write missing data");
+    fs::write(&output, b"known-good-docx").expect("seed previous output");
+
+    let render = run_cli(
+        &[
+            "template",
+            "render",
+            template.to_string_lossy().as_ref(),
+            data.to_string_lossy().as_ref(),
+            "--strict",
+            "--output-root",
+            temp.path().to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(!render.status.success());
+    let report: serde_json::Value =
+        serde_json::from_slice(&render.stdout).expect("strict render report JSON");
+    assert_eq!(report["written"], false);
+    assert!(report["diagnostics"].as_array().is_some_and(|diagnostics| {
+        diagnostics.iter().any(|diagnostic| {
+            diagnostic["part"] == "word/document.xml"
+                && diagnostic["location"]
+                    .as_str()
+                    .is_some_and(|location| location.starts_with("paragraph "))
+                && diagnostic["suggestion"]
+                    .as_str()
+                    .is_some_and(|suggestion| !suggestion.is_empty())
+        })
+    }));
+    assert_eq!(
+        fs::read(output).expect("read previous output"),
+        b"known-good-docx"
+    );
+}
+
+#[test]
 fn verify_writes_docx_pdf_html_json_and_page_evidence() {
     let temp = tempdir().expect("temp dir");
     let spec_path = temp.path().join("mydoc.yaml");

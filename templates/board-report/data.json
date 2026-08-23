@@ -1,0 +1,29 @@
+{
+  "report": {
+    "period": "Q3 2026",
+    "title": "Operating review",
+    "prepared_at": "24 August 2026",
+    "signal": "Expansion revenue and delivery quality are ahead of plan; one partner dependency remains the primary schedule risk."
+  },
+  "decisions": [
+    {
+      "title": "Approve security acceleration budget",
+      "owner": "CFO"
+    },
+    {
+      "title": "Confirm enterprise launch window",
+      "owner": "CPO"
+    },
+    {
+      "title": "Authorize partner escalation",
+      "owner": "CEO"
+    }
+  ],
+  "risk": {
+    "active": true,
+    "summary": "Partner certification is nine business days behind plan. The mitigation preserves the customer launch date but consumes schedule buffer."
+  },
+  "$partials": {
+    "distribution": "Distribution: Board and executive team only."
+  }
+}

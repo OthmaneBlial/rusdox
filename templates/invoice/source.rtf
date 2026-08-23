@@ -1,0 +1,29 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Arial;}{\f1 Georgia;}}
+{\colortbl;\red15\green118\blue110;\red15\green23\blue42;\red100\green116\blue139;}
+\paperw12240\paperh15840\margl1080\margr1080\margt900\margb900
+\f0\fs18\cf3 RUSDOX STUDIO\par
+\f1\fs56\b\cf2 INVOICE\b0\par
+\f0\fs22\cf1 Invoice \{\{ invoice.number \}\}\cf2\par
+\fs20 Issued: \{\{ invoice.date \}\}\par
+Due: \{\{ invoice.due_date \}\}\par
+\par
+\fs28\b Bill to\b0\fs20\par
+\{\{ customer.name | title \}\}\par
+\{\{ customer.address \}\}\par
+\par
+\fs24\b Line items\b0\fs20\par
+\{\{#each items\}\}\par
+\{\{ @index \}\}. \{\{ description \}\}  -  \{\{ quantity \}\} x \{\{ unit_price \}\}\par
+\{\{/each\}\}\par
+\par
+\fs26\b Total: \{\{ invoice.total \}\}\b0\par
+\par
+\{\{#if notes\}\}\par
+\b Notes\b0: \{\{ notes \}\}\par
+\{\{else\}\}\par
+No additional notes.\par
+\{\{/if\}\}\par
+\par
+\cf3 \{\{> payment_terms\}\}\par
+}

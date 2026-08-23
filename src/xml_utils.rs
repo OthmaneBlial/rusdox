@@ -1276,6 +1276,9 @@ where
                 let raw = String::from_utf8_lossy(value.as_ref());
                 text.push_str(&quick_xml::escape::unescape(&raw)?);
             }
+            Event::GeneralRef(reference) => {
+                text.push_str(&resolve_general_reference(&reference)?);
+            }
             Event::CData(value) => {
                 text.push_str(&String::from_utf8_lossy(value.as_ref()));
             }
@@ -3477,6 +3480,9 @@ where
                 let raw = String::from_utf8_lossy(value.as_ref());
                 instruction.push_str(&quick_xml::escape::unescape(&raw)?);
             }
+            Event::GeneralRef(reference) => {
+                instruction.push_str(&resolve_general_reference(&reference)?);
+            }
             Event::CData(value) => {
                 instruction.push_str(&String::from_utf8_lossy(value.as_ref()));
             }
@@ -3499,6 +3505,18 @@ where
     } else {
         Ok(None)
     }
+}
+
+fn resolve_general_reference(reference: &quick_xml::events::BytesRef<'_>) -> Result<String> {
+    if let Some(character) = reference.resolve_char_ref()? {
+        return Ok(character.to_string());
+    }
+    let name = reference
+        .decode()
+        .map_err(|error| DocxError::parse(format!("invalid XML entity encoding: {error}")))?;
+    quick_xml::escape::resolve_xml_entity(&name)
+        .map(ToString::to_string)
+        .ok_or_else(|| DocxError::parse(format!("unsupported XML entity reference `&{name};`")))
 }
 
 fn apply_field_char_state(field_state: &mut HeaderFooterFieldState, start: &BytesStart<'_>) {

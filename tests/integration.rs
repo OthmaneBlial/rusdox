@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Cursor, Read, Write};
 use std::path::Path;
@@ -7,11 +8,11 @@ use rusdox::parity::DocumentProjection;
 use rusdox::spec::DocumentSpec;
 use rusdox::studio::Studio;
 use rusdox::{
-    validate_docx_package, Border, BorderStyle, Document, DocumentMode, HeaderFooter, InputLimits,
-    PageNumberFormat, PageNumbering, PageOrientation, PageSetup, Paragraph, ParagraphAlignment,
-    ParagraphList, ParagraphStyle, ParagraphStyleProperties, Run, RunStyle, RunStyleProperties,
-    Stylesheet, Table, TableBorders, TableCell, TableRow, TableStyle, TableStyleProperties,
-    UnderlineStyle, Visual, VisualKind,
+    validate_docx_package, Border, BorderStyle, Document, DocumentMode, DocxTemplate, HeaderFooter,
+    InputLimits, PageNumberFormat, PageNumbering, PageOrientation, PageSetup, Paragraph,
+    ParagraphAlignment, ParagraphList, ParagraphStyle, ParagraphStyleProperties, Run, RunStyle,
+    RunStyleProperties, Stylesheet, Table, TableBorders, TableCell, TableRow, TableStyle,
+    TableStyleProperties, TemplateDiagnosticSeverity, UnderlineStyle, Visual, VisualKind,
 };
 use tempfile::tempdir;
 use zip::write::SimpleFileOptions;
@@ -976,4 +977,198 @@ fn docx_and_spec_resource_limits_fail_before_large_allocation() -> Result<(), ru
         rusdox::DocxError::ResourceLimit(message) if message.contains("YAML document spec")
     ));
     Ok(())
+}
+
+#[test]
+fn word_native_template_renders_external_fixture_and_preserves_package_parts(
+) -> Result<(), rusdox::DocxError> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = root.join("templates/invoice/template.docx");
+    let data: serde_json::Value =
+        serde_json::from_slice(&fs::read(root.join("templates/invoice/data.json"))?)
+            .expect("valid sample JSON");
+    let template = DocxTemplate::open(&source)?;
+    let inspection = template.inspect();
+    assert!(!inspection.has_errors(), "{:?}", inspection.diagnostics);
+    assert!(inspection
+        .placeholders
+        .iter()
+        .any(|placeholder| placeholder.kind == "each_start"));
+    assert!(inspection
+        .placeholders
+        .iter()
+        .any(|placeholder| placeholder.kind == "if_start"));
+
+    let temp = tempdir().expect("temp dir");
+    let output = temp.path().join("invoice.docx");
+    let report = template.render_to_path(&data, &output, true)?;
+    assert!(report.written);
+    assert!(!report.has_errors());
+    assert!(report.replacements >= 10);
+    assert!(report.expanded_blocks >= 4);
+
+    let package = validate_docx_package(&output)?;
+    assert!(package.valid, "{}", package.errors.join("; "));
+    let rendered = Document::open_read_only(&output)?;
+    let text = rendered.text();
+    assert!(text.contains("INV-2026-1042"));
+    assert!(text.contains("Atlas Research Group"));
+    assert!(text.contains("1. Document automation discovery"));
+    assert!(text.contains("3. Viewer acceptance and handoff"));
+    assert!(text.contains("Payment terms: net 30 days"));
+    assert!(!text.contains("{{"));
+
+    let original_parts = read_docx_parts(&source)?;
+    let rendered_parts = read_docx_parts(&output)?;
+    assert_eq!(
+        original_parts.keys().collect::<Vec<_>>(),
+        rendered_parts.keys().collect::<Vec<_>>()
+    );
+    for (name, original) in original_parts
+        .iter()
+        .filter(|(name, _)| name.as_str() != "word/document.xml")
+    {
+        assert_eq!(
+            rendered_parts.get(name),
+            Some(original),
+            "untouched package part changed: {name}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn word_native_template_expands_complete_table_rows() -> Result<(), rusdox::DocxError> {
+    let row = |text: &str| {
+        TableRow::new().add_cell(
+            TableCell::new().add_paragraph(Paragraph::new().add_run(Run::from_text(text))),
+        )
+    };
+    let document = Document::new().add_table(
+        Table::new()
+            .add_row(row("{{#each items}}"))
+            .add_row(row("{{ @index }}. {{ name }}"))
+            .add_row(row("{{/each}}")),
+    );
+    let temp = tempdir().expect("temp dir");
+    let source = temp.path().join("rows.docx");
+    let output = temp.path().join("rendered.docx");
+    document.save(&source)?;
+
+    let report = DocxTemplate::open(&source)?.render_to_path(
+        &serde_json::json!({"items": [{"name": "Alpha"}, {"name": "<Beta> & Co"}]}),
+        &output,
+        true,
+    )?;
+    assert!(report.written, "{:?}", report.diagnostics);
+    let parts = read_docx_parts(&output)?;
+    let document_xml =
+        String::from_utf8(parts["word/document.xml"].clone()).expect("document XML must be UTF-8");
+    assert!(
+        document_xml.contains("&lt;Beta&gt; &amp; Co"),
+        "replacement must remain XML-escaped: {document_xml}"
+    );
+    let rendered = Document::open_read_only(output)?;
+    let table = rendered.tables().next().expect("rendered table");
+    assert_eq!(table.rows().count(), 2);
+    assert_eq!(table.text(), "1. Alpha\n2. <Beta> & Co");
+    Ok(())
+}
+
+#[test]
+fn word_native_template_strict_missing_value_is_located_and_recoverable(
+) -> Result<(), rusdox::DocxError> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let template = DocxTemplate::open(root.join("templates/proposal/template.docx"))?;
+    let temp = tempdir().expect("temp dir");
+    let output = temp.path().join("existing.docx");
+    fs::write(&output, b"known-good-output").expect("seed output");
+
+    let report = template.render_to_path(&serde_json::json!({}), &output, true)?;
+    assert!(!report.written);
+    assert!(report.has_errors());
+    assert!(report.diagnostics.iter().any(|diagnostic| {
+        diagnostic.severity == TemplateDiagnosticSeverity::Error
+            && diagnostic.part == "word/document.xml"
+            && diagnostic.location.starts_with("paragraph ")
+            && diagnostic.placeholder == "proposal.title"
+            && !diagnostic.suggestion.is_empty()
+    }));
+    assert_eq!(fs::read(output)?, b"known-good-output");
+    Ok(())
+}
+
+#[test]
+fn word_native_template_preserves_sections_headers_media_and_relationships(
+) -> Result<(), rusdox::DocxError> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut document = Document::new();
+    document
+        .set_page_setup(
+            PageSetup::new(15_840, 12_240)
+                .margins(720, 900, 720, 900)
+                .orientation(PageOrientation::Landscape),
+        )
+        .set_header(Some(HeaderFooter::new("Designer header")))
+        .set_footer(Some(HeaderFooter::new("Page {page} of {pages}")));
+    document.push_paragraph(
+        Paragraph::new()
+            .add_run(Run::from_text("Prepared for {{ custo").bold())
+            .add_run(Run::from_text("mer.name }}").italic()),
+    );
+    document.push_visual(Visual::logo(root.join("assets/rusdox-mark.svg")));
+
+    let temp = tempdir().expect("temp dir");
+    let source = temp.path().join("designer.docx");
+    let output = temp.path().join("rendered.docx");
+    document.save(&source)?;
+    let report = DocxTemplate::open(&source)?.render_to_path(
+        &serde_json::json!({"customer": {"name": "Atlas"}}),
+        &output,
+        true,
+    )?;
+    assert!(report.written, "{:?}", report.diagnostics);
+
+    let before = read_docx_parts(&source)?;
+    let after = read_docx_parts(&output)?;
+    for name in [
+        "word/header1.xml",
+        "word/footer1.xml",
+        "word/_rels/document.xml.rels",
+        "word/styles.xml",
+        "word/media/image1.png",
+    ] {
+        assert_eq!(after.get(name), before.get(name), "{name} changed");
+    }
+    let before_document = String::from_utf8(before["word/document.xml"].clone()).expect("UTF-8");
+    let after_document = String::from_utf8(after["word/document.xml"].clone()).expect("UTF-8");
+    assert_eq!(
+        before_document.split("<w:sectPr").nth(1),
+        after_document.split("<w:sectPr").nth(1),
+        "section properties changed"
+    );
+    let rendered = Document::open_read_only(output)?;
+    assert!(rendered.text().contains("Prepared for Atlas"));
+    assert_eq!(
+        rendered.header().map(|header| header.text.as_str()),
+        Some("Designer header")
+    );
+    assert_eq!(rendered.visuals().count(), 1);
+    Ok(())
+}
+
+fn read_docx_parts(path: &Path) -> Result<BTreeMap<String, Vec<u8>>, rusdox::DocxError> {
+    let mut archive = ZipArchive::new(fs::File::open(path)?)?;
+    let mut parts = BTreeMap::new();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        if entry.is_dir() {
+            continue;
+        }
+        let name = entry.name().to_string();
+        let mut bytes = Vec::new();
+        entry.read_to_end(&mut bytes)?;
+        parts.insert(name, bytes);
+    }
+    Ok(parts)
 }

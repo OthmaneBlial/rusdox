@@ -29,6 +29,15 @@ If you have ever tried to create Word or PDF files in code, you already know the
 
 RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Performance evidence now comes from a versioned small/medium/1,000-page protocol that records the exact host, toolchain, inputs, output sizes, timings, and peak memory. See [Benchmark proof](#benchmark-proof) before comparing it with another system.
 
+## Bring your own Word design
+
+Keep the layout your team already designed in Word, add readable placeholders, then drive it from JSON:
+
+    rusdox template inspect proposal.docx
+    rusdox template verify proposal.docx data.json --strict
+
+One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
+
 ## Install in 10 seconds
 
 macOS or Linux:
@@ -76,6 +85,7 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 - Validate specs before render so semantic issues fail early in CI and local workflows.
 - Rebuild documents automatically while editing specs or config files.
 - Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
+- Turn designer-authored Word files into strict JSON-driven DOCX/PDF/parity bundles.
 - Keep simple authoring in YAML longer with variables, includes, and repeaters.
 - Set document metadata such as title, author, subject, keywords, and custom properties directly from specs or Rust.
 - Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.

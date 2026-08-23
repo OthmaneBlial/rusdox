@@ -15,7 +15,8 @@ If you are new, read these pages in order:
 9. [Input Safety and Limits](input-safety.md)
 10. [Parity Verification](parity.md)
 11. [Reproducible Performance](performance.md)
-12. [Troubleshooting](troubleshooting.md)
+12. [Word-native Templates](word-templates.md)
+13. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -51,6 +52,7 @@ If you are a developer and want full power:
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
 - how to reproduce performance results and interpret regression evidence
+- how to turn designer-authored Word files into verified JSON-driven outputs
 - how to use the Rust layer for advanced cases
 - exactly which DOCX/PDF features are supported today
 - how to diagnose installation, font, asset, table, and viewer problems
