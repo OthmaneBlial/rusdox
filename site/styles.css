@@ -226,6 +226,14 @@ main {
   align-items: start;
 }
 
+.hero-block > *,
+.docs-hero > *,
+.docs-spotlight > *,
+.benchmark-layout > *,
+.quick-install > * {
+  min-width: 0;
+}
+
 .docs-page-head {
   display: flex;
   align-items: end;
@@ -389,6 +397,8 @@ main {
 
 .panel-code code {
   display: block;
+  contain: inline-size;
+  max-width: 100%;
   padding: 14px 16px;
   margin: 10px 0 16px;
   overflow-x: auto;
@@ -448,6 +458,7 @@ main {
 }
 
 .step-card pre {
+  contain: inline-size;
   max-width: 100%;
   margin: 18px 0 0;
   padding: 16px;
@@ -722,6 +733,8 @@ main {
 }
 
 .prose pre {
+  contain: inline-size;
+  max-width: 100%;
   padding: 18px;
   overflow: auto;
   border-radius: 14px;
@@ -1082,7 +1095,7 @@ main {
   .benchmark-layout,
   .docs-layout,
   .docs-static-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .docs-sidebar {
@@ -1186,6 +1199,22 @@ main {
     padding: 22px 18px;
   }
 
+  .site-nav a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .docs-static-nav a {
+    min-height: 40px;
+  }
+
+  .docs-toc a {
+    display: block;
+    min-height: 32px;
+    padding: 5px 0;
+  }
+
   .docs-pager-next {
     text-align: left;
   }
@@ -1194,6 +1223,29 @@ main {
   .docs-hero-copy h1 {
     max-width: none;
     font-size: clamp(2.4rem, 12vw, 4rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-actions,
+  .article-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-actions .button,
+  .article-actions .button {
+    width: 100%;
+  }
+
+  .metric-list div,
+  .benchmark-list div {
+    align-items: flex-start;
+  }
+
+  .metric-list dd,
+  .benchmark-list dd {
+    font-size: clamp(1.35rem, 8vw, 1.8rem);
   }
 }
 

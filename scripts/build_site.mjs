@@ -252,7 +252,7 @@ function renderPage(page, rendered) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="${prefix}styles.css?v=1.0.0-mobile" />
+    <link rel="stylesheet" href="${prefix}styles.css?v=1.0.0-mobile2" />
     <script type="application/ld+json">${structuredData}</script>
   </head>
   <body data-page="docs-static">
