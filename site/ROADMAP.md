@@ -450,6 +450,19 @@ PDF evidence keeps tagged-PDF and PDF/A claims false.
 
 `v1.0.0` is justified only when teams can upgrade with confidence, supported viewers behave predictably, the spec has a migration story, and security/performance limits are explicit.
 
+Exit-gate evidence completed on 2026-08-24: tag `v1.0.0` resolves to
+`c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5`; the final
+[release workflow](https://github.com/OthmaneBlial/rusdox/actions/runs/32686739398)
+passed SemVer, four clean byte-reproducible target builds, GitHub provenance and
+SBOM attestations, crates.io OIDC publication, and three installer smoke jobs.
+The public [GitHub Release](https://github.com/OthmaneBlial/rusdox/releases/tag/v1.0.0),
+[crates.io package](https://crates.io/crates/rusdox/1.0.0),
+[docs.rs documentation](https://docs.rs/rusdox/1.0.0/rusdox/), and
+[Pages evidence](https://othmaneblial.github.io/rusdox/docs/releases/v1.0.0.html)
+were independently checked. The reusable checklist and exact hashes live in the
+[v1.0.0 release receipt](docs/releases/v1.0.0.md). The M3 external-human adoption
+gate remains explicitly separate and cannot be manufactured by repository code.
+
 ---
 
 ## Growth loop after the product gates are green
