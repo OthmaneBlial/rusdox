@@ -1,0 +1,20 @@
+name: RusDox release notes
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  release-notes-document:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: OthmaneBlial/rusdox@main
+        with:
+          input: documents/release-notes.yaml
+          output-root: artifacts/release-notes
+          comment: "false"
+          retention-days: "30"

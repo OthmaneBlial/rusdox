@@ -63,6 +63,7 @@ jobs:
           node scripts/check_site.mjs
           node playground/test.mjs
           node scripts/build_template_registry.mjs --check
+          node scripts/test_github_action.mjs
 
       - name: Verify crate package
         if: matrix.os == 'ubuntu-latest'
@@ -70,6 +71,16 @@ jobs:
 
       - name: Build release binary for installer fixture
         run: cargo build --release --locked --bin rusdox
+
+      - name: Smoke reusable RusDox action
+        if: matrix.os == 'ubuntu-latest'
+        uses: ./
+        with:
+          input: examples/hello_world.yaml
+          output-root: target/github-action-smoke
+          binary: target/release/rusdox
+          upload-reports: "false"
+          comment: "false"
 
       - name: Test Unix installer with checksums
         if: matrix.os != 'windows-latest'

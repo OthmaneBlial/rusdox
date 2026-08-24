@@ -1,0 +1,19 @@
+name: RusDox invoice
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-invoice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: OthmaneBlial/rusdox@main
+        with:
+          input: documents/invoice.yaml
+          output-root: artifacts/invoice
+          comment: "false"
+          retention-days: "7"

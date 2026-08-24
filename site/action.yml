@@ -1,0 +1,140 @@
+name: RusDox document verification
+description: Validate document specs, render DOCX/PDF output, annotate source lines, and retain parity evidence in GitHub Actions.
+author: Othmane Blial
+
+branding:
+  icon: file-text
+  color: orange
+
+inputs:
+  input:
+    description: Spec file or directory to validate and verify.
+    required: true
+  config:
+    description: Optional RusDox config file.
+    required: false
+    default: ""
+  output-root:
+    description: Workspace-relative root for generated, rendered, and report files.
+    required: false
+    default: .rusdox-artifacts
+  visual-baseline:
+    description: Optional page-snapshot baseline directory.
+    required: false
+    default: ""
+  visual-threshold:
+    description: Maximum changed-pixel fraction from 0 to 1.
+    required: false
+    default: "0"
+  binary:
+    description: Optional prebuilt RusDox binary. The action builds its pinned source when omitted.
+    required: false
+    default: ""
+  upload-reports:
+    description: Upload parity HTML, JSON, and page evidence to this GitHub Actions run.
+    required: false
+    default: "true"
+  artifact-name:
+    description: Prefix for the immutable GitHub Actions artifact.
+    required: false
+    default: rusdox-parity
+  retention-days:
+    description: Report artifact retention in days.
+    required: false
+    default: "14"
+  comment:
+    description: Create or update a summary comment for pull_request runs.
+    required: false
+    default: "true"
+  github-token:
+    description: GitHub token with pull-requests write permission. Required only for comments.
+    required: false
+    default: ""
+
+outputs:
+  passed:
+    description: Whether validation and every parity check passed.
+    value: ${{ steps.verify.outputs.passed }}
+  reports-path:
+    description: Absolute local path containing parity evidence.
+    value: ${{ steps.verify.outputs.reports-path }}
+  artifact-url:
+    description: Authenticated URL for the immutable GitHub Actions report artifact.
+    value: ${{ steps.upload.outputs.artifact-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install stable Rust toolchain
+      if: ${{ inputs.binary == '' }}
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Prepare native RusDox binary
+      id: prepare
+      shell: bash
+      env:
+        RUSDOX_ACTION_PATH: ${{ github.action_path }}
+        RUSDOX_BINARY_INPUT: ${{ inputs.binary }}
+      run: |
+        set -euo pipefail
+        if [[ -n "$RUSDOX_BINARY_INPUT" ]]; then
+          binary="$RUSDOX_BINARY_INPUT"
+        else
+          target_dir="$RUNNER_TEMP/rusdox-action-target"
+          cargo build --release --locked --bin rusdox \
+            --manifest-path "$RUSDOX_ACTION_PATH/Cargo.toml" \
+            --target-dir "$target_dir"
+          binary="$target_dir/release/rusdox"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            binary="${binary}.exe"
+          fi
+        fi
+        if [[ ! -f "$binary" ]]; then
+          echo "RusDox binary not found: $binary" >&2
+          exit 1
+        fi
+        echo "binary=$binary" >> "$GITHUB_OUTPUT"
+
+    - name: Validate, annotate, render, and verify
+      id: verify
+      shell: bash
+      env:
+        RUSDOX_ACTION_PATH: ${{ github.action_path }}
+        RUSDOX_BINARY: ${{ steps.prepare.outputs.binary }}
+        RUSDOX_INPUT: ${{ inputs.input }}
+        RUSDOX_CONFIG: ${{ inputs.config }}
+        RUSDOX_OUTPUT_ROOT: ${{ inputs.output-root }}
+        RUSDOX_VISUAL_BASELINE: ${{ inputs.visual-baseline }}
+        RUSDOX_VISUAL_THRESHOLD: ${{ inputs.visual-threshold }}
+      run: >-
+        node "$RUSDOX_ACTION_PATH/scripts/github_action.mjs"
+        --binary "$RUSDOX_BINARY"
+        --input "$RUSDOX_INPUT"
+        --output-root "$RUSDOX_OUTPUT_ROOT"
+        --config "$RUSDOX_CONFIG"
+        --visual-baseline "$RUSDOX_VISUAL_BASELINE"
+        --visual-threshold "$RUSDOX_VISUAL_THRESHOLD"
+
+    - name: Upload private report evidence to this GitHub run
+      id: upload
+      if: ${{ always() && inputs.upload-reports == 'true' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}-${{ github.run_id }}
+        path: ${{ inputs.output-root }}/reports/
+        if-no-files-found: ignore
+        retention-days: ${{ inputs.retention-days }}
+
+    - name: Create or update pull-request summary
+      if: ${{ always() && github.event_name == 'pull_request' && inputs.comment == 'true' && inputs.github-token != '' }}
+      shell: bash
+      continue-on-error: true
+      env:
+        RUSDOX_ACTION_PATH: ${{ github.action_path }}
+        RUSDOX_COMMENT_FILE: ${{ inputs.output-root }}/rusdox-comment.md
+        RUSDOX_ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: >-
+        node "$RUSDOX_ACTION_PATH/scripts/github_action_comment.mjs"
+        --body-file "$RUSDOX_COMMENT_FILE"
+        --artifact-url "$RUSDOX_ARTIFACT_URL"

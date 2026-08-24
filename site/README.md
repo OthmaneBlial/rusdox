@@ -52,6 +52,25 @@ inputs, preview, supported RusDox versions, accessibility notes, and verified
 DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/preview.html)
 or read its [trust and contribution contract](docs/template-registry.md).
 
+## Put document parity in every pull request
+
+Use the repository as a reusable GitHub Action to annotate validation errors on
+their exact source lines, render DOCX/PDF output, and retain parity evidence in
+the calling repository's Actions run:
+
+```yaml
+- uses: actions/checkout@v5
+- uses: OthmaneBlial/rusdox@main
+  with:
+    input: documents
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The optional PR comment contains check metadata, not document contents. Raw
+DOCX/PDF files stay on the ephemeral runner and report upload can be disabled
+for confidential workloads. Read the [GitHub Action contract](docs/github-action.md)
+and copy the [workflow recipes](examples/github-actions/).
+
 ## Schema-first authoring
 
 Every current spec declares version 1. Generate the same JSON Schema used by

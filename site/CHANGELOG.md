@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A dated WASM feasibility spike and explicit browser-rendering capability boundary.
 - A `rusdox dev` feedback loop with a loopback-only PDF/status dashboard, debounced input/config/include/asset watching, last-success preservation, per-stage timings, JSON Lines events, browser opening, and quiet bounded runs.
 - A signed curated template registry with hash-verified `template list`, `search`, `add`, and `update` commands; seven discovery categories; contributor credit; accessibility metadata; a featured monthly template; and pull-request preview artifacts.
+- A reusable source-pinned GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
 
 ### Changed
 

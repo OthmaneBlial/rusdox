@@ -20,6 +20,7 @@ const pages = [
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
   ["docs/template-registry.md", "docs/template-registry.html", "Curated template registry", "Guide", "Discover, verify, install, update, and contribute signed Word templates without expanding the core crate.", "Examples"],
+  ["docs/github-action.md", "docs/github-action.html", "GitHub Action", "Integration", "Validate specs, annotate pull-request lines, render outputs, and retain private parity evidence inside GitHub Actions.", "Trust & operations"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
@@ -120,6 +121,12 @@ const sourceCopies = [
   "scripts/generate_word_templates.sh",
   "scripts/verify_word_templates.sh",
   "scripts/generate_schema.sh",
+  "action.yml",
+  "scripts/github_action.mjs",
+  "scripts/github_action_comment.mjs",
+  "scripts/test_github_action.mjs",
+  ...walkFiles(path.join(root, "examples", "github-actions"))
+    .map((file) => normalize(path.relative(root, file))),
 ];
 
 for (const source of sourceCopies) {
@@ -403,21 +410,26 @@ function renderInline(value, page) {
     tokens.push(html);
     return token;
   };
+  const restoreTokens = (value) => {
+    let restored = value;
+    tokens.forEach((token, index) => {
+      restored = restored.replaceAll(`\u0000TOKEN${index}\u0000`, token);
+    });
+    return restored;
+  };
   let text = value
     .replace(/`([^`]+)`/g, (_, code) => reserve(`<code>${escapeHtml(code)}</code>`))
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, href) => reserve(`<img src="${escapeAttribute(resolveHref(href, page))}" alt="${escapeAttribute(alt)}" loading="lazy" />`))
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
       const external = /^(https?:|mailto:)/.test(href);
-      return reserve(`<a href="${escapeAttribute(resolveHref(href, page))}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(label)}</a>`);
+      const labelHtml = restoreTokens(escapeHtml(label));
+      return reserve(`<a href="${escapeAttribute(resolveHref(href, page))}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${labelHtml}</a>`);
     });
   text = escapeHtml(text)
     .replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>")
     .replace(/~~([^~]+?)~~/g, "<del>$1</del>")
     .replace(/(^|[^*])\*([^*]+?)\*/g, "$1<em>$2</em>");
-  tokens.forEach((token, index) => {
-    text = text.replace(`\u0000TOKEN${index}\u0000`, token);
-  });
-  return text;
+  return restoreTokens(text);
 }
 
 function resolveHref(rawHref, page) {

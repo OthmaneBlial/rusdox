@@ -128,6 +128,25 @@ inputs, preview, supported RusDox versions, accessibility notes, and verified
 DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/preview.html)
 or read its [trust and contribution contract](docs/template-registry.md).
 
+## Put document parity in every pull request
+
+Use the repository as a reusable GitHub Action to annotate validation errors on
+their exact source lines, render DOCX/PDF output, and retain parity evidence in
+the calling repository's Actions run:
+
+```yaml
+- uses: actions/checkout@v5
+- uses: OthmaneBlial/rusdox@main
+  with:
+    input: documents
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The optional PR comment contains check metadata, not document contents. Raw
+DOCX/PDF files stay on the ephemeral runner and report upload can be disabled
+for confidential workloads. Read the [GitHub Action contract](docs/github-action.md)
+and copy the [workflow recipes](examples/github-actions/).
+
 ## Schema-first authoring
 
 Every current spec declares version 1. Generate the same JSON Schema used by
@@ -1670,6 +1689,116 @@ The initial signing key was generated only to sign the immutable v1 index and
 then discarded. This conservative bootstrap means a changed default registry
 requires a new RusDox release with a newly pinned key; the remote host alone
 cannot silently replace the trusted index.
+
+---
+
+# GitHub Action
+
+Source: https://othmaneblial.github.io/rusdox/docs/github-action.html
+
+The reusable RusDox action validates specs, attaches source-located errors and
+warnings to pull-request lines, renders editable DOCX plus native PDF, runs the
+parity contract, and keeps review evidence inside the calling repository's
+GitHub Actions run.
+
+## Minimal workflow
+
+```yaml
+name: Verify documents
+
+on:
+  pull_request:
+    paths: ["documents/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  documents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: OthmaneBlial/rusdox@main
+        with:
+          input: documents
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+`main` exposes the action before the planned `v0.4.0` tag exists. Pin a full
+commit SHA for a production workflow today, then move to a reviewed release tag
+when the automation surface is released.
+
+## What it does
+
+The action builds the native binary from the exact RusDox ref selected in
+`uses`, unless `binary` points to an already-built executable. It runs
+`rusdox validate --format json` first, converts source locations into native
+GitHub error and warning annotations, and only renders valid specs. It then runs
+`rusdox verify`, writes the same HTML/JSON/page evidence used locally, adds a Job
+Summary, and optionally upserts one concise pull-request comment.
+
+By default, only `reports/` is uploaded as an immutable GitHub Actions artifact
+for 14 days. Editable DOCX and rendered PDF files stay on the ephemeral runner.
+The PR comment contains filenames and check counts—not document contents—and no
+external diff service receives the files. Page snapshots and HTML reports can
+still reveal document content, so set `upload-reports: false` for confidential
+workloads that must not be retained even in the repository's Actions storage.
+
+## Inputs and outputs
+
+Common inputs:
+
+- `input`: required path to one spec or a directory;
+- `config`: optional `rusdox.toml` path;
+- `output-root`: defaults to `.rusdox-artifacts`;
+- `visual-baseline` and `visual-threshold`: optional deterministic page diff;
+- `upload-reports`: keeps parity evidence in GitHub Actions, default `true`;
+- `comment`: updates a PR summary, default `true` when a token is provided;
+- `github-token`: token with `pull-requests: write` for comments;
+- `retention-days`: report retention, default 14.
+
+Outputs are `passed`, `reports-path`, and `artifact-url`. A validation or parity
+failure fails the workflow even though the evidence upload and PR summary still
+run.
+
+## Visual baselines
+
+Page snapshots are renderer- and platform-specific. Check in a baseline from
+the same runner image and pass its directory explicitly:
+
+```yaml
+      - uses: OthmaneBlial/rusdox@main
+        with:
+          input: documents/monthly.yaml
+          visual-baseline: tests/rusdox-pages/linux-x86_64
+          visual-threshold: "0.002"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The comment links to the authenticated artifact rather than embedding a public
+image URL. A fork pull request with a read-only token still gets line
+annotations, parity checks, and an artifact; only the optional comment is
+skipped with a warning.
+
+## Workflow recipes
+
+Copy the complete, non-executing examples from
+[`examples/github-actions/`](../examples/github-actions/):
+
+- release notes generated when a GitHub Release is published;
+- an on-demand invoice verification job;
+- compliance evidence with strict visual baselines on pull requests;
+- a scheduled operating report with short artifact retention.
+
+## Why there is no container image
+
+The native binary is the default distribution. As of 2026-08-24, public issues
+and Discussions contain no Docker, container, or OCI request. RusDox therefore
+does not publish a speculative image with a second patching and provenance
+surface. Open a feature request with the runtime, architecture, and deployment
+constraint if an image would solve a real adoption blocker; that evidence is
+the publication gate.
 
 ---
 
@@ -3447,11 +3576,13 @@ Section evidence: `registry/index.json` is an Ed25519-signed v1 contract for thr
 
 ### GitHub-native automation
 
-- [ ] Ship a reusable GitHub Action that validates specs, renders outputs, and uploads parity reports.
-- [ ] Add examples for release notes, invoices, compliance evidence, and scheduled reporting workflows.
-- [ ] Support annotations that attach RusDox validation errors to pull-request lines.
-- [ ] Offer a pull-request visual-diff comment without uploading private documents to a third-party service.
-- [ ] Publish minimal Docker and OCI images only if real users need them; the native binary remains the default.
+- [x] Ship a reusable GitHub Action that validates specs, renders outputs, and uploads parity reports.
+- [x] Add examples for release notes, invoices, compliance evidence, and scheduled reporting workflows.
+- [x] Support annotations that attach RusDox validation errors to pull-request lines.
+- [x] Offer a pull-request visual-diff comment without uploading private documents to a third-party service.
+- [x] Publish minimal Docker and OCI images only if real users need them; the native binary remains the default.
+
+Section evidence: the root `action.yml` is a source-built composite action that builds the native binary selected by the caller's pinned `uses` ref, or accepts a prebuilt binary for a faster trusted job. It validates before render, converts JSON source spans to GitHub error/warning annotations, produces the full DOCX/PDF/parity bundle, uploads only `reports/` as an immutable Actions artifact, writes a Job Summary, and upserts a metadata-only PR comment whose authenticated link never exposes a public document URL. Upload and comment are independently optional for confidential or read-only fork runs. Node contract tests cover relative file annotations and pass/fail summaries; the main CI workflow dogfoods the local action. Four copyable workflows cover release notes, invoices, strict compliance baselines, and scheduled reports. A dated public issue/Discussion check found no container demand, so no speculative Docker/OCI image or second patching surface was published; the documented evidence gate keeps the native binary as the default.
 
 ### Integration surfaces
 
@@ -3639,6 +3770,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A dated WASM feasibility spike and explicit browser-rendering capability boundary.
 - A `rusdox dev` feedback loop with a loopback-only PDF/status dashboard, debounced input/config/include/asset watching, last-success preservation, per-stage timings, JSON Lines events, browser opening, and quiet bounded runs.
 - A signed curated template registry with hash-verified `template list`, `search`, `add`, and `update` commands; seven discovery categories; contributor credit; accessibility metadata; a featured monthly template; and pull-request preview artifacts.
+- A reusable source-pinned GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
 
 ### Changed
 

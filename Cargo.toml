@@ -28,6 +28,7 @@ include = [
   "!/tests/golden/**",
   "/examples/*.yaml",
   "/examples/fragments/**",
+  "/examples/github-actions/**",
   "/examples/README.md",
   "/templates/**",
   "/assets/rusdox-mark.svg",

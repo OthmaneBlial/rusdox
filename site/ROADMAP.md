@@ -317,11 +317,13 @@ Section evidence: `registry/index.json` is an Ed25519-signed v1 contract for thr
 
 ### GitHub-native automation
 
-- [ ] Ship a reusable GitHub Action that validates specs, renders outputs, and uploads parity reports.
-- [ ] Add examples for release notes, invoices, compliance evidence, and scheduled reporting workflows.
-- [ ] Support annotations that attach RusDox validation errors to pull-request lines.
-- [ ] Offer a pull-request visual-diff comment without uploading private documents to a third-party service.
-- [ ] Publish minimal Docker and OCI images only if real users need them; the native binary remains the default.
+- [x] Ship a reusable GitHub Action that validates specs, renders outputs, and uploads parity reports.
+- [x] Add examples for release notes, invoices, compliance evidence, and scheduled reporting workflows.
+- [x] Support annotations that attach RusDox validation errors to pull-request lines.
+- [x] Offer a pull-request visual-diff comment without uploading private documents to a third-party service.
+- [x] Publish minimal Docker and OCI images only if real users need them; the native binary remains the default.
+
+Section evidence: the root `action.yml` is a source-built composite action that builds the native binary selected by the caller's pinned `uses` ref, or accepts a prebuilt binary for a faster trusted job. It validates before render, converts JSON source spans to GitHub error/warning annotations, produces the full DOCX/PDF/parity bundle, uploads only `reports/` as an immutable Actions artifact, writes a Job Summary, and upserts a metadata-only PR comment whose authenticated link never exposes a public document URL. Upload and comment are independently optional for confidential or read-only fork runs. Node contract tests cover relative file annotations and pass/fail summaries; the main CI workflow dogfoods the local action. Four copyable workflows cover release notes, invoices, strict compliance baselines, and scheduled reports. A dated public issue/Discussion check found no container demand, so no speculative Docker/OCI image or second patching surface was published; the documented evidence gate keeps the native binary as the default.
 
 ### Integration surfaces
 

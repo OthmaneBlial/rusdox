@@ -1,0 +1,24 @@
+name: RusDox compliance evidence
+
+on:
+  pull_request:
+    paths:
+      - documents/compliance/**
+      - tests/rusdox-pages/**
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  verify-compliance-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: OthmaneBlial/rusdox@main
+        with:
+          input: documents/compliance
+          visual-baseline: tests/rusdox-pages/linux-x86_64
+          visual-threshold: "0"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: "30"
