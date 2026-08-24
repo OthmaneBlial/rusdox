@@ -61,6 +61,7 @@ jobs:
         run: |
           node scripts/build_site.mjs --check
           node scripts/check_site.mjs
+          node playground/test.mjs
 
       - name: Verify crate package
         if: matrix.os == 'ubuntu-latest'

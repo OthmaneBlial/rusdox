@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browser rendering feasibility | RusDox Documentation</title>
+    <meta name="description" content="Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/wasm-feasibility.html" />
+    <meta property="og:title" content="Browser rendering feasibility | RusDox" />
+    <meta property="og:description" content="Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/wasm-feasibility.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Browser rendering feasibility","description":"Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.","url":"https://othmaneblial.github.io/rusdox/docs/wasm-feasibility.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Decision</p>
+            <h1>Browser rendering feasibility</h1>
+            <p class="lede">Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/wasm-feasibility.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a class="is-active" aria-current="page" href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#decision">Decision</a></li><li class="toc-level-2"><a href="#reproduce-the-spike">Reproduce the spike</a></li><li class="toc-level-2"><a href="#gates-for-a-full-renderer">Gates for a full renderer</a></li></ol></nav>
+            <div class="docs-content prose"><p>Date: 2026-08-24</p>
+<h2 id="decision">Decision</h2>
+<p>RusDox ships an interactive, local-first spec playground now. It does not claim to render edited DOCX or PDF files in the browser yet.</p>
+<p>The Rust library compiles for the browser target, which makes a future WASM renderer plausible. The current end-to-end render path is not browser-ready, however: PDF rendering discovers fonts from the host operating system, public PDF APIs write through filesystem paths, and the project does not yet ship a pinned redistributable font bundle with license evidence and multiscript coverage.</p>
+<p>The playground therefore follows the explicit fallback in the roadmap. It previews the document structure, keeps edits in the current browser tab, downloads edited YAML, and exposes pre-generated DOCX/PDF artifacts only while the source exactly matches a checked-in example. This avoids presenting an HTML approximation as PDF parity.</p>
+<h2 id="reproduce-the-spike">Reproduce the spike</h2>
+<p>The spike ran successfully on Rust 1.95.0 with target wasm32-unknown-unknown:</p>
+<p>rustup target add wasm32-unknown-unknown cargo check --locked --target wasm32-unknown-unknown --lib</p>
+<p>Success means the library dependency graph compiles for the target. It does not prove that browser APIs, font loading, memory behavior, downloads, or layout parity work.</p>
+<h2 id="gates-for-a-full-renderer">Gates for a full renderer</h2>
+<p>A future full browser renderer must satisfy all of these gates:</p>
+<ol><li>Return DOCX and PDF bytes from public in-memory APIs without temporary paths.</li><li>Bundle pinned, redistributable TrueType fonts and their license texts.</li><li>Cover the scripts promised by the compatibility contract, including transparent shaping limitations.</li><li>Expose a small wasm-bindgen API with deterministic errors and bounded allocations.</li><li>Pass the same semantic parity fixtures as the CLI in real Chromium, Firefox, and WebKit runs.</li><li>Prove through a network test that author content is never uploaded.</li></ol>
+<p>Until those gates pass, the CLI remains the source of truth for edited DOCX/PDF output.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="spec-versioning.html"><span>Previous</span><strong>Spec versioning</strong></a>
+    <a class="docs-pager-next" href="configuration.html"><span>Next</span><strong>Configuration</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -269,12 +269,14 @@ Section evidence: all published specs now declare version 1; missing versions re
 
 ### Zero-install playground
 
-- [ ] Run a feasibility spike for a WASM renderer with bundled, redistributable fonts.
-- [ ] If feasible, add a fully local browser playground: edit YAML, preview PDF, download DOCX/PDF, and load gallery templates.
-- [ ] If full browser rendering is not yet feasible, ship an interactive spec builder with pre-generated verified outputs and a transparent capability boundary.
-- [ ] Make every playground example reproducible with the CLI.
-- [ ] Add “Open this example” links from the README, gallery, docs, and parity reports.
-- [ ] Never upload user document content by default.
+- [x] Run a feasibility spike for a WASM renderer with bundled, redistributable fonts.
+- [x] If feasible, add a fully local browser playground: edit YAML, preview PDF, download DOCX/PDF, and load gallery templates.
+- [x] If full browser rendering is not yet feasible, ship an interactive spec builder with pre-generated verified outputs and a transparent capability boundary.
+- [x] Make every playground example reproducible with the CLI.
+- [x] Add “Open this example” links from the README, gallery, docs, and parity reports.
+- [x] Never upload user document content by default.
+
+Section evidence: `cargo check --locked --target wasm32-unknown-unknown --lib` succeeds on Rust 1.95.0, but the dated feasibility record rejects a premature full-render claim because PDF fonts still come from the host filesystem, output APIs remain path-based, and no licensed multiscript font bundle has passed browser parity. The shipped fallback is a same-origin, dependency-free playground for six gallery fixtures: edits and downloads use browser memory only, the HTML preview is visibly structural rather than PDF layout, and verified DOCX/PDF/parity links are disabled after any source edit. Every fixture shows its exact CLI command; pure parser/safety tests cover all six inputs; README, gallery, generated docs, site cards, and generated parity HTML link directly into the selected example.
 
 ### Developer feedback loop
 

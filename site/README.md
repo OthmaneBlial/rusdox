@@ -8,7 +8,7 @@
 
 **One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
 
-[Website](https://othmaneblial.github.io/rusdox/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
 
 ![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
 
@@ -52,6 +52,16 @@ deterministic filters, literal-brace escaping, and source-located validation.
 There is deliberately no general-purpose expression runtime. Read the
 [spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
 [VS Code extension](editors/vscode/README.md).
+
+## Try it without installing
+
+The [local-first playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
+loads verified examples, lets you edit YAML, previews the document structure, and
+downloads your edited spec. It has no upload endpoint, analytics, or persistence.
+The browser preview is deliberately not presented as PDF layout: verified DOCX/PDF
+downloads stay available only while the checked-in source is unchanged, and edited
+files are reproduced with the exact CLI command shown beside the preview. Read the
+[WASM feasibility decision](docs/wasm-feasibility.md) for the full boundary.
 
 ## Install in 10 seconds
 
@@ -243,6 +253,12 @@ More detail is in [examples/README.md](examples/README.md).
 
 Browse the gallery:
 
+- [Open Board Report in the playground](https://othmaneblial.github.io/rusdox/playground/?example=board-report)
+- [Open Executive Dashboard in the playground](https://othmaneblial.github.io/rusdox/playground/?example=executive-dashboard)
+- [Open Product Launch Brief in the playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
+- [Open Talent Profile in the playground](https://othmaneblial.github.io/rusdox/playground/?example=talent-profile)
+- [Open Invoice in the playground](https://othmaneblial.github.io/rusdox/playground/?example=invoice)
+- [Open Meeting Notes in the playground](https://othmaneblial.github.io/rusdox/playground/?example=meeting-notes)
 - [docs/gallery.md](docs/gallery.md)
 - [examples/board_report.yaml](examples/board_report.yaml)
 - [examples/executive_dashboard.yaml](examples/executive_dashboard.yaml)

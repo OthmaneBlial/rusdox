@@ -18,6 +18,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Three externally authored starter templates for invoices, proposals, and board/compliance reporting.
 - Versioned document specs with a generated JSON Schema shared by YAML, JSON, TOML, and a bundled zero-dependency VS Code extension.
 - Schema generation, atomic migration, source-located validation, bounded conditional branches, nested paths, deterministic filters, and literal-brace escaping.
+- A zero-install, local-first spec playground with six verified examples, structural preview, editable YAML downloads, exact CLI reproduction commands, and artifact integrity guards.
+- A dated WASM feasibility spike and explicit browser-rendering capability boundary.
 
 ### Changed
 

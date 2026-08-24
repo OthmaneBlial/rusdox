@@ -4,6 +4,10 @@ These previews are generated from the real PDF outputs in `rendered/`.
 
 That means the gallery shows actual RusDox output, not mockups.
 
+Each featured example also opens in the local-first browser playground. The
+playground gives an immediate structural preview; its verified DOCX/PDF links
+are enabled only while the checked-in YAML is unchanged.
+
 ![Template gallery overview](../assets/template-gallery.png)
 
 ## Board Report
@@ -11,6 +15,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Board Report preview](../assets/gallery/board-report.png)
 
 - Spec: [../examples/board_report.yaml](../examples/board_report.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=board-report)
 - Evidence: [DOCX/PDF parity report](../parity/board-report-parity.html)
 - Output: board-style packet with cover page, metrics, and scorecard tables
 
@@ -19,6 +24,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Executive Dashboard preview](../assets/gallery/executive-dashboard.png)
 
 - Spec: [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=executive-dashboard)
 - Evidence: [DOCX/PDF parity report](../parity/executive-dashboard-parity.html)
 - Output: dashboard-style summary with metrics and status tables
 
@@ -27,6 +33,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Product Launch Brief preview](../assets/gallery/product-launch-brief.png)
 
 - Spec: [../examples/product_launch_brief.yaml](../examples/product_launch_brief.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
 - Evidence: [DOCX/PDF parity report](../parity/product-launch-brief-parity.html)
 - Output: launch narrative with milestones and readiness checks
 
@@ -35,6 +42,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Talent Profile preview](../assets/gallery/talent-profile.png)
 
 - Spec: [../examples/talent_profile.yaml](../examples/talent_profile.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=talent-profile)
 - Evidence: [DOCX/PDF parity report](../parity/talent-profile-parity.html)
 - Output: profile or resume-style document
 
@@ -43,6 +51,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Invoice preview](../assets/gallery/invoice.png)
 
 - Spec: [../examples/invoice.yaml](../examples/invoice.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=invoice)
 - Evidence: [DOCX/PDF parity report](../parity/invoice-parity.html)
 - Output: invoice layout with line items and totals
 
@@ -51,6 +60,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Meeting Notes preview](../assets/gallery/meeting-notes.png)
 
 - Spec: [../examples/meeting_notes.yaml](../examples/meeting_notes.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=meeting-notes)
 - Evidence: [DOCX/PDF parity report](../parity/meeting-notes-parity.html)
 - Output: compact notes with metadata, agenda, and decisions
 

@@ -531,6 +531,15 @@ impl ParityReport {
     pub fn to_html(&self, canonical_url: &str) -> String {
         let status = if self.passed { "PASS" } else { "FAIL" };
         let status_class = if self.passed { "pass" } else { "fail" };
+        let playground_id = Path::new(&self.source)
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or(&self.source)
+            .replace('_', "-");
+        let playground_url = format!(
+            "https://othmaneblial.github.io/rusdox/playground/?example={}",
+            escape_html(&playground_id)
+        );
         let checks = self
             .checks
             .iter()
@@ -613,11 +622,12 @@ impl ParityReport {
     .summary {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:24px 0 }} .metric {{ background:#fff9; border:1px solid var(--line); padding:16px }} .metric strong {{ display:block; font:700 1.6rem/1.2 Georgia,serif }}
     .table-wrap {{ overflow:auto; border:1px solid var(--line); background:#fff9 }} table {{ border-collapse:collapse; width:100%; min-width:760px }} th,td {{ padding:12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line) }} th {{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em }}
     .badge {{ font:800 .7rem/1 ui-monospace,monospace }} .artifacts {{ list-style:none; padding:0; display:grid; gap:8px }} .artifacts li {{ display:grid; gap:4px; padding:12px; background:#fff9; border:1px solid var(--line) }} code {{ overflow-wrap:anywhere }} figure {{ margin:1rem 0 }} figure img {{ display:block; width:min(100%,612px); height:auto; border:1px solid var(--line); background:white }} figcaption {{ margin-top:.5rem }}
+    .playground-link {{ display:inline-block; margin-top:8px; padding:.65rem .9rem; color:white; background:#b85c30; text-decoration:none; font-weight:700 }} .playground-link:hover,.playground-link:focus-visible {{ background:#813b20 }}
     footer {{ margin-top:48px; border-top:1px solid var(--line); padding-top:16px }} @media(max-width:620px) {{ header {{ align-items:start; flex-direction:column }} }}
   </style>
 </head>
 <body><main>
-  <header><div><p class="eyebrow">RusDox parity contract v{report_version}</p><h1>{source}</h1><p>Semantic comparison of the typed source, reopened DOCX package, and the projection consumed by the native PDF renderer.</p></div><strong class="hero-status {status_class}">{status}</strong></header>
+  <header><div><p class="eyebrow">RusDox parity contract v{report_version}</p><h1>{source}</h1><p>Semantic comparison of the typed source, reopened DOCX package, and the projection consumed by the native PDF renderer.</p><a class="playground-link" href="{playground_url}">Open this example</a></div><strong class="hero-status {status_class}">{status}</strong></header>
   <section class="summary" aria-label="Report summary"><div class="metric"><span>Checks</span><strong>{check_count}</strong></div><div class="metric"><span>PDF pages</span><strong>{page_count}</strong></div><div class="metric"><span>Blocks</span><strong>{block_count}</strong></div><div class="metric"><span>Images</span><strong>{image_count}</strong></div></section>
   <h2>Contract checks</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>Assertion</th><th>Status</th><th>Evidence</th></tr></thead><tbody>{checks}</tbody></table></div>
   <h2>Generated artifacts</h2><ul class="artifacts">{artifacts}</ul>
@@ -627,6 +637,7 @@ impl ParityReport {
             source = escape_html(&self.source),
             canonical = escape_html(canonical_url),
             report_version = escape_html(&self.report_version),
+            playground_url = playground_url,
             status_class = status_class,
             status = status,
             check_count = self.checks.len(),

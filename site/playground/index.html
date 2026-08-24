@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Local spec playground | RusDox</title>
+    <meta name="description" content="Edit a RusDox YAML example locally, inspect its structure, and reproduce verified DOCX and PDF outputs with the CLI." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/playground/" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="playground.css" />
+  </head>
+  <body data-page="playground">
+    <a class="skip-link" href="#workspace">Skip to playground</a>
+    <div class="playground-shell">
+      <header class="playground-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home"><span class="brand-mark">R</span><span class="brand-text"><strong>RusDox</strong><span>Local spec playground</span></span></a>
+        <nav class="site-nav" aria-label="Primary"><a href="../index.html">Overview</a><a href="../docs.html">Docs</a><a class="is-active" href="./">Playground</a><a href="https://github.com/OthmaneBlial/rusdox">GitHub</a></nav>
+      </header>
+
+      <main id="workspace">
+        <section class="playground-intro">
+          <div><p class="eyebrow">Zero install · local by default</p><h1>Understand the spec before you install the renderer.</h1><p class="lede">Load a verified gallery example, edit its YAML, and inspect the document structure in real time. Your document stays inside this browser tab.</p></div>
+          <aside class="boundary-card" aria-label="Capability boundary"><strong>Honest preview boundary</strong><p>This is a structural HTML preview, not RusDox PDF layout. Verified DOCX/PDF downloads correspond exactly to the untouched checked-in example. After an edit, download the YAML and run the shown CLI command locally.</p></aside>
+        </section>
+
+        <section class="privacy-strip" aria-label="Privacy guarantee"><strong>No upload endpoint. No analytics. No persistence.</strong><span>The page fetches only same-origin examples and assets. Edited content remains in memory and is discarded when the tab closes.</span></section>
+
+        <section class="playground-toolbar" aria-label="Example and insertion controls">
+          <label><span>Verified example</span><select data-example-picker aria-label="Verified example"></select></label>
+          <div class="insert-controls"><span>Add block</span><button type="button" data-insert="section">Section</button><button type="button" data-insert="body">Body</button><button type="button" data-insert="bullets">Bullets</button><button type="button" data-insert="metrics">Metrics</button></div>
+          <strong class="source-state" data-state aria-live="polite">Loading checked-in source…</strong>
+        </section>
+
+        <section class="playground-grid">
+          <article class="workspace-panel editor-panel"><header><div><p class="eyebrow">01 · Author</p><h2>YAML spec</h2></div><button class="button button-secondary button-compact" type="button" data-download-yaml>Download YAML</button></header><textarea data-editor spellcheck="false" aria-label="Editable RusDox YAML specification"></textarea><p class="diagnostics" data-diagnostics aria-live="polite"></p></article>
+          <article class="workspace-panel preview-panel"><header><div><p class="eyebrow">02 · Inspect</p><h2>Structural preview</h2></div><span class="preview-label">Not PDF layout</span></header><div class="paper-preview" data-preview></div></article>
+        </section>
+
+        <section class="output-panel">
+          <div><p class="eyebrow">03 · Reproduce</p><h2>Move from exploration to verified output.</h2><p>The exact checked-in example has parity-tested artifacts. Edited content must pass through the local Rust renderer so the DOCX, PDF, and evidence stay truthful.</p></div>
+          <div class="artifact-actions"><a class="button button-primary" data-docx>Download verified DOCX</a><a class="button button-secondary" data-pdf>Open verified PDF</a><a class="button button-secondary" data-parity>Inspect parity report</a></div>
+          <div class="cli-box"><pre><code data-cli></code></pre><button class="button button-secondary button-compact" type="button" data-copy-cli>Copy command</button></div>
+        </section>
+      </main>
+
+      <footer class="playground-footer"><p>Fallback delivered after the documented WASM feasibility spike.</p><a href="../docs/wasm-feasibility.html">Read the engineering decision</a></footer>
+    </div>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>

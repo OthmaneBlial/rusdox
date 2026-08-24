@@ -21,7 +21,8 @@ for (const file of htmlFiles) {
   if (!/<link rel="canonical" href="https:\/\/othmaneblial\.github\.io\/rusdox\//.test(html)) {
     problems.push(`${relative}: missing the canonical RusDox URL`);
   }
-  if (relative !== "index.html" && /<script(?![^>]+type="application\/ld\+json")/i.test(html)) {
+  const interactiveEntry = relative === "index.html" || relative === path.join("playground", "index.html");
+  if (!interactiveEntry && /<script(?![^>]+type="application\/ld\+json")/i.test(html)) {
     problems.push(`${relative}: documentation must not require executable JavaScript`);
   }
 

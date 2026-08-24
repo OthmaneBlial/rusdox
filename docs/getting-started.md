@@ -139,3 +139,5 @@ No LibreOffice is required.
 - [Configuration](configuration.md)
 - [CLI Guide](cli.md)
 - [Gallery](gallery.md)
+- [Zero-install playground](https://othmaneblial.github.io/rusdox/playground/)
+- [Browser rendering feasibility and privacy boundary](wasm-feasibility.md)

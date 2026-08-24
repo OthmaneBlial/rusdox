@@ -16,6 +16,7 @@ const pages = [
   ["docs/getting-started.md", "docs/getting-started.html", "Getting started", "Guide", "Install RusDox and generate the first editable DOCX and native PDF in minutes.", "Authoring"],
   ["docs/yaml-guide.md", "docs/yaml-guide.html", "YAML guide", "Guide", "Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.", "Authoring"],
   ["docs/spec-versioning.md", "docs/spec-versioning.html", "Spec versioning", "Guide", "Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.", "Authoring"],
+  ["docs/wasm-feasibility.md", "docs/wasm-feasibility.html", "Browser rendering feasibility", "Decision", "Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.", "Trust & operations"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
@@ -83,6 +84,7 @@ for (const [sourceName, outputName] of [
   ["template-evidence", "template-evidence"],
   ["schema", "schema"],
   ["editors/vscode", "editors/vscode"],
+  ["playground", "playground"],
 ]) {
   const sourceRoot = path.join(root, sourceName);
   if (fs.existsSync(sourceRoot)) {
@@ -220,6 +222,7 @@ function renderPage(page, rendered) {
           <a href="${prefix}index.html">Overview</a>
           <a class="is-active" href="${prefix}docs.html">Docs</a>
           <a href="${prefix}index.html#examples">Examples</a>
+          <a href="${prefix}playground/">Playground</a>
           <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
         </nav>
       </header>

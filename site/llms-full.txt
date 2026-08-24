@@ -84,7 +84,7 @@ Source: https://othmaneblial.github.io/rusdox/docs/project-overview.html
 
 **One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
 
-[Website](https://othmaneblial.github.io/rusdox/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
 
 ![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
 
@@ -128,6 +128,16 @@ deterministic filters, literal-brace escaping, and source-located validation.
 There is deliberately no general-purpose expression runtime. Read the
 [spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
 [VS Code extension](editors/vscode/README.md).
+
+## Try it without installing
+
+The [local-first playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
+loads verified examples, lets you edit YAML, previews the document structure, and
+downloads your edited spec. It has no upload endpoint, analytics, or persistence.
+The browser preview is deliberately not presented as PDF layout: verified DOCX/PDF
+downloads stay available only while the checked-in source is unchanged, and edited
+files are reproduced with the exact CLI command shown beside the preview. Read the
+[WASM feasibility decision](docs/wasm-feasibility.md) for the full boundary.
 
 ## Install in 10 seconds
 
@@ -319,6 +329,12 @@ More detail is in [examples/README.md](examples/README.md).
 
 Browse the gallery:
 
+- [Open Board Report in the playground](https://othmaneblial.github.io/rusdox/playground/?example=board-report)
+- [Open Executive Dashboard in the playground](https://othmaneblial.github.io/rusdox/playground/?example=executive-dashboard)
+- [Open Product Launch Brief in the playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
+- [Open Talent Profile in the playground](https://othmaneblial.github.io/rusdox/playground/?example=talent-profile)
+- [Open Invoice in the playground](https://othmaneblial.github.io/rusdox/playground/?example=invoice)
+- [Open Meeting Notes in the playground](https://othmaneblial.github.io/rusdox/playground/?example=meeting-notes)
 - [docs/gallery.md](docs/gallery.md)
 - [examples/board_report.yaml](examples/board_report.yaml)
 - [examples/executive_dashboard.yaml](examples/executive_dashboard.yaml)
@@ -573,6 +589,8 @@ No LibreOffice is required.
 - [Configuration](configuration.md)
 - [CLI Guide](cli.md)
 - [Gallery](gallery.md)
+- [Zero-install playground](https://othmaneblial.github.io/rusdox/playground/)
+- [Browser rendering feasibility and privacy boundary](wasm-feasibility.md)
 
 ---
 
@@ -1258,6 +1276,44 @@ Its local language-service tests run with:
     npm test --prefix editors/vscode
 
 The extension never uploads document content.
+
+---
+
+# Browser rendering feasibility
+
+Source: https://othmaneblial.github.io/rusdox/docs/wasm-feasibility.html
+
+Date: 2026-08-24
+
+## Decision
+
+RusDox ships an interactive, local-first spec playground now. It does not claim to render edited DOCX or PDF files in the browser yet.
+
+The Rust library compiles for the browser target, which makes a future WASM renderer plausible. The current end-to-end render path is not browser-ready, however: PDF rendering discovers fonts from the host operating system, public PDF APIs write through filesystem paths, and the project does not yet ship a pinned redistributable font bundle with license evidence and multiscript coverage.
+
+The playground therefore follows the explicit fallback in the roadmap. It previews the document structure, keeps edits in the current browser tab, downloads edited YAML, and exposes pre-generated DOCX/PDF artifacts only while the source exactly matches a checked-in example. This avoids presenting an HTML approximation as PDF parity.
+
+## Reproduce the spike
+
+The spike ran successfully on Rust 1.95.0 with target wasm32-unknown-unknown:
+
+    rustup target add wasm32-unknown-unknown
+    cargo check --locked --target wasm32-unknown-unknown --lib
+
+Success means the library dependency graph compiles for the target. It does not prove that browser APIs, font loading, memory behavior, downloads, or layout parity work.
+
+## Gates for a full renderer
+
+A future full browser renderer must satisfy all of these gates:
+
+1. Return DOCX and PDF bytes from public in-memory APIs without temporary paths.
+2. Bundle pinned, redistributable TrueType fonts and their license texts.
+3. Cover the scripts promised by the compatibility contract, including transparent shaping limitations.
+4. Expose a small wasm-bindgen API with deterministic errors and bounded allocations.
+5. Pass the same semantic parity fixtures as the CLI in real Chromium, Firefox, and WebKit runs.
+6. Prove through a network test that author content is never uploaded.
+
+Until those gates pass, the CLI remains the source of truth for edited DOCX/PDF output.
 
 ---
 
@@ -2767,6 +2823,10 @@ These previews are generated from the real PDF outputs in `rendered/`.
 
 That means the gallery shows actual RusDox output, not mockups.
 
+Each featured example also opens in the local-first browser playground. The
+playground gives an immediate structural preview; its verified DOCX/PDF links
+are enabled only while the checked-in YAML is unchanged.
+
 ![Template gallery overview](../assets/template-gallery.png)
 
 ## Board Report
@@ -2774,6 +2834,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Board Report preview](../assets/gallery/board-report.png)
 
 - Spec: [../examples/board_report.yaml](../examples/board_report.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=board-report)
 - Evidence: [DOCX/PDF parity report](../parity/board-report-parity.html)
 - Output: board-style packet with cover page, metrics, and scorecard tables
 
@@ -2782,6 +2843,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Executive Dashboard preview](../assets/gallery/executive-dashboard.png)
 
 - Spec: [../examples/executive_dashboard.yaml](../examples/executive_dashboard.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=executive-dashboard)
 - Evidence: [DOCX/PDF parity report](../parity/executive-dashboard-parity.html)
 - Output: dashboard-style summary with metrics and status tables
 
@@ -2790,6 +2852,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Product Launch Brief preview](../assets/gallery/product-launch-brief.png)
 
 - Spec: [../examples/product_launch_brief.yaml](../examples/product_launch_brief.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
 - Evidence: [DOCX/PDF parity report](../parity/product-launch-brief-parity.html)
 - Output: launch narrative with milestones and readiness checks
 
@@ -2798,6 +2861,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Talent Profile preview](../assets/gallery/talent-profile.png)
 
 - Spec: [../examples/talent_profile.yaml](../examples/talent_profile.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=talent-profile)
 - Evidence: [DOCX/PDF parity report](../parity/talent-profile-parity.html)
 - Output: profile or resume-style document
 
@@ -2806,6 +2870,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Invoice preview](../assets/gallery/invoice.png)
 
 - Spec: [../examples/invoice.yaml](../examples/invoice.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=invoice)
 - Evidence: [DOCX/PDF parity report](../parity/invoice-parity.html)
 - Output: invoice layout with line items and totals
 
@@ -2814,6 +2879,7 @@ That means the gallery shows actual RusDox output, not mockups.
 ![Meeting Notes preview](../assets/gallery/meeting-notes.png)
 
 - Spec: [../examples/meeting_notes.yaml](../examples/meeting_notes.yaml)
+- Playground: [Open this example](https://othmaneblial.github.io/rusdox/playground/?example=meeting-notes)
 - Evidence: [DOCX/PDF parity report](../parity/meeting-notes-parity.html)
 - Output: compact notes with metadata, agenda, and decisions
 
@@ -3213,12 +3279,14 @@ Section evidence: all published specs now declare version 1; missing versions re
 
 ### Zero-install playground
 
-- [ ] Run a feasibility spike for a WASM renderer with bundled, redistributable fonts.
-- [ ] If feasible, add a fully local browser playground: edit YAML, preview PDF, download DOCX/PDF, and load gallery templates.
-- [ ] If full browser rendering is not yet feasible, ship an interactive spec builder with pre-generated verified outputs and a transparent capability boundary.
-- [ ] Make every playground example reproducible with the CLI.
-- [ ] Add “Open this example” links from the README, gallery, docs, and parity reports.
-- [ ] Never upload user document content by default.
+- [x] Run a feasibility spike for a WASM renderer with bundled, redistributable fonts.
+- [x] If feasible, add a fully local browser playground: edit YAML, preview PDF, download DOCX/PDF, and load gallery templates.
+- [x] If full browser rendering is not yet feasible, ship an interactive spec builder with pre-generated verified outputs and a transparent capability boundary.
+- [x] Make every playground example reproducible with the CLI.
+- [x] Add “Open this example” links from the README, gallery, docs, and parity reports.
+- [x] Never upload user document content by default.
+
+Section evidence: `cargo check --locked --target wasm32-unknown-unknown --lib` succeeds on Rust 1.95.0, but the dated feasibility record rejects a premature full-render claim because PDF fonts still come from the host filesystem, output APIs remain path-based, and no licensed multiscript font bundle has passed browser parity. The shipped fallback is a same-origin, dependency-free playground for six gallery fixtures: edits and downloads use browser memory only, the HTML preview is visibly structural rather than PDF layout, and verified DOCX/PDF/parity links are disabled after any source edit. Every fixture shows its exact CLI command; pure parser/safety tests cover all six inputs; README, gallery, generated docs, site cards, and generated parity HTML link directly into the selected example.
 
 ### Developer feedback loop
 
@@ -3443,6 +3511,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Three externally authored starter templates for invoices, proposals, and board/compliance reporting.
 - Versioned document specs with a generated JSON Schema shared by YAML, JSON, TOML, and a bundled zero-dependency VS Code extension.
 - Schema generation, atomic migration, source-located validation, bounded conditional branches, nested paths, deterministic filters, and literal-brace escaping.
+- A zero-install, local-first spec playground with six verified examples, structural preview, editable YAML downloads, exact CLI reproduction commands, and artifact integrity guards.
+- A dated WASM feasibility spike and explicit browser-rendering capability boundary.
 
 ### Changed
 

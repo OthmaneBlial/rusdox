@@ -24,6 +24,7 @@ const DOCS = [
 const EXAMPLES = [
   {
     title: "Board Report",
+    id: "board-report",
     summary: "Two-page leadership packet with narrative, metrics, and scorecard tables.",
     preview: "assets/gallery/board-report.png",
     yaml: "examples/board_report.yaml",
@@ -33,6 +34,7 @@ const EXAMPLES = [
   },
   {
     title: "Executive Dashboard",
+    id: "executive-dashboard",
     summary: "Multi-section KPI summary with narrative, delivery status, and risk tables.",
     preview: "assets/gallery/executive-dashboard.png",
     yaml: "examples/executive_dashboard.yaml",
@@ -42,6 +44,7 @@ const EXAMPLES = [
   },
   {
     title: "Product Launch Brief",
+    id: "product-launch-brief",
     summary: "Launch packet with milestones, readiness checks, and customer-facing narrative.",
     preview: "assets/gallery/product-launch-brief.png",
     yaml: "examples/product_launch_brief.yaml",
@@ -51,6 +54,7 @@ const EXAMPLES = [
   },
   {
     title: "Talent Profile",
+    id: "talent-profile",
     summary: "Resume-style example combining narrative, tables, and a signature line.",
     preview: "assets/gallery/talent-profile.png",
     yaml: "examples/talent_profile.yaml",
@@ -60,6 +64,7 @@ const EXAMPLES = [
   },
   {
     title: "Invoice",
+    id: "invoice",
     summary: "Compact billing layout with label-value metadata, line items, and totals.",
     preview: "assets/gallery/invoice.png",
     yaml: "examples/invoice.yaml",
@@ -69,6 +74,7 @@ const EXAMPLES = [
   },
   {
     title: "Meeting Notes",
+    id: "meeting-notes",
     summary: "Short operational note with metadata, agenda bullets, and a decision log.",
     preview: "assets/gallery/meeting-notes.png",
     yaml: "examples/meeting_notes.yaml",
@@ -114,9 +120,10 @@ function renderExamples() {
             <p class="muted">${escapeHtml(example.summary)}</p>
           </div>
           <div class="action-row">
+            <a class="button button-primary" href="playground/?example=${example.id}">Open this example</a>
             <a class="button button-secondary" href="${example.yaml}">View YAML</a>
             <a class="button button-secondary" href="${example.pdf}">Open PDF</a>
-            <a class="button button-primary" href="${example.docx}">Download DOCX</a>
+            <a class="button button-secondary" href="${example.docx}">Download DOCX</a>
           </div>
         </div>
       </article>`,
