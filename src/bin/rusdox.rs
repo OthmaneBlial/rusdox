@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use dialoguer::{Confirm, Input, Select};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
 use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection, ParityReport};
 use rusdox::spec::DocumentSpec;
@@ -21,9 +22,15 @@ use rusdox::{
     validate_spec, Document, DocxError, DocxTemplate, Result, ValidationIssue, ValidationReport,
     ValidationSeverity,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tempfile::tempdir;
+
+const DEFAULT_TEMPLATE_REGISTRY: &str = "https://othmaneblial.github.io/rusdox/registry/index.json";
+const DEFAULT_TEMPLATE_REGISTRY_PUBLIC_KEY: &str =
+    "6a765396357492a6aa4239c8fc042e0471259528f5b25ab742b964b735662353";
+const MAX_REGISTRY_BYTES: u64 = 2 * 1024 * 1024;
+const MAX_TEMPLATE_DOWNLOAD_BYTES: u64 = 64 * 1024 * 1024;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -106,6 +113,84 @@ enum TemplateCommand {
     Render(TemplateRenderArgs),
     /// Render and require every enabled DOCX/PDF parity check to pass.
     Verify(TemplateRenderArgs),
+    /// List verified entries from the signed curated registry.
+    List(TemplateListArgs),
+    /// Search verified registry metadata by text or category.
+    Search(TemplateSearchArgs),
+    /// Download and hash-verify one curated Word template and its sample data.
+    Add(TemplateAddArgs),
+    /// Refresh one or all installed templates from the signed registry.
+    Update(TemplateUpdateArgs),
+}
+
+#[derive(Debug, Args)]
+struct TemplateListArgs {
+    /// Signed registry index URL or local path.
+    #[arg(long, default_value = DEFAULT_TEMPLATE_REGISTRY)]
+    registry: String,
+    /// Trusted Ed25519 public key as 64 lowercase hexadecimal characters.
+    #[arg(long)]
+    public_key: Option<String>,
+    /// Command output format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
+#[derive(Debug, Args)]
+struct TemplateSearchArgs {
+    /// Case-insensitive title, description, category, tag, author, or ID query.
+    query: String,
+    /// Signed registry index URL or local path.
+    #[arg(long, default_value = DEFAULT_TEMPLATE_REGISTRY)]
+    registry: String,
+    /// Trusted Ed25519 public key as 64 lowercase hexadecimal characters.
+    #[arg(long)]
+    public_key: Option<String>,
+    /// Command output format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
+#[derive(Debug, Args)]
+struct TemplateAddArgs {
+    /// Registry template identifier.
+    id: String,
+    /// Signed registry index URL or local path.
+    #[arg(long, default_value = DEFAULT_TEMPLATE_REGISTRY)]
+    registry: String,
+    /// Trusted Ed25519 public key as 64 lowercase hexadecimal characters.
+    #[arg(long)]
+    public_key: Option<String>,
+    /// Installation root. Defaults to the platform user data directory.
+    #[arg(long)]
+    install_root: Option<PathBuf>,
+    /// Replace an installed template even when the version is unchanged.
+    #[arg(long)]
+    force: bool,
+    /// Command output format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
+}
+
+#[derive(Debug, Args)]
+struct TemplateUpdateArgs {
+    /// Installed template identifier. Omit only with --all.
+    id: Option<String>,
+    /// Update every installed template that appears in the registry.
+    #[arg(long, conflicts_with = "id", required_unless_present = "id")]
+    all: bool,
+    /// Signed registry index URL or local path.
+    #[arg(long, default_value = DEFAULT_TEMPLATE_REGISTRY)]
+    registry: String,
+    /// Trusted Ed25519 public key as 64 lowercase hexadecimal characters.
+    #[arg(long)]
+    public_key: Option<String>,
+    /// Installation root. Defaults to the platform user data directory.
+    #[arg(long)]
+    install_root: Option<PathBuf>,
+    /// Command output format.
+    #[arg(long, value_enum, default_value_t = ReportFormat::Text)]
+    format: ReportFormat,
 }
 
 #[derive(Debug, Args)]
@@ -519,6 +604,135 @@ struct TemplateCommandResult {
     page_snapshots: String,
     checks: usize,
     failed_checks: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistry {
+    schema_version: u32,
+    registry_id: String,
+    generated_at: String,
+    base_url: String,
+    categories: Vec<TemplateRegistryCategory>,
+    template_of_the_month: String,
+    templates: Vec<TemplateRegistryEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryCategory {
+    id: String,
+    label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryEntry {
+    id: String,
+    title: String,
+    version: String,
+    description: String,
+    categories: Vec<String>,
+    tags: Vec<String>,
+    author: TemplateRegistryAuthor,
+    license: TemplateRegistryLicense,
+    supported_rusdox: TemplateRegistryVersionRange,
+    preview: TemplateRegistryPreview,
+    inputs: Vec<TemplateRegistryInput>,
+    files: TemplateRegistryFiles,
+    verified_outputs: TemplateRegistryOutputs,
+    accessibility: TemplateRegistryAccessibility,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryAuthor {
+    name: String,
+    url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryLicense {
+    spdx: String,
+    url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryVersionRange {
+    minimum: String,
+    maximum_exclusive: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryAsset {
+    url: String,
+    sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryPreview {
+    url: String,
+    sha256: String,
+    alt: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryInput {
+    path: String,
+    #[serde(rename = "type")]
+    input_type: String,
+    required: bool,
+    description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryFiles {
+    template: TemplateRegistryAsset,
+    sample_data: TemplateRegistryAsset,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryOutputs {
+    docx: TemplateRegistryAsset,
+    pdf: TemplateRegistryAsset,
+    parity_json: TemplateRegistryAsset,
+    parity_html: TemplateRegistryAsset,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistryAccessibility {
+    language: String,
+    reading_order_reviewed: bool,
+    color_only_meaning: bool,
+    notes: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TemplateRegistrySignature {
+    schema_version: u32,
+    algorithm: String,
+    key_id: String,
+    manifest_sha256: String,
+    signature: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct TemplateInstallResult {
+    id: String,
+    version: String,
+    status: String,
+    install_dir: String,
+    template: String,
+    sample_data: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1721,7 +1935,537 @@ fn run_template_command(command: TemplateCommand) -> Result<()> {
         TemplateCommand::Inspect(args) => run_template_inspect(args),
         TemplateCommand::Render(args) => run_template_render("render", args),
         TemplateCommand::Verify(args) => run_template_render("verify", args),
+        TemplateCommand::List(args) => run_template_list(args),
+        TemplateCommand::Search(args) => run_template_search(args),
+        TemplateCommand::Add(args) => run_template_add(args),
+        TemplateCommand::Update(args) => run_template_update(args),
     }
+}
+
+fn run_template_list(args: TemplateListArgs) -> Result<()> {
+    let registry = load_template_registry(&args.registry, args.public_key.as_deref())?;
+    print_template_registry_entries(&registry, &registry.templates, args.format)
+}
+
+fn run_template_search(args: TemplateSearchArgs) -> Result<()> {
+    let registry = load_template_registry(&args.registry, args.public_key.as_deref())?;
+    let query = args.query.trim().to_ascii_lowercase();
+    let matches = registry
+        .templates
+        .iter()
+        .filter(|entry| {
+            [
+                entry.id.as_str(),
+                entry.title.as_str(),
+                entry.description.as_str(),
+                entry.author.name.as_str(),
+            ]
+            .iter()
+            .any(|value| value.to_ascii_lowercase().contains(&query))
+                || entry
+                    .categories
+                    .iter()
+                    .chain(&entry.tags)
+                    .any(|value| value.to_ascii_lowercase().contains(&query))
+        })
+        .collect::<Vec<_>>();
+    print_template_registry_entries(&registry, &matches, args.format)
+}
+
+fn run_template_add(args: TemplateAddArgs) -> Result<()> {
+    let registry = load_template_registry(&args.registry, args.public_key.as_deref())?;
+    let entry = registry
+        .templates
+        .iter()
+        .find(|entry| entry.id == args.id)
+        .ok_or_else(|| DocxError::Parse(format!("template '{}' was not found", args.id)))?;
+    require_supported_template_version(entry)?;
+    let install_root = resolve_template_install_root(args.install_root)?;
+    let result = install_registry_template(entry, &install_root, args.force)?;
+    print_template_install_results(&[result], args.format)
+}
+
+fn run_template_update(args: TemplateUpdateArgs) -> Result<()> {
+    let registry = load_template_registry(&args.registry, args.public_key.as_deref())?;
+    let install_root = resolve_template_install_root(args.install_root)?;
+    let ids = if args.all {
+        installed_template_ids(&install_root)?
+    } else {
+        vec![args
+            .id
+            .ok_or_else(|| DocxError::Parse("provide a template ID or use --all".to_string()))?]
+    };
+    let mut results = Vec::new();
+    for id in ids {
+        let entry = registry
+            .templates
+            .iter()
+            .find(|entry| entry.id == id)
+            .ok_or_else(|| {
+                DocxError::Parse(format!(
+                    "installed template '{id}' is not present in the trusted registry"
+                ))
+            })?;
+        require_supported_template_version(entry)?;
+        results.push(install_registry_template(entry, &install_root, false)?);
+    }
+    print_template_install_results(&results, args.format)
+}
+
+fn print_template_registry_entries<T>(
+    registry: &TemplateRegistry,
+    entries: &[T],
+    format: ReportFormat,
+) -> Result<()>
+where
+    T: std::borrow::Borrow<TemplateRegistryEntry> + Serialize,
+{
+    match format {
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "registry": registry.registry_id,
+                "signed": true,
+                "template_of_the_month": registry.template_of_the_month,
+                "templates": entries,
+            }))
+            .map_err(|error| DocxError::Parse(format!("failed to serialize registry: {error}")))?
+        ),
+        ReportFormat::Text => {
+            println!(
+                "{} verified template(s) · signed registry {}",
+                entries.len(),
+                registry.registry_id
+            );
+            for value in entries {
+                let entry = value.borrow();
+                let featured = if entry.id == registry.template_of_the_month {
+                    " · template of the month"
+                } else {
+                    ""
+                };
+                println!(
+                    "{} v{} · {} · by {}{}\n  {}\n  categories: {} · license: {}",
+                    entry.id,
+                    entry.version,
+                    entry.title,
+                    entry.author.name,
+                    featured,
+                    entry.description,
+                    entry.categories.join(", "),
+                    entry.license.spdx,
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn print_template_install_results(
+    results: &[TemplateInstallResult],
+    format: ReportFormat,
+) -> Result<()> {
+    match format {
+        ReportFormat::Json => println!(
+            "{}",
+            serde_json::to_string_pretty(results).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize install results: {error}"))
+            })?
+        ),
+        ReportFormat::Text => {
+            if results.is_empty() {
+                println!("no installed templates to update");
+            }
+            for result in results {
+                println!(
+                    "{} v{} · {}\n  template: {}\n  sample data: {}",
+                    result.id, result.version, result.status, result.template, result.sample_data,
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn load_template_registry(source: &str, public_key: Option<&str>) -> Result<TemplateRegistry> {
+    let bytes = read_registry_resource(source, MAX_REGISTRY_BYTES)?;
+    let signature_source = registry_signature_source(source)?;
+    let signature_bytes = read_registry_resource(&signature_source, 64 * 1024)?;
+    let signature: TemplateRegistrySignature = serde_json::from_slice(&signature_bytes)
+        .map_err(|error| DocxError::Parse(format!("invalid registry signature file: {error}")))?;
+    verify_template_registry_signature(
+        &bytes,
+        &signature,
+        public_key.unwrap_or(DEFAULT_TEMPLATE_REGISTRY_PUBLIC_KEY),
+    )?;
+    let registry: TemplateRegistry = serde_json::from_slice(&bytes)
+        .map_err(|error| DocxError::Parse(format!("invalid template registry: {error}")))?;
+    validate_template_registry(&registry)?;
+    Ok(registry)
+}
+
+fn verify_template_registry_signature(
+    manifest: &[u8],
+    signature: &TemplateRegistrySignature,
+    public_key_hex: &str,
+) -> Result<()> {
+    if signature.schema_version != 1
+        || signature.algorithm != "ed25519"
+        || signature.key_id.trim().is_empty()
+    {
+        return Err(DocxError::Parse(
+            "unsupported template registry signature contract".to_string(),
+        ));
+    }
+    let digest = format!("{:x}", Sha256::digest(manifest));
+    if digest != signature.manifest_sha256 {
+        return Err(DocxError::Parse(
+            "template registry SHA-256 does not match its signature record".to_string(),
+        ));
+    }
+    let public_key = decode_fixed_hex::<32>(public_key_hex, "registry public key")?;
+    let signature_bytes = decode_fixed_hex::<64>(&signature.signature, "registry signature")?;
+    let verifying_key = VerifyingKey::from_bytes(&public_key)
+        .map_err(|error| DocxError::Parse(format!("invalid registry public key: {error}")))?;
+    verifying_key
+        .verify(manifest, &Signature::from_bytes(&signature_bytes))
+        .map_err(|_| DocxError::Parse("template registry signature verification failed".into()))
+}
+
+fn decode_fixed_hex<const N: usize>(value: &str, label: &str) -> Result<[u8; N]> {
+    let value = value.trim();
+    if value.len() != N * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(DocxError::Parse(format!(
+            "{label} must contain exactly {} hexadecimal characters",
+            N * 2
+        )));
+    }
+    let mut output = [0_u8; N];
+    for (index, byte) in output.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)
+            .map_err(|error| DocxError::Parse(format!("invalid {label}: {error}")))?;
+    }
+    Ok(output)
+}
+
+fn registry_signature_source(source: &str) -> Result<String> {
+    if source.starts_with("https://") || source.starts_with("http://") {
+        let (prefix, _) = source.rsplit_once('/').ok_or_else(|| {
+            DocxError::Parse("registry URL must include an index filename".to_string())
+        })?;
+        Ok(format!("{prefix}/index.sig.json"))
+    } else {
+        let path = source.strip_prefix("file://").unwrap_or(source);
+        let mut signature = PathBuf::from(path);
+        signature.set_file_name("index.sig.json");
+        Ok(signature.display().to_string())
+    }
+}
+
+fn read_registry_resource(source: &str, limit: u64) -> Result<Vec<u8>> {
+    if source.starts_with("http://") && !is_loopback_url(source) {
+        return Err(DocxError::Parse(
+            "template registry downloads require HTTPS; plain HTTP is allowed only on loopback"
+                .to_string(),
+        ));
+    }
+    if source.starts_with("https://") || source.starts_with("http://") {
+        let mut response = ureq::get(source)
+            .call()
+            .map_err(|error| DocxError::Parse(format!("failed to download {source}: {error}")))?;
+        response
+            .body_mut()
+            .with_config()
+            .limit(limit)
+            .read_to_vec()
+            .map_err(|error| {
+                DocxError::Parse(format!(
+                    "failed to read bounded response from {source}: {error}"
+                ))
+            })
+    } else {
+        let path = Path::new(source.strip_prefix("file://").unwrap_or(source));
+        let metadata = fs::metadata(path)?;
+        if metadata.len() > limit {
+            return Err(DocxError::ResourceLimit(format!(
+                "{} is {} bytes; registry limit is {limit} bytes",
+                path.display(),
+                metadata.len()
+            )));
+        }
+        fs::read(path).map_err(Into::into)
+    }
+}
+
+fn is_loopback_url(source: &str) -> bool {
+    source
+        .strip_prefix("http://")
+        .and_then(|rest| rest.split('/').next())
+        .is_some_and(|authority| {
+            matches!(authority, "127.0.0.1" | "localhost" | "[::1]")
+                || authority.starts_with("127.0.0.1:")
+                || authority.starts_with("localhost:")
+                || authority.starts_with("[::1]:")
+        })
+}
+
+fn validate_template_registry(registry: &TemplateRegistry) -> Result<()> {
+    if registry.schema_version != 1 || registry.registry_id.trim().is_empty() {
+        return Err(DocxError::Parse(
+            "unsupported or unnamed template registry".to_string(),
+        ));
+    }
+    let required_categories = [
+        "invoices",
+        "proposals",
+        "reports",
+        "compliance",
+        "hr",
+        "education",
+        "operations",
+    ];
+    let category_ids = registry
+        .categories
+        .iter()
+        .map(|category| category.id.as_str())
+        .collect::<BTreeSet<_>>();
+    for category in required_categories {
+        if !category_ids.contains(category) {
+            return Err(DocxError::Parse(format!(
+                "template registry is missing required category '{category}'"
+            )));
+        }
+    }
+    let mut ids = BTreeSet::new();
+    for entry in &registry.templates {
+        if !is_safe_template_id(&entry.id) || !ids.insert(entry.id.as_str()) {
+            return Err(DocxError::Parse(format!(
+                "template ID '{}' is unsafe or duplicated",
+                entry.id
+            )));
+        }
+        if entry.title.trim().is_empty()
+            || entry.description.trim().is_empty()
+            || entry.author.name.trim().is_empty()
+            || entry.author.url.trim().is_empty()
+            || entry.license.spdx.trim().is_empty()
+            || entry.license.url.trim().is_empty()
+            || entry.preview.alt.trim().is_empty()
+            || entry.inputs.is_empty()
+            || entry.accessibility.language.trim().is_empty()
+            || entry.accessibility.notes.trim().is_empty()
+            || !entry.accessibility.reading_order_reviewed
+            || entry.accessibility.color_only_meaning
+        {
+            return Err(DocxError::Parse(format!(
+                "template '{}' does not satisfy the curated metadata contract",
+                entry.id
+            )));
+        }
+        if entry.categories.is_empty()
+            || entry
+                .categories
+                .iter()
+                .any(|category| !category_ids.contains(category.as_str()))
+        {
+            return Err(DocxError::Parse(format!(
+                "template '{}' has an unknown or empty category set",
+                entry.id
+            )));
+        }
+        for asset in [
+            TemplateRegistryAsset {
+                url: entry.preview.url.clone(),
+                sha256: entry.preview.sha256.clone(),
+            },
+            entry.files.template.clone(),
+            entry.files.sample_data.clone(),
+            entry.verified_outputs.docx.clone(),
+            entry.verified_outputs.pdf.clone(),
+            entry.verified_outputs.parity_json.clone(),
+            entry.verified_outputs.parity_html.clone(),
+        ] {
+            validate_registry_asset(&entry.id, &asset)?;
+        }
+    }
+    if !ids.contains(registry.template_of_the_month.as_str()) {
+        return Err(DocxError::Parse(
+            "template_of_the_month must reference a registry entry".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_registry_asset(template_id: &str, asset: &TemplateRegistryAsset) -> Result<()> {
+    if asset.url.trim().is_empty()
+        || asset.sha256.len() != 64
+        || !asset.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return Err(DocxError::Parse(format!(
+            "template '{template_id}' contains an invalid URL or SHA-256"
+        )));
+    }
+    Ok(())
+}
+
+fn is_safe_template_id(value: &str) -> bool {
+    !value.is_empty()
+        && !value.starts_with('-')
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+}
+
+fn require_supported_template_version(entry: &TemplateRegistryEntry) -> Result<()> {
+    let current = parse_numeric_version(env!("CARGO_PKG_VERSION"))?;
+    let minimum = parse_numeric_version(&entry.supported_rusdox.minimum)?;
+    let maximum = parse_numeric_version(&entry.supported_rusdox.maximum_exclusive)?;
+    if current < minimum || current >= maximum {
+        return Err(DocxError::Parse(format!(
+            "template '{}' v{} supports RusDox >= {} and < {}; current version is {}",
+            entry.id,
+            entry.version,
+            entry.supported_rusdox.minimum,
+            entry.supported_rusdox.maximum_exclusive,
+            env!("CARGO_PKG_VERSION"),
+        )));
+    }
+    Ok(())
+}
+
+fn parse_numeric_version(value: &str) -> Result<(u64, u64, u64)> {
+    let core = value.split(['-', '+']).next().unwrap_or(value);
+    let mut parts = core.split('.');
+    let parse = |part: Option<&str>| {
+        part.unwrap_or("0").parse::<u64>().map_err(|error| {
+            DocxError::Parse(format!("invalid numeric version '{value}': {error}"))
+        })
+    };
+    let parsed = (
+        parse(parts.next())?,
+        parse(parts.next())?,
+        parse(parts.next())?,
+    );
+    if parts.next().is_some() {
+        return Err(DocxError::Parse(format!(
+            "invalid numeric version '{value}'"
+        )));
+    }
+    Ok(parsed)
+}
+
+fn resolve_template_install_root(explicit: Option<PathBuf>) -> Result<PathBuf> {
+    if let Some(path) = explicit {
+        return to_absolute_path(&path);
+    }
+    default_template_install_root().ok_or_else(|| {
+        DocxError::Parse(
+            "could not resolve a user data directory; pass --install-root explicitly".to_string(),
+        )
+    })
+}
+
+fn default_template_install_root() -> Option<PathBuf> {
+    if cfg!(target_os = "windows") {
+        std::env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .map(|path| path.join("RusDox/templates"))
+    } else if cfg!(target_os = "macos") {
+        std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .map(|path| path.join("Library/Application Support/RusDox/templates"))
+    } else {
+        std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME")
+                    .map(PathBuf::from)
+                    .map(|path| path.join(".local/share"))
+            })
+            .map(|path| path.join("rusdox/templates"))
+    }
+}
+
+fn install_registry_template(
+    entry: &TemplateRegistryEntry,
+    install_root: &Path,
+    force: bool,
+) -> Result<TemplateInstallResult> {
+    let install_dir = install_root.join(&entry.id);
+    let manifest_path = install_dir.join("manifest.json");
+    if !force && manifest_path.is_file() {
+        let installed: TemplateRegistryEntry = serde_json::from_slice(&fs::read(&manifest_path)?)
+            .map_err(|error| {
+            DocxError::Parse(format!(
+                "invalid installed manifest at {}: {error}",
+                manifest_path.display()
+            ))
+        })?;
+        if installed.version == entry.version
+            && installed.files.template.sha256 == entry.files.template.sha256
+            && installed.files.sample_data.sha256 == entry.files.sample_data.sha256
+        {
+            return Ok(template_install_result(entry, &install_dir, "up-to-date"));
+        }
+    }
+
+    let template = download_and_verify_registry_asset(&entry.files.template)?;
+    let sample_data = download_and_verify_registry_asset(&entry.files.sample_data)?;
+    let _: serde_json::Value = serde_json::from_slice(&sample_data).map_err(|error| {
+        DocxError::Parse(format!(
+            "template '{}' sample data is not valid JSON: {error}",
+            entry.id
+        ))
+    })?;
+    let manifest = serde_json::to_vec_pretty(entry).map_err(|error| {
+        DocxError::Parse(format!("failed to serialize installed manifest: {error}"))
+    })?;
+
+    fs::create_dir_all(&install_dir)?;
+    atomic_write_file(install_dir.join("template.docx"), &template)?;
+    atomic_write_file(install_dir.join("data.json"), &sample_data)?;
+    atomic_write_file(&manifest_path, &manifest)?;
+    Ok(template_install_result(entry, &install_dir, "installed"))
+}
+
+fn template_install_result(
+    entry: &TemplateRegistryEntry,
+    install_dir: &Path,
+    status: &str,
+) -> TemplateInstallResult {
+    TemplateInstallResult {
+        id: entry.id.clone(),
+        version: entry.version.clone(),
+        status: status.to_string(),
+        install_dir: install_dir.display().to_string(),
+        template: install_dir.join("template.docx").display().to_string(),
+        sample_data: install_dir.join("data.json").display().to_string(),
+    }
+}
+
+fn download_and_verify_registry_asset(asset: &TemplateRegistryAsset) -> Result<Vec<u8>> {
+    let bytes = read_registry_resource(&asset.url, MAX_TEMPLATE_DOWNLOAD_BYTES)?;
+    let actual = format!("{:x}", Sha256::digest(&bytes));
+    if actual != asset.sha256 {
+        return Err(DocxError::Parse(format!(
+            "download hash mismatch for {}: expected {}, got {actual}",
+            asset.url, asset.sha256
+        )));
+    }
+    Ok(bytes)
+}
+
+fn installed_template_ids(install_root: &Path) -> Result<Vec<String>> {
+    if !install_root.exists() {
+        return Ok(Vec::new());
+    }
+    let mut ids = fs::read_dir(install_root)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.path().join("manifest.json").is_file())
+        .filter_map(|entry| entry.file_name().to_str().map(ToOwned::to_owned))
+        .collect::<Vec<_>>();
+    ids.sort();
+    Ok(ids)
 }
 
 fn run_template_inspect(args: TemplateInspectArgs) -> Result<()> {
@@ -3446,8 +4190,8 @@ mod tests {
 
     use super::{
         build_runner_manifest, build_runner_source, capture_watch_snapshot,
-        default_script_template, dev_change_reason, escape_rust_string, normalize_color_hex,
-        resolve_path, start_dev_server, summarize_f64, ConfigFormat,
+        default_script_template, dev_change_reason, escape_rust_string, is_loopback_url,
+        normalize_color_hex, resolve_path, start_dev_server, summarize_f64, ConfigFormat,
     };
 
     #[test]
@@ -3476,6 +4220,16 @@ mod tests {
         assert!(normalize_color_hex("12345").is_err());
         assert!(normalize_color_hex("1234567").is_err());
         assert!(normalize_color_hex("GG0000").is_err());
+    }
+
+    #[test]
+    fn registry_http_allows_only_exact_loopback_hosts() {
+        assert!(is_loopback_url("http://127.0.0.1:8080/index.json"));
+        assert!(is_loopback_url("http://localhost/index.json"));
+        assert!(is_loopback_url("http://[::1]:8080/index.json"));
+        assert!(!is_loopback_url("http://127.0.0.1.example/index.json"));
+        assert!(!is_loopback_url("http://localhost.example/index.json"));
+        assert!(!is_loopback_url("https://localhost/index.json"));
     }
 
     #[test]

@@ -8,7 +8,7 @@
 
 **One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
 
-[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Template registry](https://othmaneblial.github.io/rusdox/registry/preview.html) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
 
 ![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
 
@@ -37,6 +37,20 @@ Keep the layout your team already designed in Word, add readable placeholders, t
     rusdox template verify proposal.docx data.json --strict
 
 One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
+
+Discover those templates through the signed, curated registry without cloning
+the repository:
+
+    rusdox template list
+    rusdox template search compliance
+    rusdox template add board-report
+    rusdox template update --all
+
+The CLI verifies the Ed25519-signed manifest and every downloaded SHA-256 before
+an atomic install. Each entry exposes its license, contributor, documented
+inputs, preview, supported RusDox versions, accessibility notes, and verified
+DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/preview.html)
+or read its [trust and contribution contract](docs/template-registry.md).
 
 ## Schema-first authoring
 

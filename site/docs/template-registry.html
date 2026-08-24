@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Curated template registry | RusDox Documentation</title>
+    <meta name="description" content="Discover, verify, install, update, and contribute signed Word templates without expanding the core crate." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/template-registry.html" />
+    <meta property="og:title" content="Curated template registry | RusDox" />
+    <meta property="og:description" content="Discover, verify, install, update, and contribute signed Word templates without expanding the core crate." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/template-registry.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Curated template registry","description":"Discover, verify, install, update, and contribute signed Word templates without expanding the core crate.","url":"https://othmaneblial.github.io/rusdox/docs/template-registry.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Guide</p>
+            <h1>Curated template registry</h1>
+            <p class="lede">Discover, verify, install, update, and contribute signed Word templates without expanding the core crate.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/template-registry.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a class="is-active" aria-current="page" href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#discover-and-install">Discover and install</a></li><li class="toc-level-2"><a href="#curated-acceptance-contract">Curated acceptance contract</a></li><li class="toc-level-2"><a href="#trust-and-privacy">Trust and privacy</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox keeps the template registry outside the published Rust crate. The engine stays lean; templates can carry Word source, sample JSON, previews, verified DOCX/PDF output, and parity evidence without increasing <code>cargo install</code> size.</p>
+<h2 id="discover-and-install">Discover and install</h2>
+<p>rusdox template list rusdox template search compliance rusdox template add board-report rusdox template update board-report rusdox template update --all</p>
+<p>List and search are read-only. Add and update download only the selected <code>template.docx</code>, <code>data.json</code>, and manifest into the user template data folder. Every downloaded byte is checked against the SHA-256 hash in the registry.</p>
+<p>The default registry index is signed with Ed25519. RusDox pins the registry public key and verifies the detached signature before it trusts metadata or downloads. Private registries can pass a local file/HTTPS index and an explicit public key. Plain HTTP is rejected except for loopback testing.</p>
+<h2 id="curated-acceptance-contract">Curated acceptance contract</h2>
+<p>Every entry must include:</p>
+<ul><li>author credit and an SPDX license;</li><li>one or more of invoices, proposals, reports, compliance, HR, education, or operations;</li><li>a screenshot with meaningful alt text;</li><li>supported RusDox version bounds and documented inputs;</li><li>sample JSON and a Word template with SHA-256 hashes;</li><li>verified DOCX, PDF, parity JSON, and parity HTML hashes;</li><li>language, reading-order review, non-color-only meaning, and accessibility notes.</li></ul>
+<p>Run the registry verifier before proposing a template:</p>
+<p>node scripts/build_template_registry.mjs ./scripts/verify_word_templates.sh</p>
+<p>The generator validates the contract and writes the preview page used by pull requests and the public site. A template PR never needs to modify OOXML engine code.</p>
+<h2 id="trust-and-privacy">Trust and privacy</h2>
+<p>The registry contains public templates only. RusDox never uploads local sample data or rendered documents. Installation is explicit and writes only beneath the selected install root. Hash or signature mismatches fail before replacement, and atomic writes preserve an existing installed template.</p>
+<p>The initial signing key was generated only to sign the immutable v1 index and then discarded. This conservative bootstrap means a changed default registry requires a new RusDox release with a newly pinned key; the remote host alone cannot silently replace the trusted index.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="word-templates.html"><span>Previous</span><strong>Word-native templates</strong></a>
+    <a class="docs-pager-next" href="cli.html"><span>Next</span><strong>CLI reference</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

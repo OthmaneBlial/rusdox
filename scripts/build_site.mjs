@@ -19,6 +19,7 @@ const pages = [
   ["docs/wasm-feasibility.md", "docs/wasm-feasibility.html", "Browser rendering feasibility", "Decision", "Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.", "Trust & operations"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
+  ["docs/template-registry.md", "docs/template-registry.html", "Curated template registry", "Guide", "Discover, verify, install, update, and contribute signed Word templates without expanding the core crate.", "Examples"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
@@ -85,6 +86,7 @@ for (const [sourceName, outputName] of [
   ["schema", "schema"],
   ["editors/vscode", "editors/vscode"],
   ["playground", "playground"],
+  ["registry", "registry"],
 ]) {
   const sourceRoot = path.join(root, sourceName);
   if (fs.existsSync(sourceRoot)) {

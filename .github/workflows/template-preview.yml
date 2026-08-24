@@ -1,0 +1,37 @@
+name: Template registry preview
+
+on:
+  pull_request:
+    paths:
+      - "registry/**"
+      - "templates/**"
+      - "template-evidence/**"
+      - "scripts/build_template_registry.mjs"
+      - ".github/workflows/template-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify signed manifest, hashes, evidence, and accessibility contract
+        run: node scripts/build_template_registry.mjs
+      - name: Publish reviewable template preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-registry-preview-${{ github.event.pull_request.number || github.run_number }}
+          path: |
+            registry/preview.html
+            templates/*/preview.png
+            templates/*/template.docx
+            templates/*/data.json
+            template-evidence/*/reports/*-parity.html
+          if-no-files-found: error
+          retention-days: 14

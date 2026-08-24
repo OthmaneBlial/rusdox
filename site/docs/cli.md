@@ -195,6 +195,26 @@ Render from JSON and generate the edited DOCX, native PDF, page snapshots, and p
 
 Use --name for the artifact stem, --output-root for the complete evidence root, and --config for PDF renderer configuration. See [Word-native Templates](word-templates.md) for syntax v1, strict behavior, loops, conditions, partials, preservation guarantees, and limitations.
 
+Discover templates from the signed curated registry:
+
+    rusdox template list
+    rusdox template search compliance
+    rusdox template list --format json
+
+Install one template or update installed entries:
+
+    rusdox template add board-report
+    rusdox template update board-report
+    rusdox template update --all
+
+`list` and `search` do not write files. `add` and `update` verify the registry's
+detached Ed25519 signature, supported RusDox version, and the SHA-256 of the Word
+template and sample JSON before atomically installing them. Use `--install-root`
+for an explicit destination. Private registries can pass `--registry` with an
+HTTPS URL or local index and `--public-key` with the matching 32-byte key in
+hexadecimal. See [Curated template registry](template-registry.md) for the
+manifest, trust, privacy, and contribution contract.
+
 ## Output Control
 
 Write DOCX only:

@@ -5,6 +5,8 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
+use ed25519_dalek::{Signer, SigningKey};
+use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 use zip::ZipArchive;
 
@@ -50,6 +52,67 @@ blocks:
   - type: body
     text: This file should render without Rust source.
 "#
+}
+
+fn create_signed_local_registry(directory: &Path) -> (std::path::PathBuf, String) {
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut registry: serde_json::Value =
+        serde_json::from_slice(&fs::read(repo.join("registry/index.json")).expect("read registry"))
+            .expect("registry JSON");
+    let base_url = registry["base_url"].as_str().expect("base URL").to_string();
+    for entry in registry["templates"]
+        .as_array_mut()
+        .expect("template entries")
+    {
+        for pointer in [
+            "/preview/url",
+            "/files/template/url",
+            "/files/sample_data/url",
+            "/verified_outputs/docx/url",
+            "/verified_outputs/pdf/url",
+            "/verified_outputs/parity_json/url",
+            "/verified_outputs/parity_html/url",
+        ] {
+            let url = entry
+                .pointer_mut(pointer)
+                .and_then(|value| value.as_str())
+                .expect("asset URL")
+                .to_string();
+            let relative = url.strip_prefix(&base_url).expect("same-origin asset");
+            *entry.pointer_mut(pointer).expect("asset pointer") =
+                serde_json::Value::String(repo.join(relative).display().to_string());
+        }
+    }
+    let index = serde_json::to_vec_pretty(&registry).expect("serialize registry");
+    let seed = [37_u8; 32];
+    let signing_key = SigningKey::from_bytes(&seed);
+    let signature = signing_key.sign(&index);
+    let public_key = signing_key.verifying_key().to_bytes();
+    let public_key_hex = public_key
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let signature_hex = signature
+        .to_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let digest = format!("{:x}", Sha256::digest(&index));
+    let index_path = directory.join("index.json");
+    fs::write(&index_path, &index).expect("local registry");
+    fs::write(
+        directory.join("index.sig.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema_version": 1,
+            "algorithm": "ed25519",
+            "key_id": "integration-test",
+            "manifest_sha256": digest,
+            "signature": signature_hex,
+        }))
+        .expect("signature JSON"),
+    )
+    .expect("signature file");
+    (index_path, public_key_hex)
 }
 
 #[test]
@@ -916,6 +979,111 @@ fn template_cli_strict_failure_preserves_previous_docx() {
         fs::read(output).expect("read previous output"),
         b"known-good-docx"
     );
+}
+
+#[test]
+fn template_registry_lists_and_installs_hash_verified_assets() {
+    let temp = tempdir().expect("temp dir");
+    let (registry, public_key) = create_signed_local_registry(temp.path());
+    let registry_arg = registry.to_string_lossy();
+
+    let list = run_cli(
+        &[
+            "template",
+            "list",
+            "--registry",
+            registry_arg.as_ref(),
+            "--public-key",
+            &public_key,
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        list.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&list.stderr)
+    );
+    let listed: serde_json::Value = serde_json::from_slice(&list.stdout).expect("list JSON");
+    assert_eq!(listed["signed"], true);
+    assert_eq!(listed["templates"].as_array().map(Vec::len), Some(3));
+
+    let install_root = temp.path().join("installed");
+    let add = run_cli(
+        &[
+            "template",
+            "add",
+            "invoice",
+            "--registry",
+            registry_arg.as_ref(),
+            "--public-key",
+            &public_key,
+            "--install-root",
+            install_root.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(
+        add.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+    let result: serde_json::Value = serde_json::from_slice(&add.stdout).expect("install JSON");
+    assert_eq!(result[0]["status"], "installed");
+    assert!(install_root.join("invoice/template.docx").is_file());
+    assert!(install_root.join("invoice/data.json").is_file());
+    assert!(install_root.join("invoice/manifest.json").is_file());
+
+    let second = run_cli(
+        &[
+            "template",
+            "update",
+            "invoice",
+            "--registry",
+            registry_arg.as_ref(),
+            "--public-key",
+            &public_key,
+            "--install-root",
+            install_root.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(second.status.success());
+    let result: serde_json::Value = serde_json::from_slice(&second.stdout).expect("update JSON");
+    assert_eq!(result[0]["status"], "up-to-date");
+}
+
+#[test]
+fn template_registry_rejects_tampering_before_install() {
+    let temp = tempdir().expect("temp dir");
+    let (registry, public_key) = create_signed_local_registry(temp.path());
+    let mut bytes = fs::read(&registry).expect("registry");
+    let position = bytes.iter().position(|byte| *byte == b'{').expect("JSON");
+    bytes[position] = b' ';
+    fs::write(&registry, bytes).expect("tamper registry");
+    let install_root = temp.path().join("installed");
+    let output = run_cli(
+        &[
+            "template",
+            "add",
+            "invoice",
+            "--registry",
+            registry.to_string_lossy().as_ref(),
+            "--public-key",
+            &public_key,
+            "--install-root",
+            install_root.to_string_lossy().as_ref(),
+        ],
+        temp.path(),
+    );
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("SHA-256 does not match"));
+    assert!(!install_root.exists());
 }
 
 #[test]

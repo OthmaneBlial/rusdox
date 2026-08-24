@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "registry_id": "rusdox-curated",
+  "generated_at": "2026-08-24T00:00:00Z",
+  "base_url": "https://othmaneblial.github.io/rusdox/",
+  "categories": [
+    { "id": "invoices", "label": "Invoices" },
+    { "id": "proposals", "label": "Proposals" },
+    { "id": "reports", "label": "Reports" },
+    { "id": "compliance", "label": "Compliance" },
+    { "id": "hr", "label": "HR" },
+    { "id": "education", "label": "Education" },
+    { "id": "operations", "label": "Operations" }
+  ],
+  "template_of_the_month": "board-report",
+  "templates": [
+    {
+      "id": "invoice",
+      "title": "Consulting Invoice",
+      "version": "1.0.0",
+      "description": "A compact Word-designed invoice with customer details, line-item loop, totals, and payment terms.",
+      "categories": ["invoices", "operations"],
+      "tags": ["billing", "consulting", "finance"],
+      "author": { "name": "Othmane Blial", "url": "https://github.com/OthmaneBlial" },
+      "license": { "spdx": "MIT", "url": "https://othmaneblial.github.io/rusdox/templates/LICENSE.md" },
+      "supported_rusdox": { "minimum": "0.1.1", "maximum_exclusive": "0.5.0" },
+      "preview": { "url": "https://othmaneblial.github.io/rusdox/templates/invoice/preview.png", "sha256": "cf0ab81ced9a75deb986220f29ff0a1922c918c78ba39ce00318fdd843170b1e", "alt": "One-page consulting invoice with orange heading, item table, and total." },
+      "inputs": [
+        { "path": "invoice.number", "type": "string", "required": true, "description": "Human-readable invoice number." },
+        { "path": "invoice.client", "type": "object", "required": true, "description": "Client name and address." },
+        { "path": "invoice.items", "type": "array", "required": true, "description": "Line items with description, quantity, rate, and amount." }
+      ],
+      "files": {
+        "template": { "url": "https://othmaneblial.github.io/rusdox/templates/invoice/template.docx", "sha256": "5b34012e3bd4ec6f8060ef4a1e5077c780dbe8f45a81d7ff347360c18a2e3b68" },
+        "sample_data": { "url": "https://othmaneblial.github.io/rusdox/templates/invoice/data.json", "sha256": "4bed1511a0b6c9f4ccf2b6c1213771317eda41ba07a4ffbeb4631ac3f5c7642c" }
+      },
+      "verified_outputs": {
+        "docx": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/invoice/generated/invoice.docx", "sha256": "fa4d27740eacbde35fe950a28fcaed20dfb6259f0df4947cf5eb529a372f0e64" },
+        "pdf": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/invoice/rendered/invoice.pdf", "sha256": "da5be0c4a4e46fe822de99cc105c16288e7cb732b6f1880b83e5e166e83ff157" },
+        "parity_json": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/invoice/reports/invoice-parity.json", "sha256": "f3c41c2e24fd64a5e0fee54dec512af56c09dfb99c3c0671b33dcb82440adf62" },
+        "parity_html": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/invoice/reports/invoice-parity.html", "sha256": "5dc995d7809a3b23a3fce924eea2d11140c1cf3b8e11658f853d39c10fc87885" }
+      },
+      "accessibility": { "language": "en", "reading_order_reviewed": true, "color_only_meaning": false, "notes": "All table labels remain text; the template contains no decorative or content images." }
+    },
+    {
+      "id": "proposal",
+      "title": "Project Proposal",
+      "version": "1.0.0",
+      "description": "A designer-authored proposal with reusable narrative partials, scope rows, conditional notes, and commercial terms.",
+      "categories": ["proposals", "operations"],
+      "tags": ["sales", "scope", "commercial"],
+      "author": { "name": "Othmane Blial", "url": "https://github.com/OthmaneBlial" },
+      "license": { "spdx": "MIT", "url": "https://othmaneblial.github.io/rusdox/templates/LICENSE.md" },
+      "supported_rusdox": { "minimum": "0.1.1", "maximum_exclusive": "0.5.0" },
+      "preview": { "url": "https://othmaneblial.github.io/rusdox/templates/proposal/preview.png", "sha256": "3882b7f168cfa62f9e0fd6038952939f1dad2741be0746e2121f968deea69be2", "alt": "Two-page project proposal with warm orange section headings and scope table." },
+      "inputs": [
+        { "path": "proposal.client", "type": "object", "required": true, "description": "Client and engagement identity." },
+        { "path": "proposal.scope", "type": "array", "required": true, "description": "Deliverables, owners, and outcome rows." },
+        { "path": "$partials", "type": "object", "required": false, "description": "Reusable deterministic narrative fragments." }
+      ],
+      "files": {
+        "template": { "url": "https://othmaneblial.github.io/rusdox/templates/proposal/template.docx", "sha256": "a0a33e0aa462e941e67d3bcf178b047f7878d393c89423a032963f5b055b4c62" },
+        "sample_data": { "url": "https://othmaneblial.github.io/rusdox/templates/proposal/data.json", "sha256": "9ab5bbd4273bd6288ed43beb2faa53d7ac156b165c7487a89b34ab2ca379e8fa" }
+      },
+      "verified_outputs": {
+        "docx": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/proposal/generated/proposal.docx", "sha256": "9628d59bd6083bc7b2f3aba9e3b81ece9bf94db220fbe6d5c3058d6fb8f1b3db" },
+        "pdf": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/proposal/rendered/proposal.pdf", "sha256": "c5d3eaaddc456974a1dee0fe3b1aa335cb37f314a9fa5d752d99a21e98bab168" },
+        "parity_json": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/proposal/reports/proposal-parity.json", "sha256": "4ff055b2853b0f94477728f7c1495e9db612b030bc2aff00b109c043569f3124" },
+        "parity_html": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/proposal/reports/proposal-parity.html", "sha256": "f6081d0f9de57579c999865179e2d2255eafdebbd80bf5540112369454f9f29d" }
+      },
+      "accessibility": { "language": "en", "reading_order_reviewed": true, "color_only_meaning": false, "notes": "Headings and scope cells remain real text; status language is present alongside color." }
+    },
+    {
+      "id": "board-report",
+      "title": "Board and Compliance Report",
+      "version": "1.0.0",
+      "description": "A landscape board packet with repeated scorecard rows, conditional risk narrative, visible footer, and compliance-ready evidence.",
+      "categories": ["reports", "compliance"],
+      "tags": ["board", "governance", "risk"],
+      "author": { "name": "Othmane Blial", "url": "https://github.com/OthmaneBlial" },
+      "license": { "spdx": "MIT", "url": "https://othmaneblial.github.io/rusdox/templates/LICENSE.md" },
+      "supported_rusdox": { "minimum": "0.1.1", "maximum_exclusive": "0.5.0" },
+      "preview": { "url": "https://othmaneblial.github.io/rusdox/templates/board-report/preview.png", "sha256": "ea2181bc8cf330fc7aba4cf18eaca0a5328cbb2e3ed47a621e822d2cc612ddd5", "alt": "Landscape board report with executive summary, KPI scorecard, risk notes, and footer." },
+      "inputs": [
+        { "path": "report.period", "type": "string", "required": true, "description": "Reporting period shown in the heading." },
+        { "path": "report.metrics", "type": "array", "required": true, "description": "Board scorecard rows with value, status, and commentary." },
+        { "path": "report.risk", "type": "object", "required": true, "description": "Conditional risk callout and mitigation." }
+      ],
+      "files": {
+        "template": { "url": "https://othmaneblial.github.io/rusdox/templates/board-report/template.docx", "sha256": "a03ddc6006324513a388c2ec479341510ec386468405c67103649dc7c2a24621" },
+        "sample_data": { "url": "https://othmaneblial.github.io/rusdox/templates/board-report/data.json", "sha256": "291b44316a9b3a29ba1bf0198fbb7b66eaa1970e1cbcb7b8d1be2f0640bfa5ad" }
+      },
+      "verified_outputs": {
+        "docx": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/board-report/generated/board-report.docx", "sha256": "78b535bcfcbb7cf8bd44b402b55b1d9cad9998e3bf273cc5b47d8011fadf258a" },
+        "pdf": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/board-report/rendered/board-report.pdf", "sha256": "7e6bac16c975796a4269453067a3919f8226f52aa52b4484bfe31396ee4c5add" },
+        "parity_json": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/board-report/reports/board-report-parity.json", "sha256": "3232bf3773c0d72290de128099f17ac3584d19f2cca7c26bda07b326d268c5fe" },
+        "parity_html": { "url": "https://othmaneblial.github.io/rusdox/template-evidence/board-report/reports/board-report-parity.html", "sha256": "e3145a7a6ec5eebec455efc239af9bdd173763570f3765253d0798b7e9765c2f" }
+      },
+      "accessibility": { "language": "en", "reading_order_reviewed": true, "color_only_meaning": false, "notes": "Risk states always include text labels; the landscape table reading order was manually reviewed." }
+    }
+  ]
+}

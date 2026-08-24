@@ -305,13 +305,15 @@ Theme: templates, integrations, and contribution loops.
 
 ### Curated template registry
 
-- [ ] Define a small signed manifest format with license, author, preview, supported RusDox version, inputs, and output hashes.
-- [ ] Add `rusdox template search/list/add/update`.
-- [ ] Start curated: every template must have screenshots, sample data, tests, parity evidence, accessibility notes, and a clear license.
-- [ ] Add categories for invoices, proposals, reports, compliance, HR, education, and operations.
-- [ ] Generate a preview page automatically for template pull requests.
-- [ ] Feature a “template of the month” and credit contributors prominently.
-- [ ] Keep third-party templates outside the core crate so the engine remains lean.
+- [x] Define a small signed manifest format with license, author, preview, supported RusDox version, inputs, and output hashes.
+- [x] Add `rusdox template search/list/add/update`.
+- [x] Start curated: every template must have screenshots, sample data, tests, parity evidence, accessibility notes, and a clear license.
+- [x] Add categories for invoices, proposals, reports, compliance, HR, education, and operations.
+- [x] Generate a preview page automatically for template pull requests.
+- [x] Feature a “template of the month” and credit contributors prominently.
+- [x] Keep third-party templates outside the core crate so the engine remains lean.
+
+Section evidence: `registry/index.json` is an Ed25519-signed v1 contract for three hash-pinned Word templates and seven curated discovery categories. The CLI pins the default public key, accepts explicit keys for private registries, rejects non-loopback HTTP, bounds registry and asset reads, enforces RusDox version ranges, verifies source hashes before atomic installation, and supports text or JSON list/search/add/update output. Integration tests prove a signed local registry installs verified bytes and a one-byte manifest change fails before installation. The Node registry builder independently verifies the signature, 21 source/evidence hashes, preview alt text, licenses, documented inputs, reading order, language, and non-color-only semantics; it generates an accessible public gallery and a pull-request review artifact. Registry content and verified outputs remain outside the published crate.
 
 ### GitHub-native automation
 
