@@ -201,6 +201,12 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 
 RusDox does not claim complete OOXML coverage. Check the [compatibility matrix](docs/compatibility.md) for supported, partial, and intentionally unsupported behavior.
 
+Accessibility metadata is a tested contract: visual alt text is required and a
+declared document language reaches both DOCX and the PDF catalog. RTL/CJK
+typography remains experimental, and the current PDF is not claimed as tagged
+PDF, PDF/UA, or PDF/A. Read the [international and accessibility boundary](docs/international-accessibility.md)
+and the [PDF conformance research](docs/pdf-conformance-research.md).
+
 ## Benchmark Proof
 
 ![RusDox reproducible benchmark history](assets/benchmark-history.svg)

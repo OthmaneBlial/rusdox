@@ -3,6 +3,7 @@ output_name: international-scripts
 metadata:
   title: International script boundary fixture
   author: RusDox maintainers
+  language: mul
 blocks:
   - type: title
     text: International scripts

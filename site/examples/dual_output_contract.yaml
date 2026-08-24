@@ -4,6 +4,7 @@ metadata:
   title: RusDox dual-output contract
   author: RusDox maintainers
   subject: Executable DOCX and PDF feature parity fixture
+  language: en-US
   keywords:
     - parity
     - ooxml

@@ -525,6 +525,12 @@ impl VisualSpec {
             ..Self::default()
         }
     }
+
+    /// Sets required meaningful alternative text for the visual.
+    pub fn alt_text(mut self, alt_text: impl Into<String>) -> Self {
+        self.alt_text = Some(alt_text.into());
+        self
+    }
 }
 
 impl RunSpec {

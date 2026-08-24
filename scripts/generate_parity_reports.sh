@@ -20,7 +20,8 @@ for name in \
   invoice \
   meeting-notes \
   dual-output-contract \
-  international-scripts
+  international-scripts \
+  visual-assets-showcase
 do
   rm -f "$destination/$name-parity.html" "$destination/$name-parity.json"
   rm -rf "$destination/$name-pages"

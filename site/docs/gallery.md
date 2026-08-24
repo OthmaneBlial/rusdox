@@ -80,6 +80,12 @@ These fixtures exercise the less visible parts of the dual-output contract. Thei
 - Evidence: [DOCX/PDF parity report](../parity/international-scripts-parity.html)
 - Coverage: Unicode preservation and fallback across Latin, Arabic/RTL, Hebrew, CJK, emoji, and mixed-script text; see the compatibility matrix for shaping limits
 
+### Visual Accessibility
+
+- Spec: [../examples/visual_assets_showcase.yaml](../examples/visual_assets_showcase.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/visual-assets-showcase-parity.html)
+- Coverage: required meaningful alt text preserved across source, reopened DOCX, and PDF semantic projection
+
 ## Regenerate Gallery Assets
 
 ```bash

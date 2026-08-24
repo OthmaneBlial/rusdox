@@ -483,6 +483,16 @@ fn validate_metadata(report: &mut ValidationReport, metadata: &DocumentMetadata)
     {
         report.push_error("metadata.subject", "metadata subject cannot be blank");
     }
+    if let Some(language) = metadata.language.as_deref() {
+        if language.trim().is_empty() {
+            report.push_error("metadata.language", "metadata language cannot be blank");
+        } else if !is_bcp47_language_tag(language.trim()) {
+            report.push_error(
+                "metadata.language",
+                "metadata language must be a BCP 47-style tag such as en, fr-FR, or mul",
+            );
+        }
+    }
 
     for (index, keyword) in metadata.keywords.iter().enumerate() {
         if keyword.trim().is_empty() {
@@ -829,6 +839,17 @@ fn validate_visual_block(
         return;
     }
 
+    if visual
+        .alt_text
+        .as_deref()
+        .is_none_or(|value| value.trim().is_empty())
+    {
+        report.push_error(
+            format!("{path}.alt_text"),
+            "visual alt text is required and cannot be blank",
+        );
+    }
+
     let resolved = resolve_visual_path(spec, &visual.path);
     match supported_visual_extension(&resolved) {
         Some(_) => {}
@@ -871,6 +892,20 @@ fn validate_visual_block(
     if let Some(height) = visual.max_height_twips {
         validate_positive_u32(report, format!("{path}.max_height_twips"), height);
     }
+}
+
+fn is_bcp47_language_tag(value: &str) -> bool {
+    let mut subtags = value.split('-');
+    let Some(primary) = subtags.next() else {
+        return false;
+    };
+    if !(2..=8).contains(&primary.len()) || !primary.bytes().all(|byte| byte.is_ascii_alphabetic())
+    {
+        return false;
+    }
+    subtags.all(|subtag| {
+        (1..=8).contains(&subtag.len()) && subtag.bytes().all(|byte| byte.is_ascii_alphanumeric())
+    })
 }
 
 fn resolve_visual_path(spec: &DocumentSpec, raw_path: &str) -> PathBuf {
@@ -1137,6 +1172,7 @@ mod tests {
         let temp = tempdir().expect("temp dir");
         let mut spec = DocumentSpec::new().with_asset_base_dir(temp.path());
         spec.metadata.title = Some(" ".to_string());
+        spec.metadata.language = Some("en_US".to_string());
         spec.metadata.keywords = vec!["".to_string()];
         spec.styles = Stylesheet::new()
             .add_paragraph_style(ParagraphStyle::new("loop").based_on("loop").paragraph(
@@ -1208,11 +1244,19 @@ mod tests {
         assert!(report
             .issues
             .iter()
+            .any(|issue| issue.path == "metadata.language"));
+        assert!(report
+            .issues
+            .iter()
             .any(|issue| issue.message.contains("unknown paragraph style 'missing'")));
         assert!(report
             .issues
             .iter()
             .any(|issue| issue.message.contains("unsupported visual format")));
+        assert!(report
+            .issues
+            .iter()
+            .any(|issue| issue.path.ends_with(".alt_text")));
         assert!(report.issues.iter().any(|issue| issue
             .message
             .contains("row has 2 cells but the table only defines 1 columns")));
@@ -1255,7 +1299,7 @@ mod tests {
 
         let mut spec = DocumentSpec::new().with_asset_base_dir(temp.path());
         spec.blocks = vec![BlockSpec::Logo {
-            spec: VisualSpec::new("logo.svg"),
+            spec: VisualSpec::new("logo.svg").alt_text("Company logo"),
         }];
 
         let report = validate_spec(&spec);

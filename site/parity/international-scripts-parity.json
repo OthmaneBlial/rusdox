@@ -101,6 +101,18 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "skipped",
+      "detail": "source contains no images"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "passed",
+      "detail": "source language = DOCX dc:language = PDF projection = PDF catalog /Lang"
+    },
+    {
       "id": "docx_package",
       "label": "DOCX package integrity",
       "status": "passed",
@@ -157,6 +169,7 @@
       "title": "International script boundary fixture",
       "author": "RusDox maintainers",
       "subject": null,
+      "language": "mul",
       "keywords": [],
       "custom_properties": {}
     },
@@ -214,6 +227,7 @@
       "title": "International script boundary fixture",
       "author": "RusDox maintainers",
       "subject": null,
+      "language": "mul",
       "keywords": [],
       "custom_properties": {}
     },
@@ -272,6 +286,7 @@
         "title": "International script boundary fixture",
         "author": "RusDox maintainers",
         "subject": null,
+        "language": "mul",
         "keywords": [],
         "custom_properties": {}
       },
@@ -294,7 +309,42 @@
     "page_count": 1,
     "draw_operations": 13,
     "text_lines": 13,
-    "image_operations": 0
+    "image_operations": 0,
+    "document_language": "mul",
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 34,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 72,
+        "missing_characters": [
+          "⚠",
+          "✅",
+          "️",
+          "👦",
+          "👧",
+          "👨",
+          "👩",
+          "🚀"
+        ]
+      },
+      {
+        "family": "Arial Unicode MS",
+        "post_script_name": "ArialUnicodeMS",
+        "embedding_permission": "editable",
+        "glyph_count": 22,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
   },
   "visual_diff": {
     "enabled": false,
@@ -314,13 +364,13 @@
   "artifacts": [
     {
       "path": "generated/international-scripts.docx",
-      "bytes": 4227,
-      "sha256": "fa0acf2e9ae3dffdd6fa60562fb8d828c13fbaada12299f95a29f30b01eb1c1a"
+      "bytes": 4243,
+      "sha256": "d7c083cb8e8b6b5c53ac8c3d416fec00888e58be3a577d6ffa8ec6bbd18363a6"
     },
     {
       "path": "rendered/international-scripts.pdf",
-      "bytes": 24817297,
-      "sha256": "35ae7f652d9102b978b2cfdda466cef7cb339c698c3766e0ff12b8e7d4049d06"
+      "bytes": 24817311,
+      "sha256": "f0c6434ac46d5b7919fd1c7e11a9ad4c048c3ebee42bb3e727699a2e6c17e53a"
     }
   ]
 }

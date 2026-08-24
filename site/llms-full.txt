@@ -14,14 +14,16 @@ If you are new, read these pages in order:
 6. [Rust API](rust-api.md)
 7. [Compatibility Matrix](compatibility.md)
 8. [Dated Viewer Scorecard](compatibility-scorecard.md)
-9. [Input Safety and Limits](input-safety.md)
-10. [Parity Verification](parity.md)
-11. [Reproducible Performance](performance.md)
-12. [Word-native Templates](word-templates.md)
-13. [Spec Versioning and Authoring Tools](spec-versioning.md)
-14. [Stability, Versioning, and Support](stability.md)
-15. [Release Checklist](release-checklist.md)
-16. [Troubleshooting](troubleshooting.md)
+9. [International and Accessible Output](international-accessibility.md)
+10. [Tagged PDF, PDF/UA, and PDF/A Research](pdf-conformance-research.md)
+11. [Input Safety and Limits](input-safety.md)
+12. [Parity Verification](parity.md)
+13. [Reproducible Performance](performance.md)
+14. [Word-native Templates](word-templates.md)
+15. [Spec Versioning and Authoring Tools](spec-versioning.md)
+16. [Stability, Versioning, and Support](stability.md)
+17. [Release Checklist](release-checklist.md)
+18. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -57,6 +59,8 @@ If you are a developer and want full power:
 - how to generate the schema, migrate legacy specs, and get source-located editor diagnostics
 - which v1 contracts follow SemVer, the MSRV, deprecation window, and supported release policy
 - how to set document metadata and custom properties
+- how font fallback, embedding permissions, alt text, and language metadata are enforced
+- why current PDF output makes no tagged-PDF, PDF/UA, or PDF/A claim
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
 - how to reproduce performance results and interpret regression evidence
@@ -279,6 +283,12 @@ See [Getting started](docs/getting-started.md) for the complete two-minute walkt
 | Automated DOCX/PDF parity report | Yes | No | No | No |
 
 RusDox does not claim complete OOXML coverage. Check the [compatibility matrix](docs/compatibility.md) for supported, partial, and intentionally unsupported behavior.
+
+Accessibility metadata is a tested contract: visual alt text is required and a
+declared document language reaches both DOCX and the PDF catalog. RTL/CJK
+typography remains experimental, and the current PDF is not claimed as tagged
+PDF, PDF/UA, or PDF/A. Read the [international and accessibility boundary](docs/international-accessibility.md)
+and the [PDF conformance research](docs/pdf-conformance-research.md).
 
 ## Benchmark Proof
 
@@ -743,6 +753,7 @@ metadata:
   title: Client Rollout Plan
   author: RusDox Studio
   subject: Q4 regional rollout
+  language: en-US
   keywords:
     - rollout
     - planning
@@ -756,6 +767,7 @@ Supported metadata fields:
 - `title`
 - `author`
 - `subject`
+- `language`: a BCP 47-style document language such as `en-US`, `fr`, or `mul`
 - `keywords`
 - `custom_properties`
 
@@ -1052,6 +1064,11 @@ Supported file formats:
 - PNG
 - JPEG
 - SVG
+
+`alt_text` is required and must be meaningful. It is preserved in the DOCX
+drawing properties and checked against the PDF semantic projection; a file name
+or blank string does not satisfy validation. See the
+[international and accessibility contract](international-accessibility.md).
 
 ## List Blocks
 
@@ -1487,7 +1504,8 @@ release pull request; a checked box without evidence is not a release receipt.
 - [ ] DOCX/PDF semantic parity and exact Linux page baselines pass.
 - [ ] Compatibility claims link to dated viewer, version, OS, fixture hash, and
       outcome evidence.
-- [ ] Accessibility checks pass for every supported semantic.
+- [ ] `node scripts/check_accessibility_contract.mjs` passes, and accessibility
+      checks pass for every supported semantic.
 - [ ] Benchmark history is regenerated; no explicit runtime or memory budget is
       exceeded without a reviewed rationale.
 - [ ] Load, concurrency, cancellation, and atomic recovery tests pass.
@@ -2621,6 +2639,7 @@ spec.metadata = DocumentMetadata::new()
     .title("Weekly Brief")
     .author("RusDox Studio")
     .subject("Executive update")
+    .language("en-US")
     .keyword("weekly")
     .custom_property("Audience", "Leadership");
 spec.blocks = vec![
@@ -2745,13 +2764,16 @@ let metadata = DocumentMetadata::new()
     .title("Board Report")
     .author("Finance")
     .subject("Q4 review")
+    .language("en-US")
     .keyword("board")
     .custom_property("Client", "Northwind Health");
 
 let document = Document::new().with_metadata(metadata);
 ```
 
-Metadata works through both `DocumentSpec` and `Document`, and RusDox writes it into `docProps/core.xml` plus `docProps/custom.xml`.
+Metadata works through both `DocumentSpec` and `Document`. RusDox writes it into
+`docProps/core.xml` plus `docProps/custom.xml`; a declared BCP 47-style
+language is also written to the PDF catalog and compared by the parity report.
 
 ## Config-Driven Builders With `Studio`
 
@@ -2978,8 +3000,8 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Nested tables | Supported | Bounded | Yes |  | DOCX uses native nested tables. PDF renders nested rows inside the parent cell; exact nested-grid geometry is not claimed. |
 | PNG and JPEG images | Supported | Supported | Yes |  | Count, semantic kind, and alt text are compared. |
 | SVG visuals | Supported | Supported | Yes |  | Rasterized for output; complex SVG compatibility varies. |
-| Image alt text | Supported | Semantic projection | Yes |  | Tagged-PDF accessibility semantics are not yet advertised. |
-| Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords are emitted. |
+| Image alt text | Supported | Semantic projection | Yes |  | Non-blank alt text is required and compared, but the current PDF has no structure tree. |
+| Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords plus catalog language are emitted. |
 | Page size, orientation, and margins | Supported | Supported | Yes |  | Both outputs consume the same `PageSetup`; width/height remain explicit and orientation is validated. |
 | Headers and footers | Supported | Supported | Yes |  | PDF renders the same text/alignment template on every page. |
 | Page number and total-page fields | Supported | Supported | Yes |  | `{page}` and `{pages}` respect restart and decimal/Roman/letter formats. |
@@ -3002,12 +3024,19 @@ This is not yet a promise of lossless editing for arbitrary Word files. RusDox p
 | Area | Status | Notes |
 |---|---|---|
 | Latin text | Supported | Primary tested path. |
-| Unicode font embedding in PDF | Supported | TrueType fonts and ToUnicode maps are tested. |
-| Font fallback | Partial | Depends on fonts installed on the rendering machine. |
+| Unicode font embedding in PDF | Supported | Embeddable outline TrueType fonts and ToUnicode maps are tested; restricted or outline-forbidden fonts are rejected. |
+| Font fallback | Partial | Requested, generic, and script-specific fallbacks are tried. Exact resolution depends on installed fonts and missing characters are recorded in parity evidence. |
 | Mixed scripts | Partial | The `international-scripts` fixture covers Latin, Arabic, Hebrew, CJK, emoji, and mixed lines through DOCX reopen and native PDF extraction. |
 | Arabic and RTL layout | Experimental | Unicode text and right alignment are preserved, but contextual Arabic shaping and the Unicode bidi algorithm are not yet implemented by the PDF renderer. |
 | CJK | Experimental | Glyph fallback is exercised; language-specific line-breaking and kinsoku rules are not implemented. |
 | Emoji | Experimental | Monochrome glyph fallback may work. Color/ZWJ emoji sequences are not guaranteed and vary with installed fonts. |
+
+The machine-readable
+[`international-readiness.json`](../compatibility/international-readiness.json)
+prevents RTL or CJK from graduating while any shaping, line-breaking, font, or
+viewer gate is unmet. Read the complete [font, language, and alt-text contract](international-accessibility.md)
+and the [tagged PDF/PDF/A research](pdf-conformance-research.md). Current PDFs
+are not claimed as tagged PDF, PDF/UA, or PDF/A.
 
 ## Viewers and operating systems
 
@@ -3071,6 +3100,193 @@ The machine-readable source is [`compatibility/viewer-results.json`](../compatib
 ## Interpretation
 
 Automated parity is stronger for content/model equivalence; viewer tests are stronger for application acceptance. Neither substitutes for the other. Production adopters should run the same fixture shape in the exact viewer versions used by their recipients and contribute sanitized evidence for currently untested rows.
+
+---
+
+# International and accessible output
+
+Source: https://othmaneblial.github.io/rusdox/docs/international-accessibility.html
+
+RusDox preserves Unicode text, meaningful image descriptions, and document
+language metadata across its supported authoring paths. Those guarantees are
+machine-tested. They are not a claim that every script is fully laid out or
+that the current PDF is an accessible tagged document.
+
+## Support decision
+
+Latin text is supported. Arabic/right-to-left, Hebrew, CJK, and emoji remain
+experimental in the native PDF renderer. The checked-in international fixture
+passes semantic DOCX reopen, PDF text projection, language metadata, and the
+deterministic Linux page baseline, but RusDox does not yet implement:
+
+- the Unicode bidirectional algorithm and contextual Arabic shaping;
+- CJK kinsoku line-breaking rules or a pinned representative CJK font profile;
+- color or ZWJ emoji composition;
+- a dated review in representative Word, LibreOffice, Preview, and Acrobat
+  versions for these script combinations.
+
+[`compatibility/international-readiness.json`](../compatibility/international-readiness.json)
+is the executable graduation gate. A track cannot change from `experimental`
+to `supported` while any required gate is false. This intentionally prevents a
+green semantic round-trip from being presented as typographic parity.
+
+## Font embedding and fallback contract
+
+DOCX stores the requested family names and lets the reader choose an installed
+font when those families are absent. RusDox does not embed fonts in DOCX, so
+Word or LibreOffice substitution can change line breaks and pagination.
+
+The native PDF path resolves the requested family, common sans/serif/mono
+fallbacks, and then script-specific Arabic, Hebrew, CJK, or Devanagari
+fallbacks. It admits only single-face outline TrueType fonts for which OpenType
+reports installable, preview-and-print, or editable embedding permission.
+Restricted fonts and fonts that forbid outline embedding are rejected. The
+admitted font program is embedded in full and accompanied by a Unicode map.
+
+Parity evidence records, for every font used:
+
+- the resolved family and PostScript name;
+- the OpenType embedding permission;
+- the number of mapped Unicode characters;
+- every character that fell back to the font's missing-glyph box.
+
+This is a technical permission check, not a font licence grant. Distributors
+must confirm that their selected font licence permits the intended embedding
+and redistribution. Production deployments that need reproducible pagination
+must pin and licence an explicit font set in the container or host image;
+system font discovery is intentionally outside cross-machine byte parity.
+
+## Alternative text and language
+
+Every visual block must provide non-blank `alt_text`. RusDox writes the same
+description to both relevant DOCX drawing-property locations, reopens it, and
+compares it with the source and PDF semantic projection in the
+`image_alt_text` parity check. Decorative-image semantics are not yet exposed;
+authors should describe the visual's purpose, not its file name.
+
+`metadata.language` accepts a bounded BCP 47-style language tag such as
+`en-US`, `fr`, or `mul`. It is written as `dc:language` in DOCX core properties
+and `/Lang` in the PDF catalog. The `document_language` parity check compares
+the source, reopened DOCX, PDF projection, and rendered PDF evidence. Documents
+that intentionally mix languages can use `mul`; future run-level language
+changes will require their own contract.
+
+The current PDF records image descriptions in its semantic projection, but it
+does not attach them to a PDF structure tree. Assistive technology therefore
+cannot consume those descriptions as tagged figure alternatives. See the
+[PDF conformance research](pdf-conformance-research.md) before making any PDF
+accessibility or archival claim.
+
+## Accessibility parity boundary
+
+The 21-check parity report adds two explicit accessibility-oriented assertions:
+
+- `image_alt_text` passes when every visual has identical meaningful text in
+  the source, reopened DOCX, and PDF projection; it skips when there are no
+  visuals;
+- `document_language` passes when all four representations agree; it skips when
+  the author did not declare a language.
+
+These checks prevent metadata loss. They do not replace keyboard, screen-reader,
+reading-order, contrast, or representative-viewer review. Tagged PDF and PDF/A
+remain separate, unclaimed conformance projects.
+
+## Graduation checklist
+
+RTL or CJK can become supported only after the implementation adds the missing
+layout algorithm, representative licensed font profiles, deterministic parity
+fixtures, and dated viewer evidence, then every machine-readable graduation
+gate passes. Tagged PDF requires the separate structure, validation, and human
+assistive-technology work described in the research note.
+
+---
+
+# PDF conformance research
+
+Source: https://othmaneblial.github.io/rusdox/docs/pdf-conformance-research.html
+
+Status: researched on 2026-08-24. Current RusDox output is **not tagged PDF**,
+**not PDF/UA**, and **not PDF/A**. `PdfRenderEvidence` records these claims as
+false. A language entry, embedded fonts, Unicode maps, and source-level image
+descriptions are useful prerequisites, but they are not conformance.
+
+## Tagged PDF and PDF/UA
+
+The current accessibility standard is
+[ISO 14289-2:2024 (PDF/UA-2)](https://www.iso.org/standard/82278.html). The
+[PDF Association sponsored-standards programme](https://pdfa.org/sponsored-standards/)
+provides free access to the relevant ISO standards, and its
+[Tagged PDF Best Practice Guide](https://pdfa.org/resource/tagged-pdf-best-practice-guide-syntax/)
+explains the syntax implementation boundary.
+
+An honest first tagged-PDF milestone needs all of the following before any
+accessibility claim:
+
+1. `/MarkInfo` with marked content and a `/StructTreeRoot` rooted in a semantic
+   document element;
+2. marked-content IDs, structure elements, and a correct parent tree that bind
+   every meaningful page object to the logical structure;
+3. semantic roles for headings, paragraphs, lists, tables, links, notes, and
+   figures, including correct table headers and nesting;
+4. logical reading order independent of paint order, with decorative content
+   marked as artifacts;
+5. alternative text for figures, replacement or actual text where needed, a
+   catalog language, and language changes within mixed-language content;
+6. embedded fonts with reliable Unicode mapping, tagged annotations, document
+   title, viewer preferences, and the required XMP identification metadata.
+
+The W3C PDF techniques provide focused implementation checks for
+[reading order](https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF3),
+[image alternatives](https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1),
+[document language](https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF16),
+[language changes](https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF19), and
+[artifacts](https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF4). The
+[Matterhorn Protocol](https://pdfa.org/resource/the-matterhorn-protocol/) is a
+useful test catalogue, not a substitute for the standard.
+
+CI should run the exact PDF/UA flavour of
+[veraPDF validation](https://docs.verapdf.org/cli/validation/) and retain the
+machine-readable report. A veraPDF pass is necessary but not sufficient:
+release evidence must also include manual reading-order inspection and tests in
+representative assistive technology. RusDox will not infer conformance from a
+generic PDF validity check.
+
+## PDF/A archival output
+
+The [PDF/A overview](https://pdfa.org/resource/iso-19005-pdfa) separates
+archival profiles by PDF generation and semantic level. The recommended first
+RusDox target is PDF/A-2u: it fits the current PDF generation more closely and
+requires reliable Unicode mapping without prematurely claiming a complete
+logical structure. PDF/A-2a plus PDF/UA-1 can follow after tagged structure is
+implemented. PDF/A-4 remains a later evaluation because the
+[ISO 19005-4:2020 page](https://www.iso.org/standard/71832.html) currently marks
+that edition as under revision.
+
+PDF/A-2u implementation must, at minimum:
+
+- embed every font and provide Unicode mapping for all text;
+- embed a valid ICC output intent and make colour use self-contained;
+- add correct PDF/A XMP identification and any required extension schemas;
+- prohibit encryption, unresolved external rendering dependencies, and actions
+  or JavaScript forbidden by the selected profile;
+- define policy for attachments and annotations under the exact chosen part and
+  conformance level;
+- pass the explicit PDF/A-2u flavour in veraPDF, not merely auto-detection.
+
+The PDF Association publishes guidance on
+[XMP identification](https://pdfa.org/future-proofing-xmp-identification-schema/)
+and [extension-schema templates](https://pdfa.org/resource/xmp-extension-schema-templates/).
+The open [veraPDF validation profiles](https://github.com/veraPDF/veraPDF-validation-profiles)
+make the automated rule set reviewable.
+
+## Claim gate
+
+RusDox may advertise tagged PDF, PDF/UA, or PDF/A only after the renderer emits
+the complete required structures and metadata, fixtures exercise every relevant
+feature, the exact veraPDF flavour passes in CI, and the human checks required
+for accessibility are recorded. Until then, API evidence remains `false` and
+the public compatibility matrix says unsupported rather than “nearly
+compliant.”
 
 ---
 
@@ -3389,23 +3605,28 @@ RusDox compares three views:
 2. the generated DOCX reopened through the RusDox OOXML reader;
 3. the semantic projection actually consumed by the native PDF layout path.
 
-The current contract checks:
+The current contract contains 21 named checks:
 
 - normalized text and heading sequence;
 - top-level block order;
 - every table row and cell;
-- image count, semantic kind, and alt text;
+- image count and semantic kind, plus a dedicated non-blank alt-text equality check;
 - explicit page-break positions;
 - explicit section-break positions;
 - hyperlinks, bookmarks, dynamic fields, and footnote text;
 - repeating/splittable row controls, grid spans, rich-cell paragraph counts, and nested-table presence;
-- document metadata;
+- document metadata plus a dedicated language equality check across the source,
+  reopened DOCX, PDF projection, and rendered PDF catalog;
 - page setup, headers, footers, and numbering settings;
 - required DOCX parts and package relationships;
 - PDF header, trailer, and page evidence;
 - optional deterministic rendered-page visual thresholds.
 
 Each generated DOCX and PDF also receives a SHA-256 digest in the report.
+The PDF evidence additionally lists resolved embedded fonts, their OpenType
+embedding permission, mapped-glyph count, missing characters, and explicit
+`false` values for the currently unclaimed tagged-PDF and PDF/A states. See the
+[international and accessibility contract](international-accessibility.md).
 
 ## Visual regression thresholds
 
@@ -3798,6 +4019,12 @@ These fixtures exercise the less visible parts of the dual-output contract. Thei
 - Evidence: [DOCX/PDF parity report](../parity/international-scripts-parity.html)
 - Coverage: Unicode preservation and fallback across Latin, Arabic/RTL, Hebrew, CJK, emoji, and mixed-script text; see the compatibility matrix for shaping limits
 
+### Visual Accessibility
+
+- Spec: [../examples/visual_assets_showcase.yaml](../examples/visual_assets_showcase.yaml)
+- Evidence: [DOCX/PDF parity report](../parity/visual-assets-showcase-parity.html)
+- Coverage: required meaningful alt text preserved across source, reopened DOCX, and PDF semantic projection
+
 ## Regenerate Gallery Assets
 
 ```bash
@@ -4082,7 +4309,7 @@ Theme: parity, compatibility, and quality.
 - [x] Make parity failures machine-readable through JSON and meaningful exit codes.
 - [x] Upload parity reports and rendered diffs as CI artifacts.
 
-Section evidence: `rusdox verify examples` passes all 17 top-level examples. Each report now evaluates 19 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Eight representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
+Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs (17 authored document examples plus the hosted-limit TOML fixture). Each report now evaluates 21 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Nine representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 
@@ -4098,7 +4325,7 @@ This section unified the two renderers around one documented model. Remaining li
 - [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
 - [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
 
-Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
+Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs with 21 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 
@@ -4132,7 +4359,7 @@ Section evidence: protocol `2026-08-24` runs 13 isolated release processes: four
 - benchmark results are independently reproducible;
 - untrusted input has documented resource limits and fuzz coverage.
 
-Exit evidence: all 17 gallery specifications pass 19 parity checks and exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
+Exit evidence: all 18 supported top-level inputs pass 21 parity checks, while the 17 authored document examples own 26 exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
 
 ---
 
@@ -4160,7 +4387,7 @@ rusdox template verify proposal.docx data.json
 - [x] Generate the edited DOCX, native PDF, and parity report from one command.
 - [x] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
 
-Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and 19-check green parity reports.
+Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and green parity reports.
 
 This is a higher-value differentiator than adding dozens of low-level OOXML builders with no end-user workflow.
 
@@ -4313,7 +4540,7 @@ and evidence-based release checklist are all public.
 - [x] Provide reproducible builds and signed release artifacts.
 - [x] Add a long-term benchmark dashboard with explicit regression budgets.
 
-Section evidence: `compatibility/v1-feature-contract.json` records 30
+Section evidence: `compatibility/v1-feature-contract.json` records 31
 capabilities and maps every one of the 23 spec block variants exactly once.
 `BatchRenderer` preflights job/per-job/aggregate-source budgets, preserves order,
 caps workers, renders a 16-document real load, and proves queued cancellation;
@@ -4331,11 +4558,25 @@ Ubuntu scenarios in addition to the existing relative regression policy.
 
 ### International and accessible output
 
-- [ ] Graduate RTL and CJK support from experimental only when parity fixtures pass.
-- [ ] Define font embedding, fallback, licensing, and substitution behavior.
-- [ ] Preserve meaningful image alt text and document language metadata.
-- [ ] Research tagged PDF and PDF/A requirements before advertising accessible or archival output.
-- [ ] Add accessibility checks to parity reports where the formats expose equivalent semantics.
+- [x] Graduate RTL and CJK support from experimental only when parity fixtures pass.
+- [x] Define font embedding, fallback, licensing, and substitution behavior.
+- [x] Preserve meaningful image alt text and document language metadata.
+- [x] Research tagged PDF and PDF/A requirements before advertising accessible or archival output.
+- [x] Add accessibility checks to parity reports where the formats expose equivalent semantics.
+
+Section evidence: `compatibility/international-readiness.json` makes RTL and
+CJK graduation executable; both remain experimental because bidi/shaping or
+kinsoku/font-profile and representative-viewer gates are still false even
+though semantic and deterministic baseline fixtures pass. PDF rendering admits
+only embeddable outline TrueType fonts, records each resolved family,
+permission, glyph count, and missing character, and documents that operators
+own font licensing and pinned-font deployment. Non-blank visual alt text is
+required and preserved in both DOCX drawing descriptions; BCP 47-style document
+language reaches DOCX `dc:language` and PDF `/Lang`. The 21-check parity contract
+compares alt text and language wherever applicable. Sourced PDF/UA and PDF/A
+research records the required structure tree, reading order, artifacts, XMP,
+ICC, font, exact veraPDF flavour, and human assistive-technology gates; current
+PDF evidence keeps tagged-PDF and PDF/A claims false.
 
 #### Exit gate
 
@@ -4453,7 +4694,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
 - Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.
-- Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
+- Executable dual-output and international-script contract fixtures with 21-check HTML/JSON parity reports.
 - Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
 - Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 - Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
@@ -4469,12 +4710,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
 - A contributor field guide with an end-to-end architecture map, ten fixture-backed starter tasks, isolated fixture preparation, visual-diff commands, contributor credit checks, and a published governance policy.
 - Frozen v1 spec, template, renderer, and local-protocol contracts; cross-surface SemVer, deprecation, support, and release policies; an exact Rust 1.88.0 MSRV gate; complete public-item rustdoc; and release-time API compatibility scanning.
-- A machine-enforced 30-capability v1 feature contract covering every document block variant and its DOCX/PDF/parity status.
+- A machine-enforced 31-capability v1 feature contract covering every document block variant and its DOCX/PDF/parity status, including an explicit unsupported PDF-conformance entry.
 - Bounded concurrent batch rendering with aggregate source-memory preflight, ordered outcomes, and cooperative cancellation between native render stages.
 - Default and hosted TOML/JSON resource profiles, including expansion/depth/output ceilings for Word templates and operator-owned limits for local protocol workers.
 - A dated, executable v1 security review with DTD rejection, SVG external-resource denial, weekly RustSec auditing, and explicit residual-risk tracking.
 - Reproducibility receipts for twice-built release binaries, deterministic tar/ZIP packaging, release provenance verification before installer smoke tests, and per-target receipts attached to releases.
 - An accessible long-term benchmark dashboard backed by absolute runtime and peak-memory budgets for all 13 protocol scenarios.
+- Required visual alt text, BCP 47-style document language metadata in DOCX and PDF, explicit accessibility parity checks, font embedding/licensing evidence, and machine-gated RTL/CJK graduation.
+- A sourced tagged PDF, PDF/UA, and PDF/A implementation decision that keeps every conformance claim false until exact validator and human review gates pass.
 
 ### Contributors
 
@@ -4596,6 +4839,7 @@ cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 node scripts/check_compatibility_contract.mjs
+node scripts/check_accessibility_contract.mjs
 node scripts/test_benchmark_contract.mjs
 node scripts/test_reproducible_release.mjs
 node scripts/check_security_review.mjs

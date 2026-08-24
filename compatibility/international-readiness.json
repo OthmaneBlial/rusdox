@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-24",
+  "policy": "A track can be supported only when every graduation gate passes; semantic preservation alone is insufficient.",
+  "tracks": [
+    {
+      "id": "rtl",
+      "label": "Arabic, Hebrew, and bidirectional layout",
+      "status": "experimental",
+      "fixture": "examples/international_scripts.yaml",
+      "parity_report": "reports/gallery/international-scripts-parity.json",
+      "graduation_gates": [
+        {"id":"semantic-round-trip","passed":true,"evidence":"reports/gallery/international-scripts-parity.json"},
+        {"id":"deterministic-page-baseline","passed":true,"evidence":"tests/golden/pages/linux-x86_64/international-scripts/page-001.png"},
+        {"id":"unicode-bidi-ordering","passed":false,"evidence":"docs/international-accessibility.md"},
+        {"id":"contextual-script-shaping","passed":false,"evidence":"docs/international-accessibility.md"},
+        {"id":"representative-viewer-review","passed":false,"evidence":"docs/international-accessibility.md"}
+      ]
+    },
+    {
+      "id": "cjk",
+      "label": "Chinese, Japanese, and Korean layout",
+      "status": "experimental",
+      "fixture": "examples/international_scripts.yaml",
+      "parity_report": "reports/gallery/international-scripts-parity.json",
+      "graduation_gates": [
+        {"id":"semantic-round-trip","passed":true,"evidence":"reports/gallery/international-scripts-parity.json"},
+        {"id":"deterministic-page-baseline","passed":true,"evidence":"tests/golden/pages/linux-x86_64/international-scripts/page-001.png"},
+        {"id":"kinsoku-line-breaking","passed":false,"evidence":"docs/international-accessibility.md"},
+        {"id":"representative-font-profile","passed":false,"evidence":"docs/international-accessibility.md"},
+        {"id":"representative-viewer-review","passed":false,"evidence":"docs/international-accessibility.md"}
+      ]
+    }
+  ]
+}

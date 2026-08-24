@@ -932,7 +932,7 @@ fn template_cli_inspects_and_verifies_word_native_docx() {
     assert_eq!(result["command"], "verify");
     assert_eq!(result["passed"], true);
     assert_eq!(result["strict"], true);
-    assert_eq!(result["checks"], 19);
+    assert_eq!(result["checks"], 21);
     assert_eq!(result["failed_checks"], 0);
     assert!(result["replacements"].as_u64().unwrap_or_default() > 0);
     assert!(result["expanded_blocks"].as_u64().unwrap_or_default() > 0);

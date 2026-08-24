@@ -101,6 +101,18 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "skipped",
+      "detail": "source contains no images"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "skipped",
+      "detail": "source does not declare metadata.language"
+    },
+    {
       "id": "docx_package",
       "label": "DOCX package integrity",
       "status": "passed",
@@ -228,6 +240,7 @@
       "title": "RusDox Document",
       "author": "RusDox",
       "subject": null,
+      "language": null,
       "keywords": [],
       "custom_properties": {}
     },
@@ -356,6 +369,7 @@
       "title": "RusDox Document",
       "author": "RusDox",
       "subject": null,
+      "language": null,
       "keywords": [],
       "custom_properties": {}
     },
@@ -485,6 +499,7 @@
         "title": "RusDox Document",
         "author": "RusDox",
         "subject": null,
+        "language": null,
         "keywords": [],
         "custom_properties": {}
       },
@@ -507,7 +522,26 @@
     "page_count": 1,
     "draw_operations": 22,
     "text_lines": 13,
-    "image_operations": 0
+    "image_operations": 0,
+    "document_language": null,
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 22,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 36,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
   },
   "visual_diff": {
     "enabled": false,

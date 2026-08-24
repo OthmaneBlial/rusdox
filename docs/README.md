@@ -12,14 +12,16 @@ If you are new, read these pages in order:
 6. [Rust API](rust-api.md)
 7. [Compatibility Matrix](compatibility.md)
 8. [Dated Viewer Scorecard](compatibility-scorecard.md)
-9. [Input Safety and Limits](input-safety.md)
-10. [Parity Verification](parity.md)
-11. [Reproducible Performance](performance.md)
-12. [Word-native Templates](word-templates.md)
-13. [Spec Versioning and Authoring Tools](spec-versioning.md)
-14. [Stability, Versioning, and Support](stability.md)
-15. [Release Checklist](release-checklist.md)
-16. [Troubleshooting](troubleshooting.md)
+9. [International and Accessible Output](international-accessibility.md)
+10. [Tagged PDF, PDF/UA, and PDF/A Research](pdf-conformance-research.md)
+11. [Input Safety and Limits](input-safety.md)
+12. [Parity Verification](parity.md)
+13. [Reproducible Performance](performance.md)
+14. [Word-native Templates](word-templates.md)
+15. [Spec Versioning and Authoring Tools](spec-versioning.md)
+16. [Stability, Versioning, and Support](stability.md)
+17. [Release Checklist](release-checklist.md)
+18. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -55,6 +57,8 @@ If you are a developer and want full power:
 - how to generate the schema, migrate legacy specs, and get source-located editor diagnostics
 - which v1 contracts follow SemVer, the MSRV, deprecation window, and supported release policy
 - how to set document metadata and custom properties
+- how font fallback, embedding permissions, alt text, and language metadata are enforced
+- why current PDF output makes no tagged-PDF, PDF/UA, or PDF/A claim
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
 - how to reproduce performance results and interpret regression evidence

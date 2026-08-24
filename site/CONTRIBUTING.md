@@ -58,6 +58,7 @@ cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 node scripts/check_compatibility_contract.mjs
+node scripts/check_accessibility_contract.mjs
 node scripts/test_benchmark_contract.mjs
 node scripts/test_reproducible_release.mjs
 node scripts/check_security_review.mjs

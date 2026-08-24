@@ -1,0 +1,407 @@
+{
+  "report_version": "1",
+  "generator_version": "0.1.1",
+  "source": "examples/visual_assets_showcase.yaml",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "passed",
+      "detail": "every source image has non-empty alt text and source = DOCX = PDF projection"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "skipped",
+      "detail": "source does not declare metadata.language"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "Visual Assets Showcase\nImages, logos, signatures, and SVG charts rendered by RusDox\nContext\nThis example exercises the new visual block support with both raster and SVG assets.\nBenchmark Chart\nSVG chart assets now render cleanly in both DOCX and PDF outputs.\nSign-Off\nSignatures and approval marks can be embedded directly as SVG assets.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual"
+    ],
+    "headings": [
+      "Context",
+      "Benchmark Chart",
+      "Sign-Off"
+    ],
+    "tables": [],
+    "images": [
+      {
+        "kind": "logo",
+        "alt_text": "RusDox logo"
+      },
+      {
+        "kind": "image",
+        "alt_text": "RusDox template gallery montage"
+      },
+      {
+        "kind": "chart",
+        "alt_text": "RusDox 1000-page benchmark chart"
+      },
+      {
+        "kind": "signature",
+        "alt_text": "Automated approval signature"
+      }
+    ],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "Visual Assets Showcase\nImages, logos, signatures, and SVG charts rendered by RusDox\nContext\nThis example exercises the new visual block support with both raster and SVG assets.\nBenchmark Chart\nSVG chart assets now render cleanly in both DOCX and PDF outputs.\nSign-Off\nSignatures and approval marks can be embedded directly as SVG assets.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual",
+      "paragraph",
+      "paragraph",
+      "visual"
+    ],
+    "headings": [
+      "Context",
+      "Benchmark Chart",
+      "Sign-Off"
+    ],
+    "tables": [],
+    "images": [
+      {
+        "kind": "logo",
+        "alt_text": "RusDox logo"
+      },
+      {
+        "kind": "image",
+        "alt_text": "RusDox template gallery montage"
+      },
+      {
+        "kind": "chart",
+        "alt_text": "RusDox 1000-page benchmark chart"
+      },
+      {
+        "kind": "signature",
+        "alt_text": "Automated approval signature"
+      }
+    ],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 1440,
+      "margin_right_twips": 1440,
+      "margin_bottom_twips": 1440,
+      "margin_left_twips": 1440,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "Visual Assets Showcase\nImages, logos, signatures, and SVG charts rendered by RusDox\nContext\nThis example exercises the new visual block support with both raster and SVG assets.\nBenchmark Chart\nSVG chart assets now render cleanly in both DOCX and PDF outputs.\nSign-Off\nSignatures and approval marks can be embedded directly as SVG assets.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "visual",
+        "paragraph",
+        "paragraph",
+        "visual",
+        "paragraph",
+        "paragraph",
+        "visual",
+        "paragraph",
+        "paragraph",
+        "visual"
+      ],
+      "headings": [
+        "Context",
+        "Benchmark Chart",
+        "Sign-Off"
+      ],
+      "tables": [],
+      "images": [
+        {
+          "kind": "logo",
+          "alt_text": "RusDox logo"
+        },
+        {
+          "kind": "image",
+          "alt_text": "RusDox template gallery montage"
+        },
+        {
+          "kind": "chart",
+          "alt_text": "RusDox 1000-page benchmark chart"
+        },
+        {
+          "kind": "signature",
+          "alt_text": "Automated approval signature"
+        }
+      ],
+      "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "language": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 1440,
+        "margin_right_twips": 1440,
+        "margin_bottom_twips": 1440,
+        "margin_left_twips": 1440,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0,
+        "orientation": "portrait"
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 2,
+    "draw_operations": 12,
+    "text_lines": 8,
+    "image_operations": 4,
+    "document_language": null,
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 26,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 37,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/visual-assets-showcase-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      },
+      {
+        "page": 2,
+        "current": "reports/visual-assets-showcase-pages/page-002.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/visual-assets-showcase.docx",
+      "bytes": 632993,
+      "sha256": "7c940d692de9b32497a48ae0c6b21f1da62b14bd64eee091f61df07d1de09550"
+    },
+    {
+      "path": "rendered/visual-assets-showcase.pdf",
+      "bytes": 1657855,
+      "sha256": "2b132ffcc155e18edbbe029c254e8fcdf154c41d1cfa67305a0a8a374ae37e08"
+    }
+  ]
+}

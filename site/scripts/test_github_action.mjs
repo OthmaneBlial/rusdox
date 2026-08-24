@@ -46,11 +46,11 @@ const passed = renderSummary(
   { errors: 0, warnings: 0, config_issues: [], files: [] },
   {
     passed: true,
-    files: [{ source: "reports/monthly.yaml", checks: 19, failed_checks: 0 }],
+    files: [{ source: "reports/monthly.yaml", checks: 21, failed_checks: 0 }],
   },
 );
 assert.match(passed, /✅ \*\*Passed\*\*/);
 assert.match(passed, /reports\/monthly.yaml/);
-assert.match(passed, /\| 19 \| 0 \|/);
+assert.match(passed, /\| 21 \| 0 \|/);
 
 console.log("GitHub Action annotations and summaries passed.");

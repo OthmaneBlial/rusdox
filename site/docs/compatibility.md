@@ -45,8 +45,8 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | Nested tables | Supported | Bounded | Yes |  | DOCX uses native nested tables. PDF renders nested rows inside the parent cell; exact nested-grid geometry is not claimed. |
 | PNG and JPEG images | Supported | Supported | Yes |  | Count, semantic kind, and alt text are compared. |
 | SVG visuals | Supported | Supported | Yes |  | Rasterized for output; complex SVG compatibility varies. |
-| Image alt text | Supported | Semantic projection | Yes |  | Tagged-PDF accessibility semantics are not yet advertised. |
-| Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords are emitted. |
+| Image alt text | Supported | Semantic projection | Yes |  | Non-blank alt text is required and compared, but the current PDF has no structure tree. |
+| Document metadata | Supported | Supported | Yes |  | Core PDF title/author/subject/keywords plus catalog language are emitted. |
 | Page size, orientation, and margins | Supported | Supported | Yes |  | Both outputs consume the same `PageSetup`; width/height remain explicit and orientation is validated. |
 | Headers and footers | Supported | Supported | Yes |  | PDF renders the same text/alignment template on every page. |
 | Page number and total-page fields | Supported | Supported | Yes |  | `{page}` and `{pages}` respect restart and decimal/Roman/letter formats. |
@@ -69,12 +69,19 @@ This is not yet a promise of lossless editing for arbitrary Word files. RusDox p
 | Area | Status | Notes |
 |---|---|---|
 | Latin text | Supported | Primary tested path. |
-| Unicode font embedding in PDF | Supported | TrueType fonts and ToUnicode maps are tested. |
-| Font fallback | Partial | Depends on fonts installed on the rendering machine. |
+| Unicode font embedding in PDF | Supported | Embeddable outline TrueType fonts and ToUnicode maps are tested; restricted or outline-forbidden fonts are rejected. |
+| Font fallback | Partial | Requested, generic, and script-specific fallbacks are tried. Exact resolution depends on installed fonts and missing characters are recorded in parity evidence. |
 | Mixed scripts | Partial | The `international-scripts` fixture covers Latin, Arabic, Hebrew, CJK, emoji, and mixed lines through DOCX reopen and native PDF extraction. |
 | Arabic and RTL layout | Experimental | Unicode text and right alignment are preserved, but contextual Arabic shaping and the Unicode bidi algorithm are not yet implemented by the PDF renderer. |
 | CJK | Experimental | Glyph fallback is exercised; language-specific line-breaking and kinsoku rules are not implemented. |
 | Emoji | Experimental | Monochrome glyph fallback may work. Color/ZWJ emoji sequences are not guaranteed and vary with installed fonts. |
+
+The machine-readable
+[`international-readiness.json`](../compatibility/international-readiness.json)
+prevents RTL or CJK from graduating while any shaping, line-breaking, font, or
+viewer gate is unmet. Read the complete [font, language, and alt-text contract](international-accessibility.md)
+and the [tagged PDF/PDF/A research](pdf-conformance-research.md). Current PDFs
+are not claimed as tagged PDF, PDF/UA, or PDF/A.
 
 ## Viewers and operating systems
 

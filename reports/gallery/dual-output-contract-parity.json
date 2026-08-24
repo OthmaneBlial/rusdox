@@ -101,6 +101,18 @@
       "detail": "source = DOCX = PDF projection"
     },
     {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "skipped",
+      "detail": "source contains no images"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "passed",
+      "detail": "source language = DOCX dc:language = PDF projection = PDF catalog /Lang"
+    },
+    {
       "id": "docx_package",
       "label": "DOCX package integrity",
       "status": "passed",
@@ -289,6 +301,7 @@
       "title": "RusDox dual-output contract",
       "author": "RusDox maintainers",
       "subject": "Executable DOCX and PDF feature parity fixture",
+      "language": "en-US",
       "keywords": [
         "parity",
         "ooxml",
@@ -491,6 +504,7 @@
       "title": "RusDox dual-output contract",
       "author": "RusDox maintainers",
       "subject": "Executable DOCX and PDF feature parity fixture",
+      "language": "en-US",
       "keywords": [
         "parity",
         "ooxml",
@@ -694,6 +708,7 @@
         "title": "RusDox dual-output contract",
         "author": "RusDox maintainers",
         "subject": "Executable DOCX and PDF feature parity fixture",
+        "language": "en-US",
         "keywords": [
           "parity",
           "ooxml",
@@ -729,7 +744,33 @@
     "page_count": 4,
     "draw_operations": 44,
     "text_lines": 36,
-    "image_operations": 0
+    "image_operations": 0,
+    "document_language": "en-US",
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 36,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 47,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-ItalicMT",
+        "embedding_permission": "editable",
+        "glyph_count": 24,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
   },
   "visual_diff": {
     "enabled": false,
@@ -773,13 +814,13 @@
   "artifacts": [
     {
       "path": "generated/dual-output-contract.docx",
-      "bytes": 6436,
-      "sha256": "5737623721ed3bf0c79b87f803bd5311e86dfffac691af5d8ef1b91cfac5aa52"
+      "bytes": 6452,
+      "sha256": "dd5a97b2131163c1d3b0818082fa62abd05fec270ca4551bb9bdb25e6dfff9b6"
     },
     {
       "path": "rendered/dual-output-contract.pdf",
-      "bytes": 2103843,
-      "sha256": "39f5f283195fddadc223e444972490d096c6c637d68507dcb63ca050a24eea25"
+      "bytes": 2103859,
+      "sha256": "d4ce45f8b246e75ff2e652a0f64b6062fe056dc664e5d4d0247ad2f0d05fbf81"
     }
   ]
 }

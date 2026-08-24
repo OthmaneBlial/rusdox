@@ -26,6 +26,8 @@ pub struct DocumentMetadata {
     pub author: Option<String>,
     /// Optional subject.
     pub subject: Option<String>,
+    /// Optional BCP 47 document language such as `en`, `fr-FR`, or `mul`.
+    pub language: Option<String>,
     /// Ordered keywords.
     pub keywords: Vec<String>,
     /// Custom properties.
@@ -53,6 +55,12 @@ impl DocumentMetadata {
     /// Subject.
     pub fn subject(mut self, subject: impl Into<String>) -> Self {
         self.subject = Some(subject.into());
+        self
+    }
+
+    /// Document language as a BCP 47 tag.
+    pub fn language(mut self, language: impl Into<String>) -> Self {
+        self.language = Some(language.into());
         self
     }
 
@@ -100,6 +108,9 @@ pub(crate) fn render_core_properties_xml(metadata: &DocumentMetadata) -> Result<
     write_text_element(&mut writer, "dc:creator", metadata.resolved_author())?;
     if let Some(subject) = normalized_text(metadata.subject.as_deref()) {
         write_text_element(&mut writer, "dc:subject", subject)?;
+    }
+    if let Some(language) = normalized_text(metadata.language.as_deref()) {
+        write_text_element(&mut writer, "dc:language", language)?;
     }
     if !metadata.keywords.is_empty() {
         write_text_element(&mut writer, "cp:keywords", &metadata.keywords.join(", "))?;
@@ -154,6 +165,7 @@ pub(crate) fn parse_core_properties_xml(xml: &[u8]) -> Result<DocumentMetadata> 
                     b"title" => Some("title"),
                     b"creator" => Some("author"),
                     b"subject" => Some("subject"),
+                    b"language" => Some("language"),
                     b"keywords" => Some("keywords"),
                     _ => None,
                 };
@@ -169,6 +181,7 @@ pub(crate) fn parse_core_properties_xml(xml: &[u8]) -> Result<DocumentMetadata> 
                     "title" => metadata.title = Some(value),
                     "author" => metadata.author = Some(value),
                     "subject" => metadata.subject = Some(value),
+                    "language" => metadata.language = Some(value),
                     "keywords" => metadata.keywords = parse_keywords(&value),
                     _ => {}
                 }
@@ -299,12 +312,14 @@ mod tests {
             .title("Board Report")
             .author("RusDox")
             .subject("Quarterly review")
+            .language("en-GB")
             .keyword("finance")
             .custom_property("Client", "Acme");
 
         assert_eq!(metadata.title.as_deref(), Some("Board Report"));
         assert_eq!(metadata.author.as_deref(), Some("RusDox"));
         assert_eq!(metadata.subject.as_deref(), Some("Quarterly review"));
+        assert_eq!(metadata.language.as_deref(), Some("en-GB"));
         assert_eq!(metadata.keywords, vec!["finance"]);
         assert_eq!(
             metadata.custom_properties.get("Client").map(String::as_str),
@@ -318,6 +333,7 @@ mod tests {
             .title("Board Report")
             .author("Ops")
             .subject("Q2")
+            .language("en-US")
             .keyword("finance")
             .keyword("board");
 
@@ -327,6 +343,7 @@ mod tests {
         assert_eq!(parsed.title.as_deref(), Some("Board Report"));
         assert_eq!(parsed.author.as_deref(), Some("Ops"));
         assert_eq!(parsed.subject.as_deref(), Some("Q2"));
+        assert_eq!(parsed.language.as_deref(), Some("en-US"));
         assert_eq!(parsed.keywords, vec!["finance", "board"]);
     }
 

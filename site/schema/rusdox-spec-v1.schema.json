@@ -972,6 +972,14 @@
           },
           "type": "array"
         },
+        "language": {
+          "default": null,
+          "description": "Optional BCP 47 document language such as `en`, `fr-FR`, or `mul`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "subject": {
           "default": null,
           "description": "Optional subject.",
@@ -2211,6 +2219,7 @@
         "author": null,
         "custom_properties": {},
         "keywords": [],
+        "language": null,
         "subject": null,
         "title": null
       },

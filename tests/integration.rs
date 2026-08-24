@@ -537,6 +537,8 @@ fn visual_blocks_round_trip_and_emit_media_parts() -> Result<(), rusdox::DocxErr
     assert!(document_xml.contains("<w:drawing>"));
     assert!(document_xml.contains("RusDox Logo 1"));
     assert!(document_xml.contains("rIdRusDoxImage1"));
+    assert!(document_xml.contains(r#"descr="RusDox logo""#));
+    assert!(document_xml.contains(r#"descr="RusDox benchmark chart""#));
 
     let mut rels_xml = String::new();
     archive
@@ -796,7 +798,18 @@ fn dual_output_contract_round_trips_and_emits_interactive_pdf() -> Result<(), ru
     let docx_path = temp.path().join("contract.docx");
     let pdf_path = temp.path().join("contract.pdf");
     document.save(&docx_path)?;
-    studio.render_pdf_with_evidence(&document, &pdf_path, None)?;
+    let evidence = studio.render_pdf_with_evidence(&document, &pdf_path, None)?;
+    assert_eq!(evidence.document_language.as_deref(), Some("en-US"));
+    assert!(!evidence.fonts.is_empty());
+    assert!(evidence.fonts.iter().all(|font| {
+        matches!(
+            font.embedding_permission.as_str(),
+            "installable" | "preview_and_print" | "editable"
+        ) && font.glyph_count > 0
+            && font.missing_characters.is_empty()
+    }));
+    assert!(!evidence.tagged_pdf);
+    assert!(!evidence.pdf_a);
 
     let reopened = Document::open(&docx_path)?;
     assert_eq!(
@@ -816,6 +829,11 @@ fn dual_output_contract_round_trips_and_emits_interactive_pdf() -> Result<(), ru
     assert!(document_xml.contains(r#"w:orient="landscape""#));
     assert!(document_xml.contains(r#"w:gridSpan w:val="2""#));
     assert!(archive.by_name("word/footnotes.xml").is_ok());
+    let mut core_xml = String::new();
+    archive
+        .by_name("docProps/core.xml")?
+        .read_to_string(&mut core_xml)?;
+    assert!(core_xml.contains("<dc:language>en-US</dc:language>"));
 
     let pdf = fs::read(&pdf_path)?;
     let pdf_text = String::from_utf8_lossy(&pdf);
@@ -824,6 +842,7 @@ fn dual_output_contract_round_trips_and_emits_interactive_pdf() -> Result<(), ru
     assert!(pdf_text.contains("/S /GoTo"));
     assert!(pdf_text.contains("/Type /Outlines"));
     assert!(pdf_text.contains("/MediaBox [0 0 792 612]"));
+    assert!(pdf_text.contains("/Lang (en-US)"));
     Ok(())
 }
 

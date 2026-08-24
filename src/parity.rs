@@ -290,6 +290,29 @@ pub struct PdfRenderEvidence {
     pub text_lines: usize,
     /// Image operations.
     pub image_operations: usize,
+    /// BCP 47 document language written to the PDF catalog, when supplied.
+    pub document_language: Option<String>,
+    /// Embedded fonts actually used by the PDF output.
+    pub fonts: Vec<PdfFontEvidence>,
+    /// Whether the output contains a logical structure tree and is claimed as tagged PDF.
+    pub tagged_pdf: bool,
+    /// Whether the output is claimed to conform to a PDF/A profile.
+    pub pdf_a: bool,
+}
+
+/// Font embedding and licensing evidence captured from one PDF render.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PdfFontEvidence {
+    /// Resolved font family.
+    pub family: String,
+    /// PostScript/base font name written to the PDF.
+    pub post_script_name: String,
+    /// OpenType embedding permission admitted by the renderer.
+    pub embedding_permission: String,
+    /// Number of Unicode characters assigned to embedded glyphs.
+    pub glyph_count: usize,
+    /// Unicode characters that fell back to the font's missing-glyph box.
+    pub missing_characters: Vec<String>,
 }
 
 /// Result state for one parity assertion.
@@ -533,6 +556,13 @@ impl ParityReport {
                 &expected.page_numbering,
                 &docx.page_numbering,
                 &pdf.projection.page_numbering,
+            ),
+            image_alt_text_check(&expected.images, &docx.images, &pdf.projection.images),
+            document_language_check(
+                expected.metadata.language.as_deref(),
+                docx.metadata.language.as_deref(),
+                pdf.projection.metadata.language.as_deref(),
+                pdf.document_language.as_deref(),
             ),
             boolean_check(
                 "docx_package",
@@ -853,6 +883,58 @@ fn boolean_check(id: &str, label: &str, passed: bool, detail: &str) -> ParityChe
     }
 }
 
+fn image_alt_text_check(
+    expected: &[ParityImage],
+    docx: &[ParityImage],
+    pdf: &[ParityImage],
+) -> ParityCheck {
+    if expected.is_empty() {
+        return ParityCheck {
+            id: "image_alt_text".to_string(),
+            label: "Non-empty image alternative text".to_string(),
+            status: CheckStatus::Skipped,
+            detail: "source contains no images".to_string(),
+        };
+    }
+    let complete = expected.iter().all(|image| {
+        image
+            .alt_text
+            .as_deref()
+            .is_some_and(|value| !value.trim().is_empty())
+    });
+    boolean_check(
+        "image_alt_text",
+        "Non-empty image alternative text",
+        complete && expected == docx && expected == pdf,
+        "every source image has non-empty alt text and source = DOCX = PDF projection",
+    )
+}
+
+fn document_language_check(
+    expected: Option<&str>,
+    docx: Option<&str>,
+    pdf_projection: Option<&str>,
+    pdf_catalog: Option<&str>,
+) -> ParityCheck {
+    let Some(expected) = expected else {
+        return ParityCheck {
+            id: "document_language".to_string(),
+            label: "Document language metadata".to_string(),
+            status: CheckStatus::Skipped,
+            detail: "source does not declare metadata.language".to_string(),
+        };
+    };
+    boolean_check(
+        "document_language",
+        "Document language metadata",
+        !expected.trim().is_empty()
+            && docx == Some(expected)
+            && pdf_projection == Some(expected)
+            && pdf_catalog == Some(expected),
+        "source language = DOCX dc:language = PDF projection = PDF catalog /Lang",
+    )
+}
+
 fn normalize_text(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
@@ -959,6 +1041,10 @@ mod tests {
                 draw_operations: 1,
                 text_lines: 1,
                 image_operations: 0,
+                document_language: None,
+                fonts: Vec::new(),
+                tagged_pdf: false,
+                pdf_a: false,
             },
             VisualDiffSummary::skipped(0.0),
             Vec::new(),

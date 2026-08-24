@@ -4,7 +4,7 @@
 //! that build rich `.docx` files programmatically and optionally emit PDF
 //! previews.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str, TextStr};
 
 use crate::{
     config::RusdoxConfig,
-    parity::{DocumentProjection, PdfRenderEvidence},
+    parity::{DocumentProjection, PdfFontEvidence, PdfRenderEvidence},
     spec::{
         BlockSpec, CellSpec, DocumentSpec, ParagraphAlignmentSpec,
         ParagraphSpec as BlockParagraphSpec, RunFieldSpec, RunSpec as BlockRunSpec,
@@ -1868,6 +1868,7 @@ struct ResolvedPdfFace {
     cmap_name: String,
     resource_name: String,
     font_bytes: Vec<u8>,
+    embedding_permission: String,
     face_index: u32,
     units_per_em: f32,
     width_bias: f32,
@@ -1884,6 +1885,7 @@ struct ResolvedPdfFace {
     font_flags: FontFlags,
     stem_v: f32,
     used_chars: BTreeMap<char, UsedCharacter>,
+    missing_chars: BTreeSet<char>,
     next_cid: u16,
 }
 
@@ -1913,12 +1915,19 @@ impl ResolvedPdfFace {
             }
 
             let face = ttf_parser::Face::parse(font_data, face_index).ok()?;
-            if matches!(
-                face.permissions(),
-                Some(ttf_parser::Permissions::Restricted)
-            ) {
+            let permission = face.permissions()?;
+            if matches!(permission, ttf_parser::Permissions::Restricted)
+                || !face.is_outline_embedding_allowed()
+            {
                 return None;
             }
+            let embedding_permission = match permission {
+                ttf_parser::Permissions::Installable => "installable",
+                ttf_parser::Permissions::PreviewAndPrint => "preview_and_print",
+                ttf_parser::Permissions::Editable => "editable",
+                ttf_parser::Permissions::Restricted => return None,
+            }
+            .to_string();
 
             let units_per_em = f32::from(face.units_per_em());
             let missing_width_units = face
@@ -1967,6 +1976,7 @@ impl ResolvedPdfFace {
                 cmap_name: format!("{}-UTF16", sanitize_pdf_name_component(&post_script_name)),
                 resource_name: format!("F{}", resource_index + 1),
                 font_bytes: font_data.to_vec(),
+                embedding_permission,
                 face_index,
                 units_per_em,
                 width_bias,
@@ -1983,6 +1993,7 @@ impl ResolvedPdfFace {
                 font_flags,
                 stem_v: if face.is_bold() { 120.0 } else { 80.0 },
                 used_chars: BTreeMap::new(),
+                missing_chars: BTreeSet::new(),
                 next_cid: 1,
             })
         })?
@@ -1990,6 +2001,16 @@ impl ResolvedPdfFace {
 
     fn is_used(&self) -> bool {
         !self.used_chars.is_empty()
+    }
+
+    fn evidence(&self) -> PdfFontEvidence {
+        PdfFontEvidence {
+            family: self.family_name.clone(),
+            post_script_name: self.base_font_name.clone(),
+            embedding_permission: self.embedding_permission.clone(),
+            glyph_count: self.used_chars.len(),
+            missing_characters: self.missing_chars.iter().map(char::to_string).collect(),
+        }
     }
 
     fn supports_char(&self, ch: char) -> bool {
@@ -2001,9 +2022,13 @@ impl ResolvedPdfFace {
             return used;
         }
 
-        let (glyph_id, advance_units) = self
-            .lookup_glyph(ch)
-            .unwrap_or((0, self.missing_width_units));
+        let (glyph_id, advance_units) = match self.lookup_glyph(ch) {
+            Some(glyph) => glyph,
+            None => {
+                self.missing_chars.insert(ch);
+                (0, self.missing_width_units)
+            }
+        };
         let used = UsedCharacter {
             cid: self.next_cid,
             glyph_id,
@@ -2083,6 +2108,14 @@ fn render_pdf(
     let mut font_system = PdfFontSystem::new(config, settings);
     let mut layout = layout_document(document, settings, &mut font_system)?;
     add_header_footer_overlays(&mut layout, document, settings, &mut font_system)?;
+    let used_face_ids = font_system.used_face_ids();
+    let document_language = document
+        .metadata()
+        .language
+        .as_deref()
+        .map(str::trim)
+        .filter(|language| !language.is_empty())
+        .map(str::to_string);
     let evidence = PdfRenderEvidence {
         projection: DocumentProjection::from_document(document),
         page_count: layout.pages.len(),
@@ -2099,6 +2132,13 @@ fn render_pdf(
             .flat_map(|page| &page.ops)
             .filter(|op| matches!(op, DrawOp::Image { .. }))
             .count(),
+        document_language: document_language.clone(),
+        fonts: used_face_ids
+            .iter()
+            .map(|&face_id| font_system.face(face_id).evidence())
+            .collect(),
+        tagged_pdf: false,
+        pdf_a: false,
     };
     if let Some(directory) = page_snapshots_dir {
         write_layout_snapshots(&layout, directory, settings)?;
@@ -2117,7 +2157,6 @@ fn render_pdf(
         next_id += 1;
     }
 
-    let used_face_ids = font_system.used_face_ids();
     let mut font_object_ids = HashMap::new();
     for &face_id in &used_face_ids {
         let object_ids = PdfFaceObjectIds {
@@ -2177,6 +2216,9 @@ fn render_pdf(
     {
         let mut catalog = pdf.catalog(catalog_id);
         catalog.pages(page_tree_id);
+        if let Some(language) = document_language.as_deref() {
+            catalog.lang(TextStr(language));
+        }
         if let Some(outline_id) = outline_id {
             catalog.outlines(outline_id);
         }

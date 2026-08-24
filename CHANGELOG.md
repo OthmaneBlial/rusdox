@@ -10,7 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
 - Rich and merged table cells, nested tables, repeating headers, row-splitting controls, and measured overflow diagnostics.
-- Executable dual-output and international-script contract fixtures with 19-check HTML/JSON parity reports.
+- Executable dual-output and international-script contract fixtures with 21-check HTML/JSON parity reports.
 - Structural OOXML validation for XML well-formedness, content types, and internal relationships; an external-DOCX round-trip fixture; dated viewer evidence; exact Linux page baselines; and buildable fuzz targets.
 - Default, customizable resource ceilings for DOCX ZIP/XML, specs/includes, PNG/JPEG, SVG, and raster allocations.
 - Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
@@ -26,12 +26,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
 - A contributor field guide with an end-to-end architecture map, ten fixture-backed starter tasks, isolated fixture preparation, visual-diff commands, contributor credit checks, and a published governance policy.
 - Frozen v1 spec, template, renderer, and local-protocol contracts; cross-surface SemVer, deprecation, support, and release policies; an exact Rust 1.88.0 MSRV gate; complete public-item rustdoc; and release-time API compatibility scanning.
-- A machine-enforced 30-capability v1 feature contract covering every document block variant and its DOCX/PDF/parity status.
+- A machine-enforced 31-capability v1 feature contract covering every document block variant and its DOCX/PDF/parity status, including an explicit unsupported PDF-conformance entry.
 - Bounded concurrent batch rendering with aggregate source-memory preflight, ordered outcomes, and cooperative cancellation between native render stages.
 - Default and hosted TOML/JSON resource profiles, including expansion/depth/output ceilings for Word templates and operator-owned limits for local protocol workers.
 - A dated, executable v1 security review with DTD rejection, SVG external-resource denial, weekly RustSec auditing, and explicit residual-risk tracking.
 - Reproducibility receipts for twice-built release binaries, deterministic tar/ZIP packaging, release provenance verification before installer smoke tests, and per-target receipts attached to releases.
 - An accessible long-term benchmark dashboard backed by absolute runtime and peak-memory budgets for all 13 protocol scenarios.
+- Required visual alt text, BCP 47-style document language metadata in DOCX and PDF, explicit accessibility parity checks, font embedding/licensing evidence, and machine-gated RTL/CJK graduation.
+- A sourced tagged PDF, PDF/UA, and PDF/A implementation decision that keeps every conformance claim false until exact validator and human review gates pass.
 
 ### Contributors
 

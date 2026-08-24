@@ -26,23 +26,28 @@ RusDox compares three views:
 2. the generated DOCX reopened through the RusDox OOXML reader;
 3. the semantic projection actually consumed by the native PDF layout path.
 
-The current contract checks:
+The current contract contains 21 named checks:
 
 - normalized text and heading sequence;
 - top-level block order;
 - every table row and cell;
-- image count, semantic kind, and alt text;
+- image count and semantic kind, plus a dedicated non-blank alt-text equality check;
 - explicit page-break positions;
 - explicit section-break positions;
 - hyperlinks, bookmarks, dynamic fields, and footnote text;
 - repeating/splittable row controls, grid spans, rich-cell paragraph counts, and nested-table presence;
-- document metadata;
+- document metadata plus a dedicated language equality check across the source,
+  reopened DOCX, PDF projection, and rendered PDF catalog;
 - page setup, headers, footers, and numbering settings;
 - required DOCX parts and package relationships;
 - PDF header, trailer, and page evidence;
 - optional deterministic rendered-page visual thresholds.
 
 Each generated DOCX and PDF also receives a SHA-256 digest in the report.
+The PDF evidence additionally lists resolved embedded fonts, their OpenType
+embedding permission, mapped-glyph count, missing characters, and explicit
+`false` values for the currently unclaimed tagged-PDF and PDF/A states. See the
+[international and accessibility contract](international-accessibility.md).
 
 ## Visual regression thresholds
 

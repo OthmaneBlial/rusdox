@@ -136,6 +136,7 @@ spec.metadata = DocumentMetadata::new()
     .title("Weekly Brief")
     .author("RusDox Studio")
     .subject("Executive update")
+    .language("en-US")
     .keyword("weekly")
     .custom_property("Audience", "Leadership");
 spec.blocks = vec![
@@ -260,13 +261,16 @@ let metadata = DocumentMetadata::new()
     .title("Board Report")
     .author("Finance")
     .subject("Q4 review")
+    .language("en-US")
     .keyword("board")
     .custom_property("Client", "Northwind Health");
 
 let document = Document::new().with_metadata(metadata);
 ```
 
-Metadata works through both `DocumentSpec` and `Document`, and RusDox writes it into `docProps/core.xml` plus `docProps/custom.xml`.
+Metadata works through both `DocumentSpec` and `Document`. RusDox writes it into
+`docProps/core.xml` plus `docProps/custom.xml`; a declared BCP 47-style
+language is also written to the PDF catalog and compared by the parity report.
 
 ## Config-Driven Builders With `Studio`
 

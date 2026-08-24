@@ -173,7 +173,7 @@ Theme: parity, compatibility, and quality.
 - [x] Make parity failures machine-readable through JSON and meaningful exit codes.
 - [x] Upload parity reports and rendered diffs as CI artifacts.
 
-Section evidence: `rusdox verify examples` passes all 17 top-level examples. Each report now evaluates 19 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Eight representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
+Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs (17 authored document examples plus the hosted-limit TOML fixture). Each report now evaluates 21 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Nine representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 
@@ -189,7 +189,7 @@ This section unified the two renderers around one documented model. Remaining li
 - [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
 - [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
 
-Section evidence: `rusdox verify examples` passes all 17 specifications with 19 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
+Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs with 21 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 
@@ -223,7 +223,7 @@ Section evidence: protocol `2026-08-24` runs 13 isolated release processes: four
 - benchmark results are independently reproducible;
 - untrusted input has documented resource limits and fuzz coverage.
 
-Exit evidence: all 17 gallery specifications pass 19 parity checks and exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
+Exit evidence: all 18 supported top-level inputs pass 21 parity checks, while the 17 authored document examples own 26 exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
 
 ---
 
@@ -251,7 +251,7 @@ rusdox template verify proposal.docx data.json
 - [x] Generate the edited DOCX, native PDF, and parity report from one command.
 - [x] Ship at least three designer-authored templates: invoice, proposal, and compliance/board report.
 
-Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and 19-check green parity reports.
+Section evidence: template syntax v1 supports split-run scalar placeholders, nested paths, one-based loop indices, complete paragraph/table-row loops, truthy conditions with else, five deterministic filters, and cycle-safe inline partials without a raw-XML escape hatch. `template inspect/render/verify` expose human and JSON reports; strict failures name the OOXML part, paragraph/row, expression, fix, and preserve the previous destination. Integration tests prove byte preservation for untouched styles, headers, footers, media, relationships, and section properties. Three styled RTF sources exported by the macOS text system (invoice, proposal, landscape board report) render from sample JSON into visually inspected DOCX/PDF output, deterministic snapshots, and green parity reports.
 
 This is a higher-value differentiator than adding dozens of low-level OOXML builders with no end-user workflow.
 
@@ -404,7 +404,7 @@ and evidence-based release checklist are all public.
 - [x] Provide reproducible builds and signed release artifacts.
 - [x] Add a long-term benchmark dashboard with explicit regression budgets.
 
-Section evidence: `compatibility/v1-feature-contract.json` records 30
+Section evidence: `compatibility/v1-feature-contract.json` records 31
 capabilities and maps every one of the 23 spec block variants exactly once.
 `BatchRenderer` preflights job/per-job/aggregate-source budgets, preserves order,
 caps workers, renders a 16-document real load, and proves queued cancellation;
@@ -422,11 +422,25 @@ Ubuntu scenarios in addition to the existing relative regression policy.
 
 ### International and accessible output
 
-- [ ] Graduate RTL and CJK support from experimental only when parity fixtures pass.
-- [ ] Define font embedding, fallback, licensing, and substitution behavior.
-- [ ] Preserve meaningful image alt text and document language metadata.
-- [ ] Research tagged PDF and PDF/A requirements before advertising accessible or archival output.
-- [ ] Add accessibility checks to parity reports where the formats expose equivalent semantics.
+- [x] Graduate RTL and CJK support from experimental only when parity fixtures pass.
+- [x] Define font embedding, fallback, licensing, and substitution behavior.
+- [x] Preserve meaningful image alt text and document language metadata.
+- [x] Research tagged PDF and PDF/A requirements before advertising accessible or archival output.
+- [x] Add accessibility checks to parity reports where the formats expose equivalent semantics.
+
+Section evidence: `compatibility/international-readiness.json` makes RTL and
+CJK graduation executable; both remain experimental because bidi/shaping or
+kinsoku/font-profile and representative-viewer gates are still false even
+though semantic and deterministic baseline fixtures pass. PDF rendering admits
+only embeddable outline TrueType fonts, records each resolved family,
+permission, glyph count, and missing character, and documents that operators
+own font licensing and pinned-font deployment. Non-blank visual alt text is
+required and preserved in both DOCX drawing descriptions; BCP 47-style document
+language reaches DOCX `dc:language` and PDF `/Lang`. The 21-check parity contract
+compares alt text and language wherever applicable. Sourced PDF/UA and PDF/A
+research records the required structure tree, reading order, artifacts, XMP,
+ICC, font, exact veraPDF flavour, and human assistive-technology gates; current
+PDF evidence keeps tagged-PDF and PDF/A claims false.
 
 #### Exit gate
 

@@ -21,6 +21,8 @@
 - [Rust API](https://othmaneblial.github.io/rusdox/docs/rust-api.html): Choose between DocumentSpec, Studio, and the low-level typed document model.
 - [Compatibility matrix](https://othmaneblial.github.io/rusdox/docs/compatibility.html): See exactly what works in DOCX, PDF, both outputs, or not yet.
 - [Viewer compatibility scorecard](https://othmaneblial.github.io/rusdox/docs/compatibility-scorecard.html): Review dated, hash-pinned evidence from real document viewers without universal claims.
+- [International and accessible output](https://othmaneblial.github.io/rusdox/docs/international-accessibility.html): Review script graduation gates, font embedding, alternative text, language metadata, and accessibility parity.
+- [PDF conformance research](https://othmaneblial.github.io/rusdox/docs/pdf-conformance-research.html): Understand the tagged PDF, PDF/UA, PDF/A, validator, and human-review gates before any conformance claim.
 - [Input safety and limits](https://othmaneblial.github.io/rusdox/docs/input-safety.html): Understand resource ceilings, fuzz targets, and atomic output recovery for untrusted inputs.
 - [v1 security review](https://othmaneblial.github.io/rusdox/docs/security-review-v1.html): Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks.
 - [Production and batch rendering](https://othmaneblial.github.io/rusdox/docs/production.html): Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation.

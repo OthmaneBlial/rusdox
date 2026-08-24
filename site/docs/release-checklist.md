@@ -21,7 +21,8 @@ release pull request; a checked box without evidence is not a release receipt.
 - [ ] DOCX/PDF semantic parity and exact Linux page baselines pass.
 - [ ] Compatibility claims link to dated viewer, version, OS, fixture hash, and
       outcome evidence.
-- [ ] Accessibility checks pass for every supported semantic.
+- [ ] `node scripts/check_accessibility_contract.mjs` passes, and accessibility
+      checks pass for every supported semantic.
 - [ ] Benchmark history is regenerated; no explicit runtime or memory budget is
       exceeded without a reviewed rationale.
 - [ ] Load, concurrency, cancellation, and atomic recovery tests pass.

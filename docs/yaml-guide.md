@@ -60,6 +60,7 @@ metadata:
   title: Client Rollout Plan
   author: RusDox Studio
   subject: Q4 regional rollout
+  language: en-US
   keywords:
     - rollout
     - planning
@@ -73,6 +74,7 @@ Supported metadata fields:
 - `title`
 - `author`
 - `subject`
+- `language`: a BCP 47-style document language such as `en-US`, `fr`, or `mul`
 - `keywords`
 - `custom_properties`
 
@@ -369,6 +371,11 @@ Supported file formats:
 - PNG
 - JPEG
 - SVG
+
+`alt_text` is required and must be meaningful. It is preserved in the DOCX
+drawing properties and checked against the PDF semantic projection; a file name
+or blank string does not satisfy validation. See the
+[international and accessibility contract](international-accessibility.md).
 
 ## List Blocks
 
