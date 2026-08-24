@@ -1,0 +1,51 @@
+{
+  "name": "rusdox",
+  "displayName": "RusDox Authoring",
+  "description": "Autocomplete, hover help, enum suggestions, and inline diagnostics for versioned RusDox specs.",
+  "version": "0.1.0",
+  "publisher": "OthmaneBlial",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "keywords": [
+    "rusdox",
+    "docx",
+    "pdf",
+    "yaml"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "onLanguage:yaml",
+    "onLanguage:toml",
+    "workspaceContains:**/*.rusdox.yaml",
+    "workspaceContains:**/*.rusdox.yml",
+    "workspaceContains:**/*.rusdox.json",
+    "workspaceContains:**/*.rusdox.toml"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          "*.rusdox.json",
+          "rusdox.json"
+        ],
+        "url": "./schema/rusdox-spec-v1.schema.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "rusdox.showSchemaVersion",
+        "title": "RusDox: Show Spec Schema Version"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "node test/language-service.test.js"
+  }
+}

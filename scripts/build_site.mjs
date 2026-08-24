@@ -15,6 +15,7 @@ const pages = [
   ["README.md", "docs/project-overview.html", "Project overview", "Overview", "The product promise, benchmark, examples, installation paths, and current support boundary.", "Overview"],
   ["docs/getting-started.md", "docs/getting-started.html", "Getting started", "Guide", "Install RusDox and generate the first editable DOCX and native PDF in minutes.", "Authoring"],
   ["docs/yaml-guide.md", "docs/yaml-guide.html", "YAML guide", "Guide", "Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.", "Authoring"],
+  ["docs/spec-versioning.md", "docs/spec-versioning.html", "Spec versioning", "Guide", "Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.", "Authoring"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
@@ -80,6 +81,8 @@ if (fs.existsSync(compatibilitySource)) {
 for (const [sourceName, outputName] of [
   ["templates", "templates"],
   ["template-evidence", "template-evidence"],
+  ["schema", "schema"],
+  ["editors/vscode", "editors/vscode"],
 ]) {
   const sourceRoot = path.join(root, sourceName);
   if (fs.existsSync(sourceRoot)) {
@@ -112,6 +115,7 @@ const sourceCopies = [
   "scripts/run_benchmark_protocol.mjs",
   "scripts/generate_word_templates.sh",
   "scripts/verify_word_templates.sh",
+  "scripts/generate_schema.sh",
 ];
 
 for (const source of sourceCopies) {

@@ -1,3 +1,4 @@
+version: 1
 output_name: product-launch-brief
 blocks:
   - type: title

@@ -4,6 +4,10 @@
 
 For the full user docs, start with [../docs/README.md](../docs/README.md).
 
+Every complete example declares spec version 1. Generate the authoring schema
+with cargo run -- schema, and use cargo run -- migrate FILE --check to enforce
+the version in CI.
+
 You can also browse visual previews in [../docs/gallery.md](../docs/gallery.md).
 
 Each example renders to:

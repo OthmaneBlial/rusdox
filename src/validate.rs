@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::config::RusdoxConfig;
 use crate::spec::{
-    BlockSpec, CellSpec, DocumentSpec, ParagraphSpec, RunSpec, TableSpec, VisualSpec,
+    BlockSpec, CellSpec, DocumentSpec, ParagraphSpec, RunSpec, TableSpec, VisualSpec, SPEC_VERSION,
 };
 use crate::{DocumentMetadata, ParagraphList, ParagraphListKind, Stylesheet, TableBorders};
 
@@ -28,6 +28,18 @@ pub struct ValidationIssue {
     pub severity: ValidationSeverity,
     pub path: String,
     pub message: String,
+    /// Best-effort source coordinates for file-backed specifications.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<SourceSpan>,
+}
+
+/// One-based source coordinates suitable for terminals and editor diagnostics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct SourceSpan {
+    pub line: usize,
+    pub column: usize,
+    pub end_line: usize,
+    pub end_column: usize,
 }
 
 /// A collection of semantic validation issues.
@@ -72,6 +84,7 @@ impl ValidationReport {
             severity: ValidationSeverity::Error,
             path: path.into(),
             message: message.into(),
+            source: None,
         });
     }
 
@@ -80,6 +93,7 @@ impl ValidationReport {
             severity: ValidationSeverity::Warning,
             path: path.into(),
             message: message.into(),
+            source: None,
         });
     }
 
@@ -281,6 +295,15 @@ pub fn validate_spec(spec: &DocumentSpec) -> ValidationReport {
     let mut report = ValidationReport::default();
     let mut list_registry = BTreeMap::new();
 
+    if spec.version != SPEC_VERSION {
+        report.push_error(
+            "version",
+            format!(
+                "unsupported document spec version {}; this RusDox build supports version {SPEC_VERSION}",
+                spec.version
+            ),
+        );
+    }
     if let Some(output_name) = spec.output_name.as_ref() {
         if output_name.trim().is_empty() {
             report.push_error("output_name", "output name cannot be blank");

@@ -5,6 +5,7 @@ RusDox is designed so the YAML reads like the document.
 The basic shape is always:
 
 ```yaml
+version: 1
 output_name: my-document
 blocks:
   - type: title
@@ -14,6 +15,12 @@ blocks:
 ```
 
 ## Top-Level Fields
+
+version
+
+- Required for new files
+- Current value: 1
+- Use rusdox migrate legacy.yaml --in-place for legacy unversioned files
 
 `output_name`
 
@@ -42,7 +49,7 @@ blocks:
 `variables`
 
 - Optional
-- Defines reusable values for text interpolation and repeat blocks in YAML
+- Defines reusable values for nested interpolation, repeat blocks, and bounded conditions
 
 ## Metadata
 
@@ -137,6 +144,35 @@ Each repeat iteration also exposes:
 
 - `repeat_index`: zero-based index
 - `repeat_number`: one-based index
+
+## Conditions, filters, and escaping
+
+Use a bounded when block for truthiness or exact scalar equality:
+
+    variables:
+      customer:
+        active: true
+    blocks:
+      - type: when
+        path: customer.active
+        equals: true
+        blocks:
+          - type: body
+            text: Active customer
+        otherwise:
+          - type: body
+            text: Inactive customer
+
+Expressions support nested mapping/array paths and exactly five deterministic
+filters: upper, lower, title, trim, and default("text").
+
+    text: "{{ customer.name | trim | title }}"
+    text: "{{ customer.owner | default(\"unassigned\") | upper }}"
+
+Write four opening braces and four closing braces for literal double braces.
+Expression values always become document text; they cannot inject raw OOXML or
+execute code. The same expression behavior is available to JSON and TOML specs.
+See [Spec Versioning and Authoring Tools](spec-versioning.md).
 
 ## Named Styles
 

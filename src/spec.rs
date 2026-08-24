@@ -2,16 +2,29 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::spec_expand::expand_yaml_document_spec_with_limits;
+use crate::spec_expand::{
+    expand_document_spec_value_with_limits, expand_yaml_document_spec_with_limits,
+};
 use crate::DocumentMetadata;
 use crate::{DocxError, HeaderFooter, InputLimits, PageNumbering, PageSetup, Result, Stylesheet};
 
+/// Current supported document-spec contract.
+pub const SPEC_VERSION: u32 = 1;
+
+/// Returns the current document-spec version for serde defaults.
+pub const fn default_spec_version() -> u32 {
+    SPEC_VERSION
+}
+
 /// A high-level, serializable document specification.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct DocumentSpec {
+    /// Version of the declarative document-spec contract.
+    pub version: u32,
     /// Optional logical output name. Falls back to the spec file stem when absent.
     pub output_name: Option<String>,
     /// Optional core and custom document metadata written into the DOCX package.
@@ -28,7 +41,25 @@ pub struct DocumentSpec {
     pub styles: Stylesheet,
     pub blocks: Vec<BlockSpec>,
     #[serde(skip)]
+    #[schemars(skip)]
     asset_base_dir: Option<PathBuf>,
+}
+
+impl Default for DocumentSpec {
+    fn default() -> Self {
+        Self {
+            version: SPEC_VERSION,
+            output_name: None,
+            metadata: DocumentMetadata::default(),
+            page_setup: None,
+            header: None,
+            footer: None,
+            page_numbering: None,
+            styles: Stylesheet::default(),
+            blocks: Vec::new(),
+            asset_base_dir: None,
+        }
+    }
 }
 
 impl DocumentSpec {
@@ -55,8 +86,8 @@ impl DocumentSpec {
 
         let mut spec = match extension.as_str() {
             "yaml" | "yml" | "" => Self::from_yaml_path(&content, Some(path), limits),
-            "json" => Self::from_json_str_with_limits(&content, limits),
-            "toml" => Self::from_toml_str_with_limits(&content, limits),
+            "json" => Self::from_json_path(&content, Some(path), limits),
+            "toml" => Self::from_toml_path(&content, Some(path), limits),
             other => Err(DocxError::parse(format!(
                 "unsupported document spec extension '{other}', expected .yaml, .yml, .json, or .toml"
             ))),
@@ -84,8 +115,7 @@ impl DocumentSpec {
     /// Parses a JSON document specification with explicit resource ceilings.
     pub fn from_json_str_with_limits(content: &str, limits: InputLimits) -> Result<Self> {
         ensure_spec_size(content, limits.max_spec_bytes, "JSON document spec")?;
-        serde_json::from_str(content)
-            .map_err(|error| DocxError::parse(format!("invalid JSON document spec: {error}")))
+        Self::from_json_path(content, None, limits)
     }
 
     /// Parses a TOML document specification string.
@@ -96,8 +126,7 @@ impl DocumentSpec {
     /// Parses a TOML document specification with explicit resource ceilings.
     pub fn from_toml_str_with_limits(content: &str, limits: InputLimits) -> Result<Self> {
         ensure_spec_size(content, limits.max_spec_bytes, "TOML document spec")?;
-        toml::from_str(content)
-            .map_err(|error| DocxError::parse(format!("invalid TOML document spec: {error}")))
+        Self::from_toml_path(content, None, limits)
     }
 
     /// Serializes the document specification as YAML.
@@ -188,6 +217,36 @@ impl DocumentSpec {
         serde_yaml::from_value(expanded)
             .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))
     }
+
+    fn from_json_path(
+        content: &str,
+        source_path: Option<&Path>,
+        limits: InputLimits,
+    ) -> Result<Self> {
+        let root: serde_json::Value = serde_json::from_str(content)
+            .map_err(|error| DocxError::parse(format!("invalid JSON document spec: {error}")))?;
+        let root = serde_yaml::to_value(root).map_err(|error| {
+            DocxError::parse(format!("failed to normalize JSON document spec: {error}"))
+        })?;
+        let expanded = expand_document_spec_value_with_limits(root, source_path, limits)?;
+        serde_yaml::from_value(expanded)
+            .map_err(|error| DocxError::parse(format!("invalid JSON document spec: {error}")))
+    }
+
+    fn from_toml_path(
+        content: &str,
+        source_path: Option<&Path>,
+        limits: InputLimits,
+    ) -> Result<Self> {
+        let root: toml::Value = toml::from_str(content)
+            .map_err(|error| DocxError::parse(format!("invalid TOML document spec: {error}")))?;
+        let root = serde_yaml::to_value(root).map_err(|error| {
+            DocxError::parse(format!("failed to normalize TOML document spec: {error}"))
+        })?;
+        let expanded = expand_document_spec_value_with_limits(root, source_path, limits)?;
+        serde_yaml::from_value(expanded)
+            .map_err(|error| DocxError::parse(format!("invalid TOML document spec: {error}")))
+    }
 }
 
 fn ensure_spec_size(content: &str, limit: u64, label: &str) -> Result<()> {
@@ -227,7 +286,7 @@ fn read_utf8_with_limit(path: &Path, limit: u64, label: &str) -> Result<String> 
 }
 
 /// A high-level document block.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlockSpec {
     CoverTitle {
@@ -304,7 +363,7 @@ pub enum BlockSpec {
 }
 
 /// A fully specified paragraph block.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphSpec {
     pub runs: Vec<RunSpec>,
@@ -329,7 +388,7 @@ impl ParagraphSpec {
 }
 
 /// A serializable paragraph alignment.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParagraphAlignmentSpec {
     Left,
@@ -339,7 +398,7 @@ pub enum ParagraphAlignmentSpec {
 }
 
 /// A fully specified text run.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunSpec {
     pub text: String,
@@ -361,14 +420,14 @@ pub struct RunSpec {
 }
 
 /// Serializable dynamic field kinds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RunFieldSpec {
     TableOfContents,
 }
 
 /// A fully specified visual/image block.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct VisualSpec {
     pub path: String,
@@ -399,7 +458,7 @@ impl RunSpec {
 }
 
 /// A serializable underline style.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum UnderlineStyleSpec {
     Single,
@@ -412,7 +471,7 @@ pub enum UnderlineStyleSpec {
 }
 
 /// A serializable run vertical alignment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum VerticalAlignSpec {
     Superscript,
@@ -421,14 +480,14 @@ pub enum VerticalAlignSpec {
 }
 
 /// A simple label-value pair block item.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct LabelValueSpec {
     pub label: String,
     pub value: String,
 }
 
 /// A metric card item.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MetricSpec {
     pub label: String,
     pub value: String,
@@ -436,7 +495,7 @@ pub struct MetricSpec {
 }
 
 /// Shared semantic color tone.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Tone {
     Positive,
@@ -446,7 +505,7 @@ pub enum Tone {
 }
 
 /// A grid table specification.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct TableSpec {
     pub style_id: Option<String>,
     pub columns: Vec<ColumnSpec>,
@@ -454,14 +513,14 @@ pub struct TableSpec {
 }
 
 /// A table column definition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct ColumnSpec {
     pub label: String,
     pub width: u32,
 }
 
 /// A table row definition.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RowSpec {
     pub cells: Vec<CellSpec>,
@@ -470,7 +529,7 @@ pub struct RowSpec {
 }
 
 /// A table cell definition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum CellSpec {
     Text {
@@ -490,7 +549,7 @@ pub enum CellSpec {
 }
 
 /// A status cell definition.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct StatusSpec {
     pub text: String,
     pub tone: Tone,
@@ -501,6 +560,7 @@ where
     I: IntoIterator<Item = BlockSpec>,
 {
     DocumentSpec {
+        version: SPEC_VERSION,
         output_name: None,
         metadata: DocumentMetadata::default(),
         page_setup: None,
@@ -724,6 +784,7 @@ const DEFAULT_YAML_TEMPLATE: &str = r#"# RusDox document spec template
 # Save this file as `mydoc.yaml` and run:
 #   rusdox mydoc.yaml
 
+version: 1
 output_name: my-document
 # Optional core and custom metadata:
 # metadata:
@@ -845,8 +906,37 @@ mod tests {
     }
 
     #[test]
+    fn json_and_toml_authoring_share_deterministic_expressions() {
+        let json = r#"{
+  "version": 1,
+  "variables": {"customer": {"name": "Northstar", "active": true}},
+  "blocks": [{
+    "type": "when",
+    "path": "customer.active",
+    "blocks": [{"type": "body", "text": "{{ customer.name | upper }}"}],
+    "otherwise": []
+  }]
+}"#;
+        let json_spec = super::DocumentSpec::from_json_str(json).expect("JSON authoring");
+        assert_eq!(json_spec.blocks, vec![body("NORTHSTAR")]);
+
+        let toml = r#"version = 1
+
+[variables]
+name = "Northstar"
+
+[[blocks]]
+type = "body"
+text = "{{ name | lower }}"
+"#;
+        let toml_spec = super::DocumentSpec::from_toml_str(toml).expect("TOML authoring");
+        assert_eq!(toml_spec.blocks, vec![body("northstar")]);
+    }
+
+    #[test]
     fn spec_round_trips_through_yaml() {
         let spec = super::DocumentSpec {
+            version: super::SPEC_VERSION,
             output_name: Some("hello-world".to_string()),
             metadata: DocumentMetadata::new()
                 .title("Hello World")
@@ -899,6 +989,7 @@ mod tests {
     fn spec_round_trips_named_styles_and_style_references() {
         let border = Border::new(BorderStyle::Single).size(8).color("CBD5E1");
         let spec = super::DocumentSpec {
+            version: super::SPEC_VERSION,
             output_name: Some("styled-spec".to_string()),
             metadata: DocumentMetadata::default(),
             page_setup: None,

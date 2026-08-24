@@ -19,11 +19,11 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | JSON specs | Supported | Same serializable document model without YAML-only expansion. |
 | TOML specs | Supported | Same serializable document model without YAML-only expansion. |
 | Variables | Supported in YAML | Scalar interpolation through the YAML expansion layer. |
-| Includes | Supported in YAML | Relative includes with cycle detection. |
-| Repeaters | Supported in YAML | Sequence expansion with index and item variables. |
-| Conditions and filters | Supported | Word-native template syntax v1 supports bounded truthy conditions plus upper, lower, title, trim, and default filters. Declarative spec conditions remain in the schema milestone. |
-| Stable spec version field | Planned | Pre-1.0 specs do not yet declare a schema version. |
-| JSON Schema / editor completion | Planned | Targeted for v0.3. |
+| Includes | Supported | Relative YAML, JSON, and TOML includes with cycle detection. |
+| Repeaters | Supported | Cross-format sequence expansion with index and item variables. |
+| Conditions and filters | Supported | Specs and Word-native templates support bounded conditions, nested paths, and upper, lower, title, trim, and default filters. |
+| Versioned spec field | Supported | Current authoring contract is version 1 with a documented compatibility and migration policy. |
+| JSON Schema / editor completion | Supported | Generated schema plus bundled zero-dependency VS Code completion, hover, enum, and diagnostic service. |
 
 ## Document features
 

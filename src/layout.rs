@@ -1,9 +1,10 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::paragraph::ParagraphAlignment;
 
 /// Physical page orientation shared by DOCX and PDF output.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PageOrientation {
     #[default]
@@ -12,7 +13,7 @@ pub enum PageOrientation {
 }
 
 /// Page setup values stored in OOXML twips.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct PageSetup {
     pub width_twips: u32,
@@ -93,7 +94,7 @@ impl PageSetup {
 ///
 /// The `text` field supports `{page}` and `{pages}` placeholders, which are
 /// emitted as Word field codes.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct HeaderFooter {
     pub text: String,
@@ -126,7 +127,7 @@ impl HeaderFooter {
 }
 
 /// Page numbering configuration emitted into section properties.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct PageNumbering {
     pub start_at: Option<u32>,
@@ -159,7 +160,7 @@ impl PageNumbering {
 }
 
 /// Word page number formats exposed through the public API and spec.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PageNumberFormat {
     Decimal,

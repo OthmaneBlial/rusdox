@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -10,7 +11,7 @@ const DEFAULT_RUN_STYLE_ID: &str = "DefaultParagraphFont";
 const DEFAULT_TABLE_STYLE_ID: &str = "TableNormal";
 
 /// A collection of reusable paragraph, run, and table styles.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct Stylesheet {
     pub paragraph: Vec<ParagraphStyle>,
@@ -270,7 +271,7 @@ impl Stylesheet {
 }
 
 /// A reusable paragraph style definition.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphStyle {
     pub id: String,
@@ -316,7 +317,7 @@ impl ParagraphStyle {
 }
 
 /// A reusable run style definition.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunStyle {
     pub id: String,
@@ -350,7 +351,7 @@ impl RunStyle {
 }
 
 /// A reusable table style definition.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct TableStyle {
     pub id: String,
@@ -384,7 +385,7 @@ impl TableStyle {
 }
 
 /// Paragraph-level formatting that can participate in style inheritance.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphStyleProperties {
     pub list: Option<ParagraphList>,
@@ -432,7 +433,7 @@ impl ParagraphStyleProperties {
 }
 
 /// Run-level formatting that can participate in style inheritance.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunStyleProperties {
     pub bold: Option<bool>,
@@ -519,7 +520,7 @@ impl RunStyleProperties {
 }
 
 /// Table-level formatting that can participate in style inheritance.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct TableStyleProperties {
     pub width: Option<u32>,

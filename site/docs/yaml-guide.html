@@ -47,20 +47,23 @@
         <div class="docs-static-layout">
           <aside class="docs-static-nav" aria-label="Documentation navigation">
     <p class="docs-nav-label">Field guide</p>
-    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a class="is-active" aria-current="page" href="yaml-guide.html">YAML guide</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a class="is-active" aria-current="page" href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#top-level-fields">Top-Level Fields</a></li><li class="toc-level-2"><a href="#metadata">Metadata</a></li><li class="toc-level-2"><a href="#variables-includes-and-repeaters">Variables, Includes, And Repeaters</a></li><li class="toc-level-2"><a href="#named-styles">Named Styles</a></li><li class="toc-level-2"><a href="#simple-block-types">Simple Block Types</a></li><li class="toc-level-2"><a href="#visual-blocks">Visual Blocks</a></li><li class="toc-level-2"><a href="#list-blocks">List Blocks</a></li><li class="toc-level-3"><a href="#bullets">bullets</a></li><li class="toc-level-3"><a href="#labelvalues">labelvalues</a></li><li class="toc-level-3"><a href="#metrics">metrics</a></li><li class="toc-level-2"><a href="#tables">Tables</a></li><li class="toc-level-2"><a href="#custom-paragraphs">Custom Paragraphs</a></li><li class="toc-level-2"><a href="#shared-page-controls-and-semantic-blocks">Shared Page Controls And Semantic Blocks</a></li><li class="toc-level-2"><a href="#rich-table-rows-and-cells">Rich Table Rows And Cells</a></li><li class="toc-level-2"><a href="#best-practices">Best Practices</a></li><li class="toc-level-2"><a href="#see-real-files">See Real Files</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#top-level-fields">Top-Level Fields</a></li><li class="toc-level-2"><a href="#metadata">Metadata</a></li><li class="toc-level-2"><a href="#variables-includes-and-repeaters">Variables, Includes, And Repeaters</a></li><li class="toc-level-2"><a href="#conditions-filters-and-escaping">Conditions, filters, and escaping</a></li><li class="toc-level-2"><a href="#named-styles">Named Styles</a></li><li class="toc-level-2"><a href="#simple-block-types">Simple Block Types</a></li><li class="toc-level-2"><a href="#visual-blocks">Visual Blocks</a></li><li class="toc-level-2"><a href="#list-blocks">List Blocks</a></li><li class="toc-level-3"><a href="#bullets">bullets</a></li><li class="toc-level-3"><a href="#labelvalues">labelvalues</a></li><li class="toc-level-3"><a href="#metrics">metrics</a></li><li class="toc-level-2"><a href="#tables">Tables</a></li><li class="toc-level-2"><a href="#custom-paragraphs">Custom Paragraphs</a></li><li class="toc-level-2"><a href="#shared-page-controls-and-semantic-blocks">Shared Page Controls And Semantic Blocks</a></li><li class="toc-level-2"><a href="#rich-table-rows-and-cells">Rich Table Rows And Cells</a></li><li class="toc-level-2"><a href="#best-practices">Best Practices</a></li><li class="toc-level-2"><a href="#see-real-files">See Real Files</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox is designed so the YAML reads like the document.</p>
 <p>The basic shape is always:</p>
-<pre><code class="language-yaml">output_name: my-document
+<pre><code class="language-yaml">version: 1
+output_name: my-document
 blocks:
   - type: title
     text: My Document
   - type: body
     text: This is a paragraph.</code></pre>
 <h2 id="top-level-fields">Top-Level Fields</h2>
+<p>version</p>
+<ul><li>Required for new files</li><li>Current value: 1</li><li>Use rusdox migrate legacy.yaml --in-place for legacy unversioned files</li></ul>
 <p><code>output_name</code></p>
 <ul><li>Optional</li><li>Controls the file name of the generated output</li><li>If omitted, RusDox uses the spec file stem</li></ul>
 <p><code>metadata</code></p>
@@ -70,7 +73,7 @@ blocks:
 <p><code>styles</code></p>
 <ul><li>Optional</li><li>Defines reusable named paragraph, run, and table styles</li><li>Supports inheritance through <code>based_on</code></li><li>Paragraph styles can also set <code>next</code></li></ul>
 <p><code>variables</code></p>
-<ul><li>Optional</li><li>Defines reusable values for text interpolation and repeat blocks in YAML</li></ul>
+<ul><li>Optional</li><li>Defines reusable values for nested interpolation, repeat blocks, and bounded conditions</li></ul>
 <h2 id="metadata">Metadata</h2>
 <p>Use metadata when generated documents need clean properties in Word, search tools, or downstream automation.</p>
 <pre><code class="language-yaml">metadata:
@@ -127,6 +130,13 @@ blocks:
 <ul><li><code>variable</code>: name of a sequence variable to iterate</li><li><code>items</code>: inline sequence to iterate</li><li><code>as</code>: loop variable name, defaults to <code>item</code></li><li><code>blocks</code>: template block list</li></ul>
 <p>Each repeat iteration also exposes:</p>
 <ul><li><code>repeat_index</code>: zero-based index</li><li><code>repeat_number</code>: one-based index</li></ul>
+<h2 id="conditions-filters-and-escaping">Conditions, filters, and escaping</h2>
+<p>Use a bounded when block for truthiness or exact scalar equality:</p>
+<p>variables: customer: active: true blocks:</p>
+<ul><li>type: when path: customer.active equals: true blocks:</li><li>type: body text: Active customer otherwise:</li><li>type: body text: Inactive customer</li></ul>
+<p>Expressions support nested mapping/array paths and exactly five deterministic filters: upper, lower, title, trim, and default(&quot;text&quot;).</p>
+<p>text: &quot;{{ customer.name | trim | title }}&quot; text: &quot;{{ customer.owner | default(\&quot;unassigned\&quot;) | upper }}&quot;</p>
+<p>Write four opening braces and four closing braces for literal double braces. Expression values always become document text; they cannot inject raw OOXML or execute code. The same expression behavior is available to JSON and TOML specs. See <a href="spec-versioning.html">Spec Versioning and Authoring Tools</a>.</p>
 <h2 id="named-styles">Named Styles</h2>
 <p>Use named styles when the document needs stable reusable formatting instead of repeating direct properties on every block.</p>
 <p>Example:</p>
@@ -341,7 +351,7 @@ blocks:
 <ul><li><a href="../examples/board_report.yaml">../examples/board_report.yaml</a></li><li><a href="../examples/executive_dashboard.yaml">../examples/executive_dashboard.yaml</a></li><li><a href="../examples/dual_output_contract.yaml">../examples/dual_output_contract.yaml</a></li><li><a href="../examples/international_scripts.yaml">../examples/international_scripts.yaml</a></li><li><a href="../examples/formatting_showcase.yaml">../examples/formatting_showcase.yaml</a></li><li><a href="../examples/named_styles_showcase.yaml">../examples/named_styles_showcase.yaml</a></li><li><a href="../examples/yaml_composition_showcase.yaml">../examples/yaml_composition_showcase.yaml</a></li></ul></div>
             <nav class="docs-pager" aria-label="Documentation pagination">
     <a href="getting-started.html"><span>Previous</span><strong>Getting started</strong></a>
-    <a class="docs-pager-next" href="configuration.html"><span>Next</span><strong>Configuration</strong></a>
+    <a class="docs-pager-next" href="spec-versioning.html"><span>Next</span><strong>Spec versioning</strong></a>
   </nav>
           </article>
         </div>

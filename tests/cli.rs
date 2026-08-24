@@ -105,6 +105,84 @@ fn init_script_refuses_overwrite_without_force() {
 }
 
 #[test]
+fn schema_command_emits_versioned_authoring_contract() {
+    let temp = tempdir().expect("temp dir");
+    let output = run_cli(&["schema"], temp.path());
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let schema: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("generated JSON Schema");
+    assert_eq!(schema["x-rusdox-spec-version"], 1);
+    assert_eq!(schema["properties"]["version"]["const"], 1);
+    assert!(schema["required"]
+        .as_array()
+        .is_some_and(|required| required.contains(&serde_json::json!("version"))));
+    assert!(String::from_utf8_lossy(&output.stdout).contains("\"when\""));
+}
+
+#[test]
+fn migrate_upgrades_yaml_atomically_and_check_detects_current_version() {
+    let temp = tempdir().expect("temp dir");
+    let spec = temp.path().join("legacy.rusdox.yaml");
+    fs::write(
+        &spec,
+        "# keep this author comment\noutput_name: legacy\nblocks: []\n",
+    )
+    .expect("write legacy spec");
+
+    let check = run_cli(
+        &["migrate", spec.to_string_lossy().as_ref(), "--check"],
+        temp.path(),
+    );
+    assert!(!check.status.success());
+    assert!(String::from_utf8_lossy(&check.stderr).contains("needs migration"));
+
+    let migrate = run_cli(
+        &["migrate", spec.to_string_lossy().as_ref(), "--in-place"],
+        temp.path(),
+    );
+    assert!(
+        migrate.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&migrate.stderr)
+    );
+    let migrated = fs::read_to_string(&spec).expect("migrated spec");
+    assert!(migrated.starts_with("# keep this author comment\nversion: 1\n"));
+
+    let current = run_cli(
+        &["migrate", spec.to_string_lossy().as_ref(), "--check"],
+        temp.path(),
+    );
+    assert!(current.status.success());
+}
+
+#[test]
+fn validate_json_reports_source_line_and_column() {
+    let temp = tempdir().expect("temp dir");
+    let spec = temp.path().join("future.rusdox.yaml");
+    fs::write(&spec, "version: 9\nblocks: []\n").expect("write future spec");
+    let output = run_cli(
+        &[
+            "validate",
+            spec.to_string_lossy().as_ref(),
+            "--format",
+            "json",
+        ],
+        temp.path(),
+    );
+    assert!(!output.status.success());
+    let report: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("validation JSON");
+    let issue = &report["files"][0]["issues"][0];
+    assert_eq!(issue["path"], "version");
+    assert_eq!(issue["source"]["line"], 1);
+    assert_eq!(issue["source"]["column"], 1);
+}
+
+#[test]
 fn config_init_and_show_work_with_explicit_path() {
     let temp = tempdir().expect("temp dir");
     let config_path = temp.path().join("cfg.toml");

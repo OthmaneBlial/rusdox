@@ -16,7 +16,8 @@ If you are new, read these pages in order:
 10. [Parity Verification](parity.md)
 11. [Reproducible Performance](performance.md)
 12. [Word-native Templates](word-templates.md)
-13. [Troubleshooting](troubleshooting.md)
+13. [Spec Versioning and Authoring Tools](spec-versioning.md)
+14. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -31,7 +32,8 @@ If you want more control:
 
 - Read [YAML Guide](yaml-guide.md)
 - Read [Configuration](configuration.md)
-- Use variables, includes, and repeaters when static YAML starts getting repetitive
+- Use variables, includes, repeaters, bounded conditions, and deterministic filters when static YAML starts getting repetitive
+- Generate the versioned schema or install the local [VS Code authoring extension](../editors/vscode/README.md)
 - Use local `./rusdox.toml` overrides per project
 
 If you are a developer and want full power:
@@ -47,7 +49,8 @@ If you are a developer and want full power:
 - how output folders work
 - how DOCX and PDF generation works
 - how to style documents with config and named styles
-- how to reuse YAML with variables, includes, and repeaters
+- how to reuse specs with variables, includes, repeaters, conditions, and filters
+- how to generate the schema, migrate legacy specs, and get source-located editor diagnostics
 - how to set document metadata and custom properties
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI

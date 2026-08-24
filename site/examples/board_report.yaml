@@ -1,3 +1,4 @@
+version: 1
 output_name: board-report
 blocks:
   - type: cover_title

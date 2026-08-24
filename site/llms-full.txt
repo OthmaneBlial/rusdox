@@ -18,7 +18,8 @@ If you are new, read these pages in order:
 10. [Parity Verification](parity.md)
 11. [Reproducible Performance](performance.md)
 12. [Word-native Templates](word-templates.md)
-13. [Troubleshooting](troubleshooting.md)
+13. [Spec Versioning and Authoring Tools](spec-versioning.md)
+14. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -33,7 +34,8 @@ If you want more control:
 
 - Read [YAML Guide](yaml-guide.md)
 - Read [Configuration](configuration.md)
-- Use variables, includes, and repeaters when static YAML starts getting repetitive
+- Use variables, includes, repeaters, bounded conditions, and deterministic filters when static YAML starts getting repetitive
+- Generate the versioned schema or install the local [VS Code authoring extension](../editors/vscode/README.md)
 - Use local `./rusdox.toml` overrides per project
 
 If you are a developer and want full power:
@@ -49,7 +51,8 @@ If you are a developer and want full power:
 - how output folders work
 - how DOCX and PDF generation works
 - how to style documents with config and named styles
-- how to reuse YAML with variables, includes, and repeaters
+- how to reuse specs with variables, includes, repeaters, conditions, and filters
+- how to generate the schema, migrate legacy specs, and get source-located editor diagnostics
 - how to set document metadata and custom properties
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI
@@ -110,6 +113,21 @@ Keep the layout your team already designed in Word, add readable placeholders, t
     rusdox template verify proposal.docx data.json --strict
 
 One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
+
+## Schema-first authoring
+
+Every current spec declares version 1. Generate the same JSON Schema used by
+the bundled VS Code tooling, or migrate a legacy file atomically:
+
+    rusdox schema --output rusdox-spec-v1.schema.json
+    rusdox migrate legacy.yaml --in-place
+    rusdox validate current.yaml --format json
+
+YAML, JSON, and TOML share nested paths, bounded when branches, five
+deterministic filters, literal-brace escaping, and source-located validation.
+There is deliberately no general-purpose expression runtime. Read the
+[spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
+[VS Code extension](editors/vscode/README.md).
 
 ## Install in 10 seconds
 
@@ -210,6 +228,7 @@ rusdox init-doc mydoc.yaml
 Edit `mydoc.yaml`:
 
 ```yaml
+version: 1
 output_name: client-brief
 blocks:
   - type: title
@@ -450,6 +469,7 @@ That creates a starter YAML document.
 Example:
 
 ```yaml
+version: 1
 output_name: client-brief
 blocks:
   - type: title
@@ -565,6 +585,7 @@ RusDox is designed so the YAML reads like the document.
 The basic shape is always:
 
 ```yaml
+version: 1
 output_name: my-document
 blocks:
   - type: title
@@ -574,6 +595,12 @@ blocks:
 ```
 
 ## Top-Level Fields
+
+version
+
+- Required for new files
+- Current value: 1
+- Use rusdox migrate legacy.yaml --in-place for legacy unversioned files
 
 `output_name`
 
@@ -602,7 +629,7 @@ blocks:
 `variables`
 
 - Optional
-- Defines reusable values for text interpolation and repeat blocks in YAML
+- Defines reusable values for nested interpolation, repeat blocks, and bounded conditions
 
 ## Metadata
 
@@ -697,6 +724,35 @@ Each repeat iteration also exposes:
 
 - `repeat_index`: zero-based index
 - `repeat_number`: one-based index
+
+## Conditions, filters, and escaping
+
+Use a bounded when block for truthiness or exact scalar equality:
+
+    variables:
+      customer:
+        active: true
+    blocks:
+      - type: when
+        path: customer.active
+        equals: true
+        blocks:
+          - type: body
+            text: Active customer
+        otherwise:
+          - type: body
+            text: Inactive customer
+
+Expressions support nested mapping/array paths and exactly five deterministic
+filters: upper, lower, title, trim, and default("text").
+
+    text: "{{ customer.name | trim | title }}"
+    text: "{{ customer.owner | default(\"unassigned\") | upper }}"
+
+Write four opening braces and four closing braces for literal double braces.
+Expression values always become document text; they cannot inject raw OOXML or
+execute code. The same expression behavior is available to JSON and TOML specs.
+See [Spec Versioning and Authoring Tools](spec-versioning.md).
 
 ## Named Styles
 
@@ -1106,6 +1162,105 @@ Rows accept `repeat_as_header` and `allow_split_across_pages`. A `kind: rich` ce
 
 ---
 
+# Spec versioning
+
+Source: https://othmaneblial.github.io/rusdox/docs/spec-versioning.html
+
+RusDox document specs have an explicit contract version:
+
+    version: 1
+
+The same model is supported in YAML, JSON, and TOML. New specs and published
+examples must declare the version. During the pre-1.0 transition, a missing
+field is read as legacy version 1 so old files keep rendering, but the schema
+and editor tooling report the omission and recommend migration.
+
+## Compatibility policy
+
+- This release supports document spec version 1.
+- Unknown future versions fail semantic validation before any output is written.
+- Additive optional fields and new block variants may appear in compatible
+  RusDox minor releases.
+- Existing field meaning, enum meaning, and escaping behavior do not change
+  inside a spec version.
+- A removal, incompatible default, or expression-semantics change requires a
+  new spec version and a migration path.
+- The Rust API and CLI still follow crate SemVer independently of the spec
+  version.
+
+Generate the canonical schema directly from the installed binary:
+
+    rusdox schema
+    rusdox schema --output rusdox-spec-v1.schema.json
+
+The checked-in schema is generated from the Rust/serde types. Its public ID is
+https://othmaneblial.github.io/rusdox/schema/rusdox-spec-v1.schema.json and it
+applies to YAML, JSON, and TOML object shapes.
+
+## Migration
+
+Inspect a file without changing it:
+
+    rusdox migrate legacy.yaml --check
+
+Print the migrated form to stdout:
+
+    rusdox migrate legacy.yaml
+
+Write atomically in place or to a separate file:
+
+    rusdox migrate legacy.yaml --in-place
+    rusdox migrate legacy.json --output current.json
+
+YAML migration preserves leading author comments. JSON and TOML are parsed and
+pretty-printed. Future versions are never silently downgraded.
+
+## Deterministic expressions
+
+Nested paths work in values:
+
+    text: "{{ customer.address.city }}"
+
+Supported filters are upper, lower, title, trim, and default("text"):
+
+    text: "{{ customer.name | trim | title }}"
+    text: "{{ customer.owner | default(\"unassigned\") | upper }}"
+
+Use doubled delimiters for literal braces:
+
+    text: "Show {{{{ customer.name }}}} literally"
+
+This becomes Show {{ customer.name }} literally. Values are always inserted as
+document text and escaped by the DOCX/PDF writers. There is no raw OOXML, shell,
+function-call, network, or general-purpose evaluation mode.
+
+The bounded conditional block selects one branch by truthiness or scalar
+equality:
+
+    - type: when
+      path: customer.active
+      equals: true
+      blocks:
+        - type: body
+          text: Active account
+      otherwise:
+        - type: body
+          text: Inactive account
+
+Conditions and filters share the same behavior in YAML, JSON, and TOML.
+
+## VS Code
+
+The dependency-free extension in editors/vscode bundles the schema and provides
+block/field completion, hover help, enum suggestions, and inline diagnostics.
+Its local language-service tests run with:
+
+    npm test --prefix editors/vscode
+
+The extension never uploads document content.
+
+---
+
 # Configuration
 
 Source: https://othmaneblial.github.io/rusdox/docs/configuration.html
@@ -1432,6 +1587,12 @@ Generate DOCX, PDF, and parity evidence:
 rusdox verify mydoc.yaml
 ```
 
+Generate the authoring schema or migrate a legacy spec:
+
+    rusdox schema --output rusdox-spec-v1.schema.json
+    rusdox migrate legacy.yaml --in-place
+    rusdox migrate current.yaml --check
+
 ## Parity Verification
 
 Verify one file:
@@ -1470,9 +1631,20 @@ Check every spec in a folder and emit JSON for CI:
 rusdox validate examples --format json
 ```
 
-Validation catches semantic issues before render, including invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets.
+Validation catches semantic issues before render, including unsupported spec versions, invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets. File-backed semantic issues include one-based line and column coordinates in text and JSON reports.
 
 Render commands also run the same semantic validation before they write output.
+
+## Schema and migration
+
+The schema command prints the generated version 1 JSON Schema. Use --output for
+an atomic file write. The same object schema powers YAML, JSON, and TOML
+authoring and the bundled VS Code extension.
+
+The migrate command prints a migrated spec by default. Use --in-place for an
+atomic replacement, --output for a separate destination, and --check in CI to
+reject legacy unversioned specs. RusDox rejects future versions instead of
+silently downgrading them. See [Spec Versioning](spec-versioning.md).
 
 ## Watch Mode
 
@@ -2064,11 +2236,11 @@ Within a supported column, **Partial** or **Experimental** identifies a narrower
 | JSON specs | Supported | Same serializable document model without YAML-only expansion. |
 | TOML specs | Supported | Same serializable document model without YAML-only expansion. |
 | Variables | Supported in YAML | Scalar interpolation through the YAML expansion layer. |
-| Includes | Supported in YAML | Relative includes with cycle detection. |
-| Repeaters | Supported in YAML | Sequence expansion with index and item variables. |
-| Conditions and filters | Supported | Word-native template syntax v1 supports bounded truthy conditions plus upper, lower, title, trim, and default filters. Declarative spec conditions remain in the schema milestone. |
-| Stable spec version field | Planned | Pre-1.0 specs do not yet declare a schema version. |
-| JSON Schema / editor completion | Planned | Targeted for v0.3. |
+| Includes | Supported | Relative YAML, JSON, and TOML includes with cycle detection. |
+| Repeaters | Supported | Cross-format sequence expansion with index and item variables. |
+| Conditions and filters | Supported | Specs and Word-native templates support bounded conditions, nested paths, and upper, lower, title, trim, and default filters. |
+| Versioned spec field | Supported | Current authoring contract is version 1 with a documented compatibility and migration policy. |
+| JSON Schema / editor completion | Supported | Generated schema plus bundled zero-dependency VS Code completion, hover, enum, and diagnostic service. |
 
 ## Document features
 
@@ -2678,6 +2850,10 @@ Source: https://othmaneblial.github.io/rusdox/docs/examples.html
 
 For the full user docs, start with [../docs/README.md](../docs/README.md).
 
+Every complete example declares spec version 1. Generate the authoring schema
+with cargo run -- schema, and use cargo run -- migrate FILE --check to enforce
+the version in CI.
+
 You can also browse visual previews in [../docs/gallery.md](../docs/gallery.md).
 
 Each example renders to:
@@ -3025,13 +3201,15 @@ This is a higher-value differentiator than adding dozens of low-level OOXML buil
 
 ### Schema-first authoring
 
-- [ ] Add a version field to document specs and publish the compatibility policy.
-- [ ] Publish generated JSON Schema for YAML, JSON, and TOML authoring.
-- [ ] Add `rusdox schema` and `rusdox migrate` commands.
-- [ ] Provide autocomplete, hover documentation, enum suggestions, and inline diagnostics through a lightweight VS Code extension.
-- [ ] Add source spans so validation errors point to line and column.
-- [ ] Add declarative conditions, nested path access, filters, and escaping rules.
-- [ ] Keep expressions intentionally small and deterministic; do not invent a general-purpose programming language.
+- [x] Add a version field to document specs and publish the compatibility policy.
+- [x] Publish generated JSON Schema for YAML, JSON, and TOML authoring.
+- [x] Add `rusdox schema` and `rusdox migrate` commands.
+- [x] Provide autocomplete, hover documentation, enum suggestions, and inline diagnostics through a lightweight VS Code extension.
+- [x] Add source spans so validation errors point to line and column.
+- [x] Add declarative conditions, nested path access, filters, and escaping rules.
+- [x] Keep expressions intentionally small and deterministic; do not invent a general-purpose programming language.
+
+Section evidence: all published specs now declare version 1; missing versions remain a documented legacy bridge while future versions fail before output. The canonical 2020-12 JSON Schema is generated from the Rust/serde model, includes bounded include/repeat/when authoring blocks, ships in the crate and VS Code extension, and is identical for YAML, JSON, and TOML object shapes. The schema and migrate commands support stdout, atomic writes, in-place migration, and CI checks. Semantic validation reports one-based source spans. Cross-format tests cover nested paths, when branches, upper/lower/title/trim/default filters, literal braces, rejection of unknown filters, and a dependency-free editor service with completion, hover, enums, and inline diagnostics.
 
 ### Zero-install playground
 
@@ -3263,6 +3441,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Versioned small/medium/1,000-page benchmarks with isolated validation, DOCX, PDF, dual-output, and existing-DOCX pipelines; machine-readable host/hash/memory evidence; scheduled regression detection; and generated history charts.
 - Word-native DOCX template inspection and strict/lenient rendering from JSON, including split-run placeholders, nested values, complete paragraph/table-row loops, conditions, deterministic filters, reusable partials, native PDF output, and parity reports.
 - Three externally authored starter templates for invoices, proposals, and board/compliance reporting.
+- Versioned document specs with a generated JSON Schema shared by YAML, JSON, TOML, and a bundled zero-dependency VS Code extension.
+- Schema generation, atomic migration, source-located validation, bounded conditional branches, nested paths, deterministic filters, and literal-brace escaping.
 
 ### Changed
 

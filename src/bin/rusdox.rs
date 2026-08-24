@@ -10,10 +10,12 @@ use dialoguer::{Confirm, Input, Select};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
 use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection, ParityReport};
 use rusdox::spec::DocumentSpec;
+use rusdox::spec::SPEC_VERSION;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
 use rusdox::{
-    validate_config, validate_spec, Document, DocxError, DocxTemplate, Result, ValidationIssue,
-    ValidationReport, ValidationSeverity,
+    atomic_write_file, attach_source_spans, document_spec_schema_pretty, validate_config,
+    validate_spec, Document, DocxError, DocxTemplate, Result, ValidationIssue, ValidationReport,
+    ValidationSeverity,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -59,6 +61,10 @@ enum Commands {
     InitDoc(InitDocArgs),
     /// Create a starter script compatible with `rusdox mydoc.rs`.
     InitScript(InitScriptArgs),
+    /// Print or write the generated document-spec JSON Schema.
+    Schema(SchemaArgs),
+    /// Upgrade a legacy document spec to the current version.
+    Migrate(MigrateArgs),
     /// Validate a document spec or spec directory without rendering output.
     Validate(ValidateArgs),
     /// Rebuild a document spec automatically when the spec or config changes.
@@ -229,6 +235,31 @@ struct InitScriptArgs {
     path: PathBuf,
     /// Overwrite if script already exists.
     #[arg(long)]
+    force: bool,
+}
+
+#[derive(Debug, Args)]
+struct SchemaArgs {
+    /// Write the schema atomically instead of printing it to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Debug, Args)]
+struct MigrateArgs {
+    /// YAML, JSON, or TOML document spec to migrate.
+    input: PathBuf,
+    /// Write the migrated spec to a separate path.
+    #[arg(long, conflicts_with_all = ["in_place", "check"])]
+    output: Option<PathBuf>,
+    /// Atomically replace the input after a successful migration and parse check.
+    #[arg(long, conflicts_with_all = ["output", "check"])]
+    in_place: bool,
+    /// Exit non-zero when the input needs migration; never write.
+    #[arg(long, conflicts_with_all = ["output", "in_place"])]
+    check: bool,
+    /// Allow --output to replace an existing file.
+    #[arg(long, requires = "output")]
     force: bool,
 }
 
@@ -486,6 +517,8 @@ fn run() -> Result<()> {
             Commands::Config { command } => run_config_command(command),
             Commands::InitDoc(args) => init_doc(args),
             Commands::InitScript(args) => init_script(args),
+            Commands::Schema(args) => run_schema(args),
+            Commands::Migrate(args) => run_migrate(args),
             Commands::Validate(args) => run_validate(args),
             Commands::Watch(args) => run_watch(args),
             Commands::Bench(args) => run_bench(args),
@@ -545,6 +578,217 @@ fn init_script(args: InitScriptArgs) -> Result<()> {
     }
     rusdox::atomic_write_file(&path, default_script_template().as_bytes())?;
     println!("{}", path.display());
+    Ok(())
+}
+
+fn run_schema(args: SchemaArgs) -> Result<()> {
+    let schema = document_spec_schema_pretty()?;
+    if let Some(output) = args.output {
+        atomic_write_file(&output, schema.as_bytes())?;
+        println!("{}", output.display());
+    } else {
+        print!("{schema}");
+    }
+    Ok(())
+}
+
+fn run_migrate(args: MigrateArgs) -> Result<()> {
+    if !args.input.is_file() {
+        return Err(DocxError::Parse(format!(
+            "migration input is not a file: {}",
+            args.input.display()
+        )));
+    }
+    let content = fs::read_to_string(&args.input)?;
+    let extension = args
+        .input
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("yaml")
+        .to_ascii_lowercase();
+    let (version, migrated) = migrate_spec_content(&content, &extension)?;
+    let needs_migration = version != Some(SPEC_VERSION);
+
+    if args.check {
+        if needs_migration {
+            return Err(DocxError::Parse(format!(
+                "{} needs migration to spec version {SPEC_VERSION}",
+                args.input.display()
+            )));
+        }
+        println!(
+            "{} already uses spec version {SPEC_VERSION}",
+            args.input.display()
+        );
+        return Ok(());
+    }
+
+    if let Some(output) = args.output {
+        if output.exists() && !args.force {
+            return Err(DocxError::Parse(format!(
+                "migration output already exists at {} (use --force to replace it)",
+                output.display()
+            )));
+        }
+        atomic_write_file(&output, migrated.as_bytes())?;
+        println!("{}", output.display());
+    } else if args.in_place {
+        atomic_write_file(&args.input, migrated.as_bytes())?;
+        println!("{}", args.input.display());
+    } else {
+        print!("{migrated}");
+    }
+    Ok(())
+}
+
+fn migrate_spec_content(content: &str, extension: &str) -> Result<(Option<u32>, String)> {
+    match extension {
+        "yaml" | "yml" | "" => migrate_yaml_spec(content),
+        "json" => migrate_json_spec(content),
+        "toml" => migrate_toml_spec(content),
+        other => Err(DocxError::Parse(format!(
+            "unsupported migration extension '{other}', expected .yaml, .yml, .json, or .toml"
+        ))),
+    }
+}
+
+fn migrate_yaml_spec(content: &str) -> Result<(Option<u32>, String)> {
+    let value: serde_yaml::Value = serde_yaml::from_str(content)
+        .map_err(|error| DocxError::Parse(format!("invalid YAML document spec: {error}")))?;
+    let version = mapping_spec_version(value.as_mapping(), "YAML")?;
+    ensure_migratable_version(version)?;
+    if version == Some(SPEC_VERSION) {
+        return Ok((version, content.to_string()));
+    }
+
+    let mut lines = content.lines().map(str::to_string).collect::<Vec<_>>();
+    if let Some(index) = lines.iter().position(|line| {
+        let trimmed = line.trim_start();
+        line.len() == trimmed.len() && trimmed.starts_with("version:")
+    }) {
+        lines[index] = format!("version: {SPEC_VERSION}");
+    } else {
+        let insertion = lines
+            .iter()
+            .position(|line| {
+                let trimmed = line.trim();
+                !trimmed.is_empty() && !trimmed.starts_with('#') && trimmed != "---"
+            })
+            .unwrap_or(lines.len());
+        lines.insert(insertion, format!("version: {SPEC_VERSION}"));
+    }
+    let mut migrated = lines.join("\n");
+    if content.ends_with('\n') || !migrated.is_empty() {
+        migrated.push('\n');
+    }
+    serde_yaml::from_str::<serde_yaml::Value>(&migrated)
+        .map_err(|error| DocxError::Parse(format!("migrated YAML failed to parse: {error}")))?;
+    Ok((version, migrated))
+}
+
+fn migrate_json_spec(content: &str) -> Result<(Option<u32>, String)> {
+    let value: serde_json::Value = serde_json::from_str(content)
+        .map_err(|error| DocxError::Parse(format!("invalid JSON document spec: {error}")))?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| DocxError::Parse("JSON document spec root must be an object".to_string()))?;
+    let version = json_spec_version(object.get("version"), "JSON")?;
+    ensure_migratable_version(version)?;
+    if version == Some(SPEC_VERSION) {
+        return Ok((version, content.to_string()));
+    }
+    let mut migrated = serde_json::Map::new();
+    migrated.insert("version".to_string(), serde_json::Value::from(SPEC_VERSION));
+    for (key, value) in object {
+        if key != "version" {
+            migrated.insert(key.clone(), value.clone());
+        }
+    }
+    let mut rendered = serde_json::to_string_pretty(&migrated)
+        .map_err(|error| DocxError::Parse(format!("failed to serialize migrated JSON: {error}")))?;
+    rendered.push('\n');
+    Ok((version, rendered))
+}
+
+fn migrate_toml_spec(content: &str) -> Result<(Option<u32>, String)> {
+    let mut value: toml::Value = toml::from_str(content)
+        .map_err(|error| DocxError::Parse(format!("invalid TOML document spec: {error}")))?;
+    let table = value
+        .as_table_mut()
+        .ok_or_else(|| DocxError::Parse("TOML document spec root must be a table".to_string()))?;
+    let version = match table.get("version") {
+        Some(value) => Some(
+            value
+                .as_integer()
+                .and_then(|version| u32::try_from(version).ok())
+                .ok_or_else(|| {
+                    DocxError::Parse("TOML spec version must be a non-negative integer".to_string())
+                })?,
+        ),
+        None => None,
+    };
+    ensure_migratable_version(version)?;
+    if version == Some(SPEC_VERSION) {
+        return Ok((version, content.to_string()));
+    }
+    table.insert(
+        "version".to_string(),
+        toml::Value::Integer(i64::from(SPEC_VERSION)),
+    );
+    let mut rendered = toml::to_string_pretty(&value)
+        .map_err(|error| DocxError::Parse(format!("failed to serialize migrated TOML: {error}")))?;
+    if !rendered.ends_with('\n') {
+        rendered.push('\n');
+    }
+    Ok((version, rendered))
+}
+
+fn mapping_spec_version(
+    mapping: Option<&serde_yaml::Mapping>,
+    format: &str,
+) -> Result<Option<u32>> {
+    let mapping = mapping.ok_or_else(|| {
+        DocxError::Parse(format!("{format} document spec root must be a mapping"))
+    })?;
+    let value = mapping.get(serde_yaml::Value::String("version".to_string()));
+    match value {
+        Some(serde_yaml::Value::Number(value)) => value
+            .as_u64()
+            .and_then(|version| u32::try_from(version).ok())
+            .map(Some)
+            .ok_or_else(|| {
+                DocxError::Parse(format!(
+                    "{format} spec version must be a non-negative integer"
+                ))
+            }),
+        Some(_) => Err(DocxError::Parse(format!(
+            "{format} spec version must be a non-negative integer"
+        ))),
+        None => Ok(None),
+    }
+}
+
+fn json_spec_version(value: Option<&serde_json::Value>, format: &str) -> Result<Option<u32>> {
+    match value {
+        Some(value) => value
+            .as_u64()
+            .and_then(|version| u32::try_from(version).ok())
+            .map(Some)
+            .ok_or_else(|| {
+                DocxError::Parse(format!(
+                    "{format} spec version must be a non-negative integer"
+                ))
+            }),
+        None => Ok(None),
+    }
+}
+
+fn ensure_migratable_version(version: Option<u32>) -> Result<()> {
+    if let Some(version) = version.filter(|version| *version > SPEC_VERSION) {
+        return Err(DocxError::Parse(format!(
+            "cannot migrate future spec version {version}; this build supports version {SPEC_VERSION}"
+        )));
+    }
     Ok(())
 }
 
@@ -1289,7 +1533,8 @@ fn inspect_spec(spec_path: &Path) -> Result<SpecInspection> {
     let parse_duration = parse_start.elapsed();
 
     let validate_start = Instant::now();
-    let report = validate_spec(&spec);
+    let mut report = validate_spec(&spec);
+    attach_source_spans(spec_path, &mut report)?;
     let validation_duration = validate_start.elapsed();
 
     Ok(SpecInspection {
@@ -1703,7 +1948,10 @@ fn format_issue_line(issue: &ValidationIssue) -> String {
         ValidationSeverity::Error => "error",
         ValidationSeverity::Warning => "warning",
     };
-    format!("  [{severity}] {}: {}", issue.path, issue.message)
+    let location = issue.source.map_or_else(String::new, |source| {
+        format!(" (line {}, column {})", source.line, source.column)
+    });
+    format!("  [{severity}] {}{location}: {}", issue.path, issue.message)
 }
 
 fn summarize_f64(values: impl Iterator<Item = f64>) -> NumericSummary {

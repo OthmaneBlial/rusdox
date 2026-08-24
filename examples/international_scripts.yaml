@@ -1,3 +1,4 @@
+version: 1
 output_name: international-scripts
 metadata:
   title: International script boundary fixture

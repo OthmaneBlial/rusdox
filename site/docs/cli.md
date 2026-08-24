@@ -46,6 +46,12 @@ Generate DOCX, PDF, and parity evidence:
 rusdox verify mydoc.yaml
 ```
 
+Generate the authoring schema or migrate a legacy spec:
+
+    rusdox schema --output rusdox-spec-v1.schema.json
+    rusdox migrate legacy.yaml --in-place
+    rusdox migrate current.yaml --check
+
 ## Parity Verification
 
 Verify one file:
@@ -84,9 +90,20 @@ Check every spec in a folder and emit JSON for CI:
 rusdox validate examples --format json
 ```
 
-Validation catches semantic issues before render, including invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets.
+Validation catches semantic issues before render, including unsupported spec versions, invalid colors, unknown style references, table shape mismatches, blank required values, and missing visual assets. File-backed semantic issues include one-based line and column coordinates in text and JSON reports.
 
 Render commands also run the same semantic validation before they write output.
+
+## Schema and migration
+
+The schema command prints the generated version 1 JSON Schema. Use --output for
+an atomic file write. The same object schema powers YAML, JSON, and TOML
+authoring and the bundled VS Code extension.
+
+The migrate command prints a migrated spec by default. Use --in-place for an
+atomic replacement, --output for a separate destination, and --check in CI to
+reject legacy unversioned specs. RusDox rejects future versions instead of
+silently downgrading them. See [Spec Versioning](spec-versioning.md).
 
 ## Watch Mode
 

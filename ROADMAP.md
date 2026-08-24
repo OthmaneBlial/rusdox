@@ -257,13 +257,15 @@ This is a higher-value differentiator than adding dozens of low-level OOXML buil
 
 ### Schema-first authoring
 
-- [ ] Add a version field to document specs and publish the compatibility policy.
-- [ ] Publish generated JSON Schema for YAML, JSON, and TOML authoring.
-- [ ] Add `rusdox schema` and `rusdox migrate` commands.
-- [ ] Provide autocomplete, hover documentation, enum suggestions, and inline diagnostics through a lightweight VS Code extension.
-- [ ] Add source spans so validation errors point to line and column.
-- [ ] Add declarative conditions, nested path access, filters, and escaping rules.
-- [ ] Keep expressions intentionally small and deterministic; do not invent a general-purpose programming language.
+- [x] Add a version field to document specs and publish the compatibility policy.
+- [x] Publish generated JSON Schema for YAML, JSON, and TOML authoring.
+- [x] Add `rusdox schema` and `rusdox migrate` commands.
+- [x] Provide autocomplete, hover documentation, enum suggestions, and inline diagnostics through a lightweight VS Code extension.
+- [x] Add source spans so validation errors point to line and column.
+- [x] Add declarative conditions, nested path access, filters, and escaping rules.
+- [x] Keep expressions intentionally small and deterministic; do not invent a general-purpose programming language.
+
+Section evidence: all published specs now declare version 1; missing versions remain a documented legacy bridge while future versions fail before output. The canonical 2020-12 JSON Schema is generated from the Rust/serde model, includes bounded include/repeat/when authoring blocks, ships in the crate and VS Code extension, and is identical for YAML, JSON, and TOML object shapes. The schema and migrate commands support stdout, atomic writes, in-place migration, and CI checks. Semantic validation reports one-based source spans. Cross-format tests cover nested paths, when branches, upper/lower/title/trim/default filters, literal braces, rejection of unknown filters, and a dependency-free editor service with completion, hover, enums, and inline diagnostics.
 
 ### Zero-install playground
 

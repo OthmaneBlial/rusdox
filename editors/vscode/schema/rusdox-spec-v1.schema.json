@@ -1,0 +1,2029 @@
+{
+  "$defs": {
+    "BlockSpec": {
+      "description": "A high-level document block.",
+      "oneOf": [
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "cover_title",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "title",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "subtitle",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "hero",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "centered_note",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "page_heading",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "section",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "body",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "type": {
+              "const": "tagline",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "spec": {
+              "$ref": "#/$defs/ParagraphSpec"
+            },
+            "type": {
+              "const": "paragraph",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "spec"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Starts the following content on a new page.",
+          "properties": {
+            "type": {
+              "const": "page_break",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Starts the following content in a new next-page section.",
+          "properties": {
+            "type": {
+              "const": "section_break",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Emits a Word-updatable TOC field and a deterministic PDF heading list.",
+          "properties": {
+            "title": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "const": "table_of_contents",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "bullets",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "numbered",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "items": {
+              "items": {
+                "$ref": "#/$defs/LabelValueSpec"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "label_values",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "items": {
+              "items": {
+                "$ref": "#/$defs/MetricSpec"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "metrics",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "items"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "spec": {
+              "$ref": "#/$defs/TableSpec"
+            },
+            "type": {
+              "const": "table",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "spec"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A fully specified visual/image block.",
+          "properties": {
+            "alignment": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ParagraphAlignmentSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "alt_text": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "path": {
+              "default": "",
+              "type": "string"
+            },
+            "type": {
+              "const": "image",
+              "type": "string"
+            },
+            "width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A fully specified visual/image block.",
+          "properties": {
+            "alignment": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ParagraphAlignmentSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "alt_text": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "path": {
+              "default": "",
+              "type": "string"
+            },
+            "type": {
+              "const": "logo",
+              "type": "string"
+            },
+            "width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A fully specified visual/image block.",
+          "properties": {
+            "alignment": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ParagraphAlignmentSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "alt_text": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "path": {
+              "default": "",
+              "type": "string"
+            },
+            "type": {
+              "const": "signature",
+              "type": "string"
+            },
+            "width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A fully specified visual/image block.",
+          "properties": {
+            "alignment": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ParagraphAlignmentSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "alt_text": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_height_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "max_width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "path": {
+              "default": "",
+              "type": "string"
+            },
+            "type": {
+              "const": "chart",
+              "type": "string"
+            },
+            "width_twips": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "spacer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Inline a local block fragment.",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "type": {
+              "const": "include"
+            },
+            "variables": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
+          "required": [
+            "type",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Repeat blocks for a local array. Exactly one of variable or items is required.",
+          "oneOf": [
+            {
+              "not": {
+                "required": [
+                  "items"
+                ]
+              },
+              "required": [
+                "variable"
+              ]
+            },
+            {
+              "not": {
+                "required": [
+                  "variable"
+                ]
+              },
+              "required": [
+                "items"
+              ]
+            }
+          ],
+          "properties": {
+            "as": {
+              "default": "item",
+              "type": "string"
+            },
+            "blocks": {
+              "items": {
+                "$ref": "#/$defs/BlockSpec"
+              },
+              "type": "array"
+            },
+            "items": {
+              "type": "array"
+            },
+            "type": {
+              "const": "repeat"
+            },
+            "variable": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "blocks"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Select one deterministic block branch from a data path and optional scalar equality.",
+          "properties": {
+            "blocks": {
+              "items": {
+                "$ref": "#/$defs/BlockSpec"
+              },
+              "type": "array"
+            },
+            "equals": {},
+            "otherwise": {
+              "default": [],
+              "items": {
+                "$ref": "#/$defs/BlockSpec"
+              },
+              "type": "array"
+            },
+            "path": {
+              "type": "string"
+            },
+            "type": {
+              "const": "when"
+            }
+          },
+          "required": [
+            "type",
+            "path",
+            "blocks"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Border": {
+      "description": "A single table or cell border.",
+      "properties": {
+        "color": {
+          "description": "Optional hexadecimal RGB color value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "size": {
+          "description": "Optional line size in eighths of a point.",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "style": {
+          "$ref": "#/$defs/BorderStyle",
+          "description": "The border style."
+        }
+      },
+      "required": [
+        "style"
+      ],
+      "type": "object"
+    },
+    "BorderStyle": {
+      "description": "A supported border style.",
+      "oneOf": [
+        {
+          "const": "none",
+          "description": "No visible border.",
+          "type": "string"
+        },
+        {
+          "const": "single",
+          "description": "A single line border.",
+          "type": "string"
+        },
+        {
+          "const": "double",
+          "description": "A double line border.",
+          "type": "string"
+        },
+        {
+          "const": "dotted",
+          "description": "A dotted border.",
+          "type": "string"
+        },
+        {
+          "const": "dashed",
+          "description": "A dashed border.",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Preserve or emit a custom OOXML border value.",
+          "properties": {
+            "custom": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "custom"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "CellSpec": {
+      "description": "A table cell definition.",
+      "oneOf": [
+        {
+          "properties": {
+            "kind": {
+              "const": "text",
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/StatusSpec",
+          "properties": {
+            "kind": {
+              "const": "status",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "background_color": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "grid_span": {
+              "default": null,
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "rich",
+              "type": "string"
+            },
+            "nested_table": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/TableSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "paragraphs": {
+              "default": [],
+              "items": {
+                "$ref": "#/$defs/ParagraphSpec"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ColumnSpec": {
+      "description": "A table column definition.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "width": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label",
+        "width"
+      ],
+      "type": "object"
+    },
+    "DocumentMetadata": {
+      "description": "First-class document metadata used for DOCX package properties.",
+      "properties": {
+        "author": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "custom_properties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "type": "object"
+        },
+        "keywords": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "subject": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "HeaderFooter": {
+      "description": "A simple header or footer paragraph template.\n\nThe `text` field supports `{page}` and `{pages}` placeholders, which are\nemitted as Word field codes.",
+      "properties": {
+        "alignment": {
+          "$ref": "#/$defs/ParagraphAlignment",
+          "default": "left"
+        },
+        "text": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LabelValueSpec": {
+      "description": "A simple label-value pair block item.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "type": "object"
+    },
+    "MetricSpec": {
+      "description": "A metric card item.",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "tone": {
+          "$ref": "#/$defs/Tone"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value",
+        "tone"
+      ],
+      "type": "object"
+    },
+    "PageNumberFormat": {
+      "description": "Word page number formats exposed through the public API and spec.",
+      "enum": [
+        "decimal",
+        "upper_roman",
+        "lower_roman",
+        "upper_letter",
+        "lower_letter"
+      ],
+      "type": "string"
+    },
+    "PageNumbering": {
+      "description": "Page numbering configuration emitted into section properties.",
+      "properties": {
+        "format": {
+          "$ref": "#/$defs/PageNumberFormat",
+          "default": "decimal"
+        },
+        "start_at": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "PageOrientation": {
+      "description": "Physical page orientation shared by DOCX and PDF output.",
+      "enum": [
+        "portrait",
+        "landscape"
+      ],
+      "type": "string"
+    },
+    "PageSetup": {
+      "description": "Page setup values stored in OOXML twips.",
+      "properties": {
+        "footer_twips": {
+          "default": 720,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "gutter_twips": {
+          "default": 0,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "header_twips": {
+          "default": 720,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "height_twips": {
+          "default": 15840,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "margin_bottom_twips": {
+          "default": 1440,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "margin_left_twips": {
+          "default": 1440,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "margin_right_twips": {
+          "default": 1440,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "margin_top_twips": {
+          "default": 1440,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "orientation": {
+          "$ref": "#/$defs/PageOrientation",
+          "default": "portrait"
+        },
+        "width_twips": {
+          "default": 12240,
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ParagraphAlignment": {
+      "description": "Paragraph alignment options.",
+      "oneOf": [
+        {
+          "const": "left",
+          "description": "Left aligned text.",
+          "type": "string"
+        },
+        {
+          "const": "center",
+          "description": "Center aligned text.",
+          "type": "string"
+        },
+        {
+          "const": "right",
+          "description": "Right aligned text.",
+          "type": "string"
+        },
+        {
+          "const": "justified",
+          "description": "Justified text.",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Preserve or emit a custom OOXML value.",
+          "properties": {
+            "custom": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "custom"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ParagraphAlignmentSpec": {
+      "description": "A serializable paragraph alignment.",
+      "enum": [
+        "left",
+        "center",
+        "right",
+        "justified"
+      ],
+      "type": "string"
+    },
+    "ParagraphList": {
+      "description": "Semantic DOCX numbering metadata for a paragraph.",
+      "properties": {
+        "id": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/ParagraphListKind"
+        },
+        "level": {
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "level",
+        "id"
+      ],
+      "type": "object"
+    },
+    "ParagraphListKind": {
+      "description": "Semantic paragraph list kinds supported by the DOCX writer.",
+      "oneOf": [
+        {
+          "const": "bullet",
+          "description": "Bulleted list formatting.",
+          "type": "string"
+        },
+        {
+          "const": "decimal",
+          "description": "Decimal numbered list formatting.",
+          "type": "string"
+        }
+      ]
+    },
+    "ParagraphSpec": {
+      "description": "A fully specified paragraph block.",
+      "properties": {
+        "alignment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParagraphAlignmentSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "page_break_before": {
+          "default": false,
+          "type": "boolean"
+        },
+        "runs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RunSpec"
+          },
+          "type": "array"
+        },
+        "section_break_before": {
+          "default": false,
+          "type": "boolean"
+        },
+        "spacing_after_twips": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "spacing_before_twips": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "style_id": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "ParagraphStyle": {
+      "description": "A reusable paragraph style definition.",
+      "properties": {
+        "based_on": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "paragraph": {
+          "$ref": "#/$defs/ParagraphStyleProperties",
+          "default": {
+            "alignment": null,
+            "keep_next": null,
+            "list": null,
+            "page_break_before": null,
+            "spacing_after": null,
+            "spacing_before": null
+          }
+        },
+        "run": {
+          "$ref": "#/$defs/RunStyleProperties",
+          "default": {
+            "bold": null,
+            "color": null,
+            "font_family": null,
+            "font_size": null,
+            "italic": null,
+            "shadow": null,
+            "small_caps": null,
+            "strikethrough": null,
+            "underline": null,
+            "vertical_align": null
+          }
+        }
+      },
+      "type": "object"
+    },
+    "ParagraphStyleProperties": {
+      "description": "Paragraph-level formatting that can participate in style inheritance.",
+      "properties": {
+        "alignment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParagraphAlignment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "keep_next": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "list": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParagraphList"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "page_break_before": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "spacing_after": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "spacing_before": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "RowSpec": {
+      "description": "A table row definition.",
+      "properties": {
+        "allow_split_across_pages": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "cells": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CellSpec"
+          },
+          "type": "array"
+        },
+        "repeat_as_header": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "RunFieldSpec": {
+      "description": "Serializable dynamic field kinds.",
+      "enum": [
+        "table_of_contents"
+      ],
+      "type": "string"
+    },
+    "RunSpec": {
+      "description": "A fully specified text run.",
+      "properties": {
+        "bold": {
+          "default": false,
+          "type": "boolean"
+        },
+        "bookmark": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "color": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "field": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RunFieldSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "font_family": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "footnote": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hyperlink": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "italic": {
+          "default": false,
+          "type": "boolean"
+        },
+        "shadow": {
+          "default": false,
+          "type": "boolean"
+        },
+        "size_pt": {
+          "default": null,
+          "format": "float",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "small_caps": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strikethrough": {
+          "default": false,
+          "type": "boolean"
+        },
+        "style_id": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "default": "",
+          "type": "string"
+        },
+        "underline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnderlineStyleSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vertical_align": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerticalAlignSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "RunStyle": {
+      "description": "A reusable run style definition.",
+      "properties": {
+        "based_on": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "$ref": "#/$defs/RunStyleProperties",
+          "default": {
+            "bold": null,
+            "color": null,
+            "font_family": null,
+            "font_size": null,
+            "italic": null,
+            "shadow": null,
+            "small_caps": null,
+            "strikethrough": null,
+            "underline": null,
+            "vertical_align": null
+          }
+        }
+      },
+      "type": "object"
+    },
+    "RunStyleProperties": {
+      "description": "Run-level formatting that can participate in style inheritance.",
+      "properties": {
+        "bold": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "color": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "font_family": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "font_size": {
+          "default": null,
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "italic": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "shadow": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "small_caps": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "strikethrough": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "underline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnderlineStyle"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "vertical_align": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerticalAlign"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "type": "object"
+    },
+    "StatusSpec": {
+      "description": "A status cell definition.",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "tone": {
+          "$ref": "#/$defs/Tone"
+        }
+      },
+      "required": [
+        "text",
+        "tone"
+      ],
+      "type": "object"
+    },
+    "Stylesheet": {
+      "description": "A collection of reusable paragraph, run, and table styles.",
+      "properties": {
+        "paragraph": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ParagraphStyle"
+          },
+          "type": "array"
+        },
+        "run": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RunStyle"
+          },
+          "type": "array"
+        },
+        "table": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TableStyle"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "TableBorders": {
+      "description": "Border collection for tables and table cells.",
+      "properties": {
+        "bottom": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Bottom border."
+        },
+        "inside_horizontal": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Horizontal internal border."
+        },
+        "inside_vertical": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Vertical internal border."
+        },
+        "left": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Left border."
+        },
+        "right": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Right border."
+        },
+        "top": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Border"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Top border."
+        }
+      },
+      "type": "object"
+    },
+    "TableSpec": {
+      "description": "A grid table specification.",
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/ColumnSpec"
+          },
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/RowSpec"
+          },
+          "type": "array"
+        },
+        "style_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "columns",
+        "rows"
+      ],
+      "type": "object"
+    },
+    "TableStyle": {
+      "description": "A reusable table style definition.",
+      "properties": {
+        "based_on": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "$ref": "#/$defs/TableStyleProperties",
+          "default": {
+            "borders": null,
+            "width": null
+          }
+        }
+      },
+      "type": "object"
+    },
+    "TableStyleProperties": {
+      "description": "Table-level formatting that can participate in style inheritance.",
+      "properties": {
+        "borders": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TableBorders"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "width": {
+          "default": null,
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "Tone": {
+      "description": "Shared semantic color tone.",
+      "enum": [
+        "positive",
+        "neutral",
+        "warning",
+        "risk"
+      ],
+      "type": "string"
+    },
+    "UnderlineStyle": {
+      "description": "Supported underline styles for a text run.",
+      "oneOf": [
+        {
+          "const": "single",
+          "description": "A single underline.",
+          "type": "string"
+        },
+        {
+          "const": "double",
+          "description": "A double underline.",
+          "type": "string"
+        },
+        {
+          "const": "dotted",
+          "description": "A dotted underline.",
+          "type": "string"
+        },
+        {
+          "const": "dash",
+          "description": "A dashed underline.",
+          "type": "string"
+        },
+        {
+          "const": "wavy",
+          "description": "A wavy underline.",
+          "type": "string"
+        },
+        {
+          "const": "words",
+          "description": "Underline words but not spaces.",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "description": "Explicitly disable underline.",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Preserve or emit a custom OOXML underline value.",
+          "properties": {
+            "custom": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "custom"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "UnderlineStyleSpec": {
+      "description": "A serializable underline style.",
+      "enum": [
+        "single",
+        "double",
+        "dotted",
+        "dash",
+        "wavy",
+        "words",
+        "none"
+      ],
+      "type": "string"
+    },
+    "VerticalAlign": {
+      "description": "Vertical alignment for a run.",
+      "oneOf": [
+        {
+          "const": "superscript",
+          "description": "Superscript text.",
+          "type": "string"
+        },
+        {
+          "const": "subscript",
+          "description": "Subscript text.",
+          "type": "string"
+        },
+        {
+          "const": "baseline",
+          "description": "Baseline text.",
+          "type": "string"
+        }
+      ]
+    },
+    "VerticalAlignSpec": {
+      "description": "A serializable run vertical alignment.",
+      "enum": [
+        "superscript",
+        "subscript",
+        "baseline"
+      ],
+      "type": "string"
+    }
+  },
+  "$id": "https://othmaneblial.github.io/rusdox/schema/rusdox-spec-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Schema for YAML, JSON, and TOML RusDox authoring. Files are local-first and deterministic.",
+  "properties": {
+    "blocks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BlockSpec"
+      },
+      "type": "array"
+    },
+    "footer": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HeaderFooter"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional default footer template."
+    },
+    "header": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HeaderFooter"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional default header template."
+    },
+    "metadata": {
+      "$ref": "#/$defs/DocumentMetadata",
+      "default": {
+        "author": null,
+        "custom_properties": {},
+        "keywords": [],
+        "subject": null,
+        "title": null
+      },
+      "description": "Optional core and custom document metadata written into the DOCX package."
+    },
+    "output_name": {
+      "default": null,
+      "description": "Optional logical output name. Falls back to the spec file stem when absent.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "page_numbering": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PageNumbering"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional page numbering format and restart control."
+    },
+    "page_setup": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PageSetup"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional page size and margin overrides for the document section."
+    },
+    "styles": {
+      "$ref": "#/$defs/Stylesheet",
+      "default": {
+        "paragraph": [],
+        "run": [],
+        "table": []
+      },
+      "description": "Reusable named styles available to blocks and runs in this document."
+    },
+    "variables": {
+      "additionalProperties": true,
+      "default": {},
+      "description": "Local values available to deterministic {{ path | filter }} expressions, repeat blocks, and when blocks.",
+      "type": "object"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "description": "Version of the declarative document-spec contract.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "blocks"
+  ],
+  "title": "RusDox document specification",
+  "type": "object",
+  "x-rusdox-authoring-formats": [
+    "yaml",
+    "json",
+    "toml"
+  ],
+  "x-rusdox-spec-version": 1
+}

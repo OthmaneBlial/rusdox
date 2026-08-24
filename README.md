@@ -38,6 +38,21 @@ Keep the layout your team already designed in Word, add readable placeholders, t
 
 One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
 
+## Schema-first authoring
+
+Every current spec declares version 1. Generate the same JSON Schema used by
+the bundled VS Code tooling, or migrate a legacy file atomically:
+
+    rusdox schema --output rusdox-spec-v1.schema.json
+    rusdox migrate legacy.yaml --in-place
+    rusdox validate current.yaml --format json
+
+YAML, JSON, and TOML share nested paths, bounded when branches, five
+deterministic filters, literal-brace escaping, and source-located validation.
+There is deliberately no general-purpose expression runtime. Read the
+[spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
+[VS Code extension](editors/vscode/README.md).
+
 ## Install in 10 seconds
 
 macOS or Linux:
@@ -137,6 +152,7 @@ rusdox init-doc mydoc.yaml
 Edit `mydoc.yaml`:
 
 ```yaml
+version: 1
 output_name: client-brief
 blocks:
   - type: title

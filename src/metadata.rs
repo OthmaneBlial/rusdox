@@ -3,6 +3,7 @@ use std::io::Cursor;
 
 use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::{Reader, Writer};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::Result;
@@ -16,7 +17,7 @@ pub(crate) const VT_NS: &str =
 pub(crate) const CUSTOM_PROPERTY_FMTID: &str = "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}";
 
 /// First-class document metadata used for DOCX package properties.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct DocumentMetadata {
     pub title: Option<String>,

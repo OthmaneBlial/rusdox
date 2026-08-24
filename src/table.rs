@@ -1,9 +1,10 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::paragraph::Paragraph;
 
 /// A supported border style.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum BorderStyle {
     /// No visible border.
@@ -45,7 +46,7 @@ impl BorderStyle {
 }
 
 /// A single table or cell border.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Border {
     /// The border style.
     pub style: BorderStyle,
@@ -79,7 +80,7 @@ impl Border {
 }
 
 /// Border collection for tables and table cells.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct TableBorders {
     /// Top border.

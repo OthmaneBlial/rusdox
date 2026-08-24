@@ -22,6 +22,8 @@ include = [
   "/LICENSE",
   "/SECURITY.md",
   "/docs/**",
+  "/schema/**",
+  "/editors/vscode/**",
   "/tests/**",
   "!/tests/golden/**",
   "/examples/*.yaml",
@@ -64,6 +66,7 @@ miniz_oxide = "0.9"
 pdf-writer = "0.15"
 quick-xml = "0.41"
 resvg = { version = "0.47", default-features = false, features = ["system-fonts", "text"] }
+schemars = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"

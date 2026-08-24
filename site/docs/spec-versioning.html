@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spec versioning | RusDox Documentation</title>
+    <meta name="description" content="Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/spec-versioning.html" />
+    <meta property="og:title" content="Spec versioning | RusDox" />
+    <meta property="og:description" content="Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/spec-versioning.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Spec versioning","description":"Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.","url":"https://othmaneblial.github.io/rusdox/docs/spec-versioning.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Guide</p>
+            <h1>Spec versioning</h1>
+            <p class="lede">Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/spec-versioning.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a class="is-active" aria-current="page" href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#compatibility-policy">Compatibility policy</a></li><li class="toc-level-2"><a href="#migration">Migration</a></li><li class="toc-level-2"><a href="#deterministic-expressions">Deterministic expressions</a></li><li class="toc-level-2"><a href="#vs-code">VS Code</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox document specs have an explicit contract version:</p>
+<p>version: 1</p>
+<p>The same model is supported in YAML, JSON, and TOML. New specs and published examples must declare the version. During the pre-1.0 transition, a missing field is read as legacy version 1 so old files keep rendering, but the schema and editor tooling report the omission and recommend migration.</p>
+<h2 id="compatibility-policy">Compatibility policy</h2>
+<ul><li>This release supports document spec version 1.</li><li>Unknown future versions fail semantic validation before any output is written.</li><li>Additive optional fields and new block variants may appear in compatible RusDox minor releases.</li><li>Existing field meaning, enum meaning, and escaping behavior do not change inside a spec version.</li><li>A removal, incompatible default, or expression-semantics change requires a new spec version and a migration path.</li><li>The Rust API and CLI still follow crate SemVer independently of the spec version.</li></ul>
+<p>Generate the canonical schema directly from the installed binary:</p>
+<p>rusdox schema rusdox schema --output rusdox-spec-v1.schema.json</p>
+<p>The checked-in schema is generated from the Rust/serde types. Its public ID is https://othmaneblial.github.io/rusdox/schema/rusdox-spec-v1.schema.json and it applies to YAML, JSON, and TOML object shapes.</p>
+<h2 id="migration">Migration</h2>
+<p>Inspect a file without changing it:</p>
+<p>rusdox migrate legacy.yaml --check</p>
+<p>Print the migrated form to stdout:</p>
+<p>rusdox migrate legacy.yaml</p>
+<p>Write atomically in place or to a separate file:</p>
+<p>rusdox migrate legacy.yaml --in-place rusdox migrate legacy.json --output current.json</p>
+<p>YAML migration preserves leading author comments. JSON and TOML are parsed and pretty-printed. Future versions are never silently downgraded.</p>
+<h2 id="deterministic-expressions">Deterministic expressions</h2>
+<p>Nested paths work in values:</p>
+<p>text: &quot;{{ customer.address.city }}&quot;</p>
+<p>Supported filters are upper, lower, title, trim, and default(&quot;text&quot;):</p>
+<p>text: &quot;{{ customer.name | trim | title }}&quot; text: &quot;{{ customer.owner | default(\&quot;unassigned\&quot;) | upper }}&quot;</p>
+<p>Use doubled delimiters for literal braces:</p>
+<p>text: &quot;Show {{{{ customer.name }}}} literally&quot;</p>
+<p>This becomes Show {{ customer.name }} literally. Values are always inserted as document text and escaped by the DOCX/PDF writers. There is no raw OOXML, shell, function-call, network, or general-purpose evaluation mode.</p>
+<p>The bounded conditional block selects one branch by truthiness or scalar equality:</p>
+<ul><li>type: when path: customer.active equals: true blocks:</li><li>type: body text: Active account otherwise:</li><li>type: body text: Inactive account</li></ul>
+<p>Conditions and filters share the same behavior in YAML, JSON, and TOML.</p>
+<h2 id="vs-code">VS Code</h2>
+<p>The dependency-free extension in editors/vscode bundles the schema and provides block/field completion, hover help, enum suggestions, and inline diagnostics. Its local language-service tests run with:</p>
+<p>npm test --prefix editors/vscode</p>
+<p>The extension never uploads document content.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="yaml-guide.html"><span>Previous</span><strong>YAML guide</strong></a>
+    <a class="docs-pager-next" href="configuration.html"><span>Next</span><strong>Configuration</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

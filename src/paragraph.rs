@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::run::Run;
@@ -7,7 +8,7 @@ const DEFAULT_BULLET_LIST_ID: u32 = 1;
 const DEFAULT_NUMBERED_LIST_ID: u32 = 2;
 
 /// Paragraph alignment options.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParagraphAlignment {
     /// Left aligned text.
@@ -45,7 +46,7 @@ impl ParagraphAlignment {
 }
 
 /// Semantic paragraph list kinds supported by the DOCX writer.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParagraphListKind {
     /// Bulleted list formatting.
@@ -72,7 +73,7 @@ impl ParagraphListKind {
 }
 
 /// Semantic DOCX numbering metadata for a paragraph.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ParagraphList {
     kind: ParagraphListKind,
     level: u8,

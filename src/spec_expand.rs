@@ -19,6 +19,14 @@ pub(crate) fn expand_yaml_document_spec_with_limits(
     }
     let root: Value = serde_yaml::from_str(content)
         .map_err(|error| DocxError::parse(format!("invalid YAML document spec: {error}")))?;
+    expand_document_spec_value_with_limits(root, source_path, limits)
+}
+
+pub(crate) fn expand_document_spec_value_with_limits(
+    root: Value,
+    source_path: Option<&Path>,
+    limits: InputLimits,
+) -> Result<Value> {
     let mut state = ExpansionState {
         include_stack: Vec::new(),
         included_files: 0,
@@ -117,11 +125,46 @@ fn expand_block_sequence(
                 expanded.extend(expand_include_block(block, current_dir, variables, state)?)
             }
             "repeat" => expanded.extend(expand_repeat_block(block, current_dir, variables, state)?),
+            "when" => expanded.extend(expand_when_block(block, current_dir, variables, state)?),
             _ => expanded.push(expand_value(block, variables)?),
         }
     }
 
     Ok(expanded)
+}
+
+fn expand_when_block(
+    block: Value,
+    current_dir: Option<&Path>,
+    variables: &Mapping,
+    state: &mut ExpansionState,
+) -> Result<Vec<Value>> {
+    let mut mapping = expect_mapping(block, "`when` block must be a mapping")?;
+    mapping.remove(string_key("type"));
+    let path = mapping
+        .remove(string_key("path"))
+        .and_then(|value| value.as_str().map(str::to_string))
+        .ok_or_else(|| DocxError::parse("`when` block requires a scalar `path` field"))?;
+    let actual = lookup_variable_value(variables, &path);
+    let selected = if let Some(expected) = mapping.remove(string_key("equals")) {
+        let expected = expand_value(expected, variables)?;
+        actual.is_some_and(|actual| actual == &expected)
+    } else {
+        actual.is_some_and(truthy)
+    };
+    let blocks = mapping
+        .remove(string_key("blocks"))
+        .ok_or_else(|| DocxError::parse("`when` block requires a `blocks` field"))?;
+    let otherwise = mapping
+        .remove(string_key("otherwise"))
+        .unwrap_or_else(|| Value::Sequence(Vec::new()));
+    if let Some(field) = mapping.keys().find_map(Value::as_str) {
+        return Err(DocxError::parse(format!(
+            "unknown `when` field `{field}`; supported fields are path, equals, blocks, and otherwise"
+        )));
+    }
+    let branch = if selected { blocks } else { otherwise };
+    expand_block_sequence(branch, current_dir, variables, state)
 }
 
 fn expand_include_block(
@@ -176,17 +219,60 @@ fn expand_include_block(
         )));
     }
     let content = read_include_with_limit(&canonical, state.limits.max_spec_bytes)?;
-    let root: Value = serde_yaml::from_str(&content).map_err(|error| {
-        DocxError::parse(format!(
-            "invalid included YAML fragment '{}': {error}",
-            canonical.display()
-        ))
-    })?;
+    let root = parse_include_value(&content, &canonical)?;
 
     state.include_stack.push(canonical.clone());
     let result = expand_include_root(root, canonical.parent(), variables, override_vars, state);
     state.include_stack.pop();
     result
+}
+
+fn parse_include_value(content: &str, path: &Path) -> Result<Value> {
+    let extension = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("yaml")
+        .to_ascii_lowercase();
+    match extension.as_str() {
+        "yaml" | "yml" | "" => serde_yaml::from_str(content).map_err(|error| {
+            DocxError::parse(format!(
+                "invalid included YAML fragment '{}': {error}",
+                path.display()
+            ))
+        }),
+        "json" => {
+            let value: serde_json::Value = serde_json::from_str(content).map_err(|error| {
+                DocxError::parse(format!(
+                    "invalid included JSON fragment '{}': {error}",
+                    path.display()
+                ))
+            })?;
+            serde_yaml::to_value(value).map_err(|error| {
+                DocxError::parse(format!(
+                    "failed to normalize included JSON fragment '{}': {error}",
+                    path.display()
+                ))
+            })
+        }
+        "toml" => {
+            let value: toml::Value = toml::from_str(content).map_err(|error| {
+                DocxError::parse(format!(
+                    "invalid included TOML fragment '{}': {error}",
+                    path.display()
+                ))
+            })?;
+            serde_yaml::to_value(value).map_err(|error| {
+                DocxError::parse(format!(
+                    "failed to normalize included TOML fragment '{}': {error}",
+                    path.display()
+                ))
+            })
+        }
+        other => Err(DocxError::parse(format!(
+            "unsupported included fragment extension '{other}' at '{}'",
+            path.display()
+        ))),
+    }
 }
 
 fn read_include_with_limit(path: &Path, limit: u64) -> Result<String> {
@@ -368,15 +454,22 @@ fn expand_value(value: Value, variables: &Mapping) -> Result<Value> {
 }
 
 fn interpolate_string_value(text: &str, variables: &Mapping) -> Result<Value> {
-    if let Some(path) = exact_placeholder(text) {
-        let value = lookup_variable_value(variables, path).ok_or_else(|| {
-            DocxError::parse(format!("unknown variable '{path}' in YAML document spec"))
-        })?;
-        return Ok(value.clone());
+    const ESCAPED_OPEN: &str = "\u{e000}";
+    const ESCAPED_CLOSE: &str = "\u{e001}";
+    let escaped = text
+        .replace("{{{{", ESCAPED_OPEN)
+        .replace("}}}}", ESCAPED_CLOSE);
+    if let Some(expression) = exact_placeholder(&escaped) {
+        let value = evaluate_expression(variables, expression)?;
+        return Ok(restore_escaped_delimiters(
+            value,
+            ESCAPED_OPEN,
+            ESCAPED_CLOSE,
+        ));
     }
 
     let mut rendered = String::new();
-    let mut rest = text;
+    let mut rest = escaped.as_str();
     while let Some(start) = rest.find("{{") {
         rendered.push_str(&rest[..start]);
         let tail = &rest[start + 2..];
@@ -385,25 +478,107 @@ fn interpolate_string_value(text: &str, variables: &Mapping) -> Result<Value> {
                 "unterminated variable placeholder in '{text}'"
             )));
         };
-        let path = tail[..end].trim();
-        if path.is_empty() {
+        let expression = tail[..end].trim();
+        if expression.is_empty() {
             return Err(DocxError::parse(format!(
                 "empty variable placeholder in '{text}'"
             )));
         }
-        let value = lookup_variable_value(variables, path).ok_or_else(|| {
-            DocxError::parse(format!("unknown variable '{path}' in YAML document spec"))
-        })?;
-        let scalar = scalar_to_string(value).ok_or_else(|| {
+        let value = evaluate_expression(variables, expression)?;
+        let scalar = scalar_to_string(&value).ok_or_else(|| {
             DocxError::parse(format!(
-                "variable '{path}' resolves to a non-scalar value and cannot be interpolated into text"
+                "expression '{expression}' resolves to a non-scalar value and cannot be interpolated into text"
             ))
         })?;
         rendered.push_str(&scalar);
         rest = &tail[end + 2..];
     }
     rendered.push_str(rest);
-    Ok(Value::String(rendered))
+    Ok(Value::String(
+        rendered
+            .replace(ESCAPED_OPEN, "{{")
+            .replace(ESCAPED_CLOSE, "}}"),
+    ))
+}
+
+fn evaluate_expression(variables: &Mapping, expression: &str) -> Result<Value> {
+    let mut pieces = expression.split('|').map(str::trim);
+    let path = pieces.next().unwrap_or_default();
+    if path.is_empty() {
+        return Err(DocxError::parse("expression path cannot be empty"));
+    }
+    let mut value = lookup_variable_value(variables, path).cloned();
+    for filter in pieces {
+        value = apply_filter(value, filter)?;
+    }
+    value.ok_or_else(|| DocxError::parse(format!("unknown variable '{path}' in document spec")))
+}
+
+fn apply_filter(value: Option<Value>, filter: &str) -> Result<Option<Value>> {
+    if let Some(argument) = filter
+        .strip_prefix("default(")
+        .and_then(|value| value.strip_suffix(')'))
+    {
+        if value.as_ref().is_none_or(Value::is_null) {
+            return Ok(Some(Value::String(
+                argument.trim().trim_matches(['\'', '"']).to_string(),
+            )));
+        }
+        return Ok(value);
+    }
+
+    let transform: fn(&str) -> String = match filter {
+        "upper" => str::to_uppercase,
+        "lower" => str::to_lowercase,
+        "trim" => |value: &str| value.trim().to_string(),
+        "title" => title_case,
+        _ => {
+            return Err(DocxError::parse(format!(
+                "unknown document expression filter `{filter}`; use upper, lower, title, trim, or default(\"text\")"
+            )))
+        }
+    };
+    Ok(match value {
+        Some(Value::String(value)) => Some(Value::String(transform(&value))),
+        Some(Value::Number(value)) => Some(Value::String(transform(&value.to_string()))),
+        Some(Value::Bool(value)) => Some(Value::String(transform(&value.to_string()))),
+        other => other,
+    })
+}
+
+fn title_case(value: &str) -> String {
+    value
+        .split_whitespace()
+        .map(|word| {
+            let mut chars = word.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first
+                    .to_uppercase()
+                    .chain(chars.flat_map(char::to_lowercase))
+                    .collect()
+            })
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn restore_escaped_delimiters(value: Value, open: &str, close: &str) -> Value {
+    match value {
+        Value::String(value) => Value::String(value.replace(open, "{{").replace(close, "}}")),
+        other => other,
+    }
+}
+
+fn truthy(value: &Value) -> bool {
+    match value {
+        Value::Null => false,
+        Value::Bool(value) => *value,
+        Value::Number(value) => value.as_f64().is_some_and(|value| value != 0.0),
+        Value::String(value) => !value.is_empty(),
+        Value::Sequence(value) => !value.is_empty(),
+        Value::Mapping(value) => !value.is_empty(),
+        Value::Tagged(value) => truthy(&value.value),
+    }
 }
 
 fn exact_placeholder(text: &str) -> Option<&str> {
@@ -619,5 +794,50 @@ blocks:
         )
         .expect_err("include count ceiling must fail");
         assert!(error.to_string().contains("include count"));
+    }
+
+    #[test]
+    fn expands_declarative_conditions_filters_and_literal_delimiters() {
+        let yaml = r#"version: 1
+variables:
+  customer:
+    name: "  northstar LABS  "
+    active: true
+blocks:
+  - type: title
+    text: '{{ customer.name | trim | title }}'
+  - type: when
+    path: customer.active
+    equals: true
+    blocks:
+      - type: body
+        text: 'Literal {{{{customer.name}}}}; fallback {{ customer.owner | default("unassigned") | upper }}'
+    otherwise:
+      - type: body
+        text: hidden
+"#;
+        let expanded =
+            expand_yaml_document_spec_with_limits(yaml, None, crate::InputLimits::default())
+                .expect("expand deterministic expressions");
+        let spec: crate::spec::DocumentSpec =
+            serde_yaml::from_value(expanded).expect("deserialize expanded spec");
+        assert_eq!(spec.blocks.len(), 2);
+        assert_eq!(
+            serde_yaml::to_string(&spec.blocks).expect("serialize blocks"),
+            "- type: title\n  text: Northstar Labs\n- type: body\n  text: Literal {{customer.name}}; fallback UNASSIGNED\n"
+        );
+    }
+
+    #[test]
+    fn rejects_general_purpose_expression_syntax() {
+        let error = expand_yaml_document_spec_with_limits(
+            "variables:\n  value: one\nblocks:\n  - type: body\n    text: '{{ value | execute }}'\n",
+            None,
+            crate::InputLimits::default(),
+        )
+        .expect_err("unknown filter must fail");
+        assert!(error
+            .to_string()
+            .contains("unknown document expression filter"));
     }
 }

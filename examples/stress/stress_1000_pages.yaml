@@ -1,3 +1,4 @@
+version: 1
 output_name: stress-1000-pages
 blocks:
 - type: title

@@ -30,6 +30,8 @@ mod package_validate;
 mod paragraph;
 pub mod parity;
 mod run;
+pub mod schema;
+mod source;
 pub mod spec;
 mod spec_expand;
 pub mod studio;
@@ -52,6 +54,8 @@ pub use package_validate::{
 };
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 pub use run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
+pub use schema::{document_spec_schema, document_spec_schema_pretty, DOCUMENT_SPEC_SCHEMA_ID};
+pub use source::{attach_source_spans, attach_source_spans_from_str};
 pub use style::{
     ParagraphStyle, ParagraphStyleProperties, RunStyle, RunStyleProperties, Stylesheet, TableStyle,
     TableStyleProperties,
@@ -65,7 +69,7 @@ pub use template::{
     TemplatePlaceholder, TemplateRenderReport, TEMPLATE_SYNTAX_VERSION,
 };
 pub use validate::{
-    validate_config, validate_spec, validate_spec_with_config, ValidationIssue, ValidationReport,
-    ValidationSeverity,
+    validate_config, validate_spec, validate_spec_with_config, SourceSpan, ValidationIssue,
+    ValidationReport, ValidationSeverity,
 };
 pub use visual::{Visual, VisualFormat, VisualKind, VisualSizing, VisualSource};

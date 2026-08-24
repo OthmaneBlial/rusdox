@@ -1,3 +1,4 @@
+version: 1
 output_name: dual-output-contract
 metadata:
   title: RusDox dual-output contract

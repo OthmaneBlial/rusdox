@@ -35,6 +35,7 @@ That creates a starter YAML document.
 Example:
 
 ```yaml
+version: 1
 output_name: client-brief
 blocks:
   - type: title
