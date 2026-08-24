@@ -1,0 +1,9 @@
+*.docx binary
+*.pdf binary
+*.png binary
+
+# Signed registry assets must retain byte-identical hashes on every checkout.
+registry/*.json text eol=lf
+templates/**/*.json text eol=lf
+template-evidence/**/*.json text eol=lf
+template-evidence/**/*.html text eol=lf

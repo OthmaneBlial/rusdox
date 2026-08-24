@@ -71,6 +71,12 @@ DOCX/PDF files stay on the ephemeral runner and report upload can be disabled
 for confidential workloads. Read the [GitHub Action contract](docs/github-action.md)
 and copy the [workflow recipes](examples/github-actions/).
 
+For application integrations, use the object-safe Rust `Renderer` boundary or
+the same versioned JSON request over `rusdox serve stdio`. Official executable
+examples cover [Node, Python, Go, and CI](examples/integrations/) without four
+premature SDKs. A tiny opt-in HTTP adapter binds loopback only and reuses the
+identical request contract; see the [integration protocol](docs/integrations.md).
+
 ## Schema-first authoring
 
 Every current spec declares version 1. Generate the same JSON Schema used by

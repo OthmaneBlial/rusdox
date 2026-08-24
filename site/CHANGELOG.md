@@ -22,7 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A dated WASM feasibility spike and explicit browser-rendering capability boundary.
 - A `rusdox dev` feedback loop with a loopback-only PDF/status dashboard, debounced input/config/include/asset watching, last-success preservation, per-stage timings, JSON Lines events, browser opening, and quiet bounded runs.
 - A signed curated template registry with hash-verified `template list`, `search`, `add`, and `update` commands; seven discovery categories; contributor credit; accessibility metadata; a featured monthly template; and pull-request preview artifacts.
-- A reusable source-pinned GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
+- A reusable source-built GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
+- An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
 
 ### Changed
 
@@ -35,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Script-mode CLI tests now share a Cargo target cache and use unique package names, preventing multi-gigabyte temporary build accumulation and binary collisions.
 - DOCX, PDF, and spec writes now preserve the previous valid destination when a render/write is interrupted, including atomic replacement on Windows instead of deleting the old file first.
+- Signed registry text assets retain LF bytes on every checkout, and local registry fixtures hash the checked-out bytes so Windows CRLF policy cannot create false integrity failures.
 
 ## [0.1.1] - 2026-08-23
 

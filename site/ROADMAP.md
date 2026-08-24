@@ -327,11 +327,13 @@ Section evidence: the root `action.yml` is a source-built composite action that 
 
 ### Integration surfaces
 
-- [ ] Stabilize a renderer boundary that can support Rust embedding, WASM, and a local stdin/stdout JSON protocol.
-- [ ] Add a tiny opt-in local HTTP service only after the core protocol is stable.
-- [ ] Provide official examples for calling the binary from Node, Python, Go, and CI without maintaining four premature native SDKs.
-- [ ] Evaluate a Node/WASM package based on demonstrated demand and browser feasibility.
-- [ ] Add Markdown/rich-text ingestion only after parity behavior is defined for each supported construct.
+- [x] Stabilize a renderer boundary that can support Rust embedding, WASM, and a local stdin/stdout JSON protocol.
+- [x] Add a tiny opt-in local HTTP service only after the core protocol is stable.
+- [x] Provide official examples for calling the binary from Node, Python, Go, and CI without maintaining four premature native SDKs.
+- [x] Evaluate a Node/WASM package based on demonstrated demand and browser feasibility.
+- [x] Add Markdown/rich-text ingestion only after parity behavior is defined for each supported construct.
+
+Section evidence: public `Renderer`/`NativeRenderer` types accept path-backed or self-contained YAML/JSON/TOML sources and return DOCX plus optional PDF bytes in memory, leaving durable writes to adapters. Protocol v1 maps that boundary to one request/response JSON contract with IDs, diagnostics, timings, atomic output paths, byte counts, and SHA-256. `rusdox serve stdio` reserves stdout for newline-delimited responses; the later HTTP adapter reuses the exact request at `POST /v1/request`, binds only `127.0.0.1`, disables CORS, sets defensive response headers, caps headers/JSON, and confines relative outputs beneath a fixed root. Library and CLI tests cover inline rendering, validation source spans, version rejection, path-escape rejection, real stdio DOCX/PDF output, and real loopback HTTP validation. Dependency-free Node, Python, Go, and shell/CI examples execute as contract tests. A dated demand check found no Node/npm/WASM request, and the browser feasibility blockers remain, so no misleading package ships; the inline source and object-safe trait preserve a future path. Markdown also remains deliberately unimplemented after publishing an explicit construct-by-construct DOCX/PDF parity gate—raw HTML, remote assets, scripts, and CSS are out of scope rather than ambiguously interpreted.
 
 ### Contributor experience
 

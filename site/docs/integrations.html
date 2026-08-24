@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Integration protocol | RusDox Documentation</title>
+    <meta name="description" content="Embed the renderer or call one stable local JSON protocol from Node, Python, Go, CI, and loopback HTTP." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/integrations.html" />
+    <meta property="og:title" content="Integration protocol | RusDox" />
+    <meta property="og:description" content="Embed the renderer or call one stable local JSON protocol from Node, Python, Go, CI, and loopback HTTP." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/integrations.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Integration protocol","description":"Embed the renderer or call one stable local JSON protocol from Node, Python, Go, CI, and loopback HTTP.","url":"https://othmaneblial.github.io/rusdox/docs/integrations.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Integration</p>
+            <h1>Integration protocol</h1>
+            <p class="lede">Embed the renderer or call one stable local JSON protocol from Node, Python, Go, CI, and loopback HTTP.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/integrations.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a class="is-active" aria-current="page" href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#one-request-one-response">One request, one response</a></li><li class="toc-level-2"><a href="#loopback-http">Loopback HTTP</a></li><li class="toc-level-2"><a href="#rust-embedding">Rust embedding</a></li><li class="toc-level-2"><a href="#node-python-go-and-ci">Node, Python, Go, and CI</a></li><li class="toc-level-2"><a href="#node-wasm-decision">Node/WASM decision</a></li><li class="toc-level-2"><a href="#markdown-and-rich-text">Markdown and rich text</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox exposes one versioned, local-first rendering boundary instead of four language-specific SDKs. Rust callers use the <code>Renderer</code> trait and <code>NativeRenderer</code>; processes use the same JSON v1 request over newline-delimited stdin/stdout or an explicitly started loopback HTTP service.</p>
+<h2 id="one-request-one-response">One request, one response</h2>
+<p>Start a bounded worker:</p>
+<pre><code class="language-bash">rusdox serve stdio --output-root target/rusdox-output --max-requests 1</code></pre>
+<p>Send one compact JSON object followed by a newline:</p>
+<pre><code class="language-json">{
+  &quot;protocol_version&quot;: 1,
+  &quot;request_id&quot;: &quot;invoice-42&quot;,
+  &quot;operation&quot;: &quot;render&quot;,
+  &quot;source&quot;: {
+    &quot;kind&quot;: &quot;inline&quot;,
+    &quot;format&quot;: &quot;yaml&quot;,
+    &quot;content&quot;: &quot;version: 1\noutput_name: invoice\nblocks:\n  - type: body\n    text: Paid\n&quot;
+  },
+  &quot;output&quot;: {
+    &quot;directory&quot;: &quot;invoices&quot;,
+    &quot;name&quot;: &quot;invoice-42&quot;,
+    &quot;pdf&quot;: true
+  }
+}</code></pre>
+<p>The response is one JSON line with the same <code>request_id</code>, <code>ok</code>, diagnostics, per-stage timings, and each artifact&#39;s absolute path, byte count, and SHA-256. <code>validate</code> uses the same source object but never writes files and does not require <code>output</code>.</p>
+<p><code>source.kind</code> can be <code>inline</code> with <code>yaml</code>, <code>json</code>, or <code>toml</code>, or <code>path</code> with a local spec path. Inline content is the transport-neutral/WASM-ready boundary; path sources preserve includes and relative asset resolution for local tools. Unknown fields, unknown versions, oversized requests, unsafe output names, and output paths containing absolute roots or <code>..</code> are rejected explicitly.</p>
+<h2 id="loopback-http">Loopback HTTP</h2>
+<p>Start the opt-in service only when a local tool cannot manage a child process:</p>
+<pre><code class="language-bash">rusdox serve http --port 4175 --output-root target/rusdox-output
+curl -fsS http://127.0.0.1:4175/health
+curl -fsS -H &#39;Content-Type: application/json&#39; \
+  --data-binary @request.json \
+  http://127.0.0.1:4175/v1/request</code></pre>
+<p>The server always binds <code>127.0.0.1</code>, has no CORS permission, reads at most 16 KiB of headers and 2 MiB of JSON, returns <code>no-store</code> and <code>nosniff</code> headers, and processes requests sequentially. It has no authentication and is deliberately not a hosted, LAN, daemon, or multi-tenant API. Use stdin/stdout when possible.</p>
+<h2 id="rust-embedding">Rust embedding</h2>
+<p>The public object-safe boundary is independent of either transport:</p>
+<pre><code class="language-rust">use rusdox::config::RusdoxConfig;
+use rusdox::{NativeRenderer, RenderRequest, RenderSource, Renderer, SpecFormat,
+    RENDERER_API_VERSION};
+
+let renderer = NativeRenderer::new(RusdoxConfig::default());
+let output = renderer.render(&amp;RenderRequest {
+    renderer_api_version: RENDERER_API_VERSION,
+    source: RenderSource::Inline {
+        format: SpecFormat::Yaml,
+        content: &quot;version: 1\nblocks: []\n&quot;.into(),
+    },
+    emit_pdf: true,
+})?;
+assert!(output.docx.starts_with(b&quot;PK&quot;));
+# Ok::&lt;(), rusdox::DocxError&gt;(())</code></pre>
+<p>The result keeps DOCX and optional PDF bytes in memory. Durable caller-visible artifact writes belong to the protocol adapter, which lets a future WASM implementation reuse request semantics without pretending the current native font/PDF stack or its internal temporary path already runs in browsers.</p>
+<h2 id="node-python-go-and-ci">Node, Python, Go, and CI</h2>
+<p>The executable examples use only each language&#39;s process standard library:</p>
+<ul><li><a href="../examples/integrations/node.mjs"><code>node.mjs</code></a></li><li><a href="../examples/integrations/python.py"><code>python.py</code></a></li><li><a href="../examples/integrations/go/main.go"><code>go/main.go</code></a></li><li><a href="../examples/integrations/ci.sh"><code>ci.sh</code></a></li></ul>
+<p>Run all available examples against the current debug binary:</p>
+<pre><code class="language-bash">node scripts/test_integrations.mjs</code></pre>
+<p>They are contract tests, not SDK scaffolds. Keeping the JSON boundary small avoids version skew across four wrappers while demand is still forming.</p>
+<h2 id="node-wasm-decision">Node/WASM decision</h2>
+<p>The dated browser feasibility spike already shows that the current renderer depends on filesystem, native font discovery, rasterization, and PDF paths. A 2026-08-24 check of public issues and Discussions found no Node package, npm, WASM, or WebAssembly request. RusDox therefore ships no package that would expose partial or misleading browser behavior. The new inline <code>RenderSource</code> and object-safe <code>Renderer</code> trait remove protocol redesign as a future blocker; a package still requires demand plus passing browser font/image/PDF fixtures.</p>
+<h2 id="markdown-and-rich-text">Markdown and rich text</h2>
+<p>RusDox does not silently reinterpret Markdown today. Before ingestion can ship, each admitted construct must have defined DOCX/PDF semantics and parity checks: headings map to named heading styles; paragraphs preserve hard/soft break rules; emphasis maps to bold/italic runs; links remain interactive in both outputs; ordered/unordered lists use semantic numbering; code keeps whitespace and font policy; tables define alignment, wrapping, and page splitting; images require alt text, sizing, and bounded local resources. Raw HTML, scripts, remote images, and arbitrary CSS remain out of scope. This contract is the implementation gate, not a claim that Markdown ingestion already exists.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="github-action.html"><span>Previous</span><strong>GitHub Action</strong></a>
+    <a class="docs-pager-next" href="cli.html"><span>Next</span><strong>CLI reference</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

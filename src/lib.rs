@@ -29,6 +29,8 @@ mod metadata;
 mod package_validate;
 mod paragraph;
 pub mod parity;
+pub mod protocol;
+pub mod renderer;
 mod run;
 pub mod schema;
 mod source;
@@ -53,6 +55,10 @@ pub use package_validate::{
     PackageValidationReport,
 };
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
+pub use renderer::{
+    NativeRenderer, RenderRequest, RenderSource, RenderedDocument, Renderer, RendererValidation,
+    SpecFormat, RENDERER_API_VERSION,
+};
 pub use run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
 pub use schema::{document_spec_schema, document_spec_schema_pretty, DOCUMENT_SPEC_SCHEMA_ID};
 pub use source::{attach_source_spans, attach_source_spans_from_str};

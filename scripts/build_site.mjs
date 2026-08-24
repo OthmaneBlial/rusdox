@@ -21,6 +21,7 @@ const pages = [
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
   ["docs/template-registry.md", "docs/template-registry.html", "Curated template registry", "Guide", "Discover, verify, install, update, and contribute signed Word templates without expanding the core crate.", "Examples"],
   ["docs/github-action.md", "docs/github-action.html", "GitHub Action", "Integration", "Validate specs, annotate pull-request lines, render outputs, and retain private parity evidence inside GitHub Actions.", "Trust & operations"],
+  ["docs/integrations.md", "docs/integrations.html", "Integration protocol", "Integration", "Embed the renderer or call one stable local JSON protocol from Node, Python, Go, CI, and loopback HTTP.", "Reference"],
   ["docs/cli.md", "docs/cli.html", "CLI reference", "Reference", "Render, validate, watch, benchmark, initialize, and configure documents.", "Reference"],
   ["docs/rust-api.md", "docs/rust-api.html", "Rust API", "Reference", "Choose between DocumentSpec, Studio, and the low-level typed document model.", "Reference"],
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
@@ -125,7 +126,10 @@ const sourceCopies = [
   "scripts/github_action.mjs",
   "scripts/github_action_comment.mjs",
   "scripts/test_github_action.mjs",
+  "scripts/test_integrations.mjs",
   ...walkFiles(path.join(root, "examples", "github-actions"))
+    .map((file) => normalize(path.relative(root, file))),
+  ...walkFiles(path.join(root, "examples", "integrations"))
     .map((file) => normalize(path.relative(root, file))),
 ];
 

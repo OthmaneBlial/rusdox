@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::{Read, Write};
+use std::io::{BufRead, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -14,6 +14,10 @@ use dialoguer::{Confirm, Input, Select};
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
 use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection, ParityReport};
+use rusdox::protocol::{
+    execute_protocol_request, protocol_failure, ProtocolRequest, ProtocolResponse,
+    MAX_PROTOCOL_REQUEST_BYTES, PROTOCOL_VERSION,
+};
 use rusdox::spec::DocumentSpec;
 use rusdox::spec::SPEC_VERSION;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
@@ -82,6 +86,8 @@ enum Commands {
     Watch(WatchArgs),
     /// Rebuild with a local PDF/status dashboard and structured feedback.
     Dev(DevArgs),
+    /// Run the stable local JSON protocol over stdin/stdout or loopback HTTP.
+    Serve(ServeArgs),
     /// Reproducibly measure one validation or rendering pipeline.
     Bench(BenchArgs),
     /// Inspect or render a Word-native DOCX template from JSON data.
@@ -430,6 +436,28 @@ struct DevArgs {
     /// Stop after this many build attempts, including the initial build.
     #[arg(long)]
     max_builds: Option<u32>,
+}
+
+#[derive(Debug, Args)]
+struct ServeArgs {
+    /// Explicit local transport.
+    #[arg(value_enum)]
+    transport: ServeTransport,
+    /// Fixed root beneath which render requests may write relative outputs.
+    #[arg(long, default_value = ".rusdox-service")]
+    output_root: PathBuf,
+    /// Loopback HTTP port. Use 0 to let the operating system choose.
+    #[arg(long, default_value_t = 0)]
+    port: u16,
+    /// Stop after a bounded number of non-empty requests (useful for jobs and tests).
+    #[arg(long)]
+    max_requests: Option<u32>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum ServeTransport {
+    Stdio,
+    Http,
 }
 
 #[derive(Debug, Args)]
@@ -828,6 +856,7 @@ fn run() -> Result<()> {
             Commands::Validate(args) => run_validate(args),
             Commands::Watch(args) => run_watch(args),
             Commands::Dev(args) => run_dev(args),
+            Commands::Serve(args) => run_serve(args),
             Commands::Bench(args) => run_bench(args),
             Commands::Template { command } => run_template_command(command),
             Commands::Verify(args) => run_verify(args),
@@ -1527,6 +1556,287 @@ fn resolve_dev_artifacts(
         ));
     }
     Ok(artifacts)
+}
+
+fn run_serve(args: ServeArgs) -> Result<()> {
+    match args.transport {
+        ServeTransport::Stdio => run_serve_stdio(&args),
+        ServeTransport::Http => run_serve_http(&args),
+    }
+}
+
+fn run_serve_stdio(args: &ServeArgs) -> Result<()> {
+    let stdin = std::io::stdin();
+    let mut reader = stdin.lock();
+    let stdout = std::io::stdout();
+    let mut writer = stdout.lock();
+    let mut handled = 0_u32;
+    while let Some((line, oversized)) = read_bounded_protocol_line(&mut reader)? {
+        if line.iter().all(u8::is_ascii_whitespace) && !oversized {
+            continue;
+        }
+        let response = if oversized {
+            protocol_failure(
+                "",
+                "request_too_large",
+                format!(
+                    "JSON request exceeds the {} byte limit",
+                    MAX_PROTOCOL_REQUEST_BYTES
+                ),
+            )
+        } else {
+            match serde_json::from_slice::<ProtocolRequest>(&line) {
+                Ok(request) => execute_protocol_request(request, &args.output_root),
+                Err(error) => protocol_failure("", "invalid_json", error.to_string()),
+            }
+        };
+        serde_json::to_writer(&mut writer, &response).map_err(|error| {
+            DocxError::Parse(format!("failed to serialize protocol response: {error}"))
+        })?;
+        writer.write_all(b"\n")?;
+        writer.flush()?;
+        handled += 1;
+        if args.max_requests.is_some_and(|maximum| handled >= maximum) {
+            break;
+        }
+    }
+    Ok(())
+}
+
+fn read_bounded_protocol_line<R: BufRead>(
+    reader: &mut R,
+) -> std::io::Result<Option<(Vec<u8>, bool)>> {
+    let mut line = Vec::new();
+    let mut oversized = false;
+    let mut saw_bytes = false;
+    loop {
+        let available = reader.fill_buf()?;
+        if available.is_empty() {
+            return if saw_bytes {
+                Ok(Some((line, oversized)))
+            } else {
+                Ok(None)
+            };
+        }
+        saw_bytes = true;
+        let consumed = available
+            .iter()
+            .position(|byte| *byte == b'\n')
+            .map_or(available.len(), |position| position + 1);
+        if !oversized {
+            let remaining = MAX_PROTOCOL_REQUEST_BYTES
+                .saturating_add(1)
+                .saturating_sub(line.len());
+            line.extend_from_slice(&available[..consumed.min(remaining)]);
+            oversized = line.len() > MAX_PROTOCOL_REQUEST_BYTES || consumed > remaining;
+        }
+        let ended = available[..consumed].ends_with(b"\n");
+        reader.consume(consumed);
+        if ended {
+            while matches!(line.last(), Some(b'\n' | b'\r')) {
+                line.pop();
+            }
+            return Ok(Some((line, oversized)));
+        }
+    }
+}
+
+fn run_serve_http(args: &ServeArgs) -> Result<()> {
+    let listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), args.port))?;
+    let address = listener.local_addr()?;
+    eprintln!(
+        "rusdox protocol v{PROTOCOL_VERSION} listening on http://127.0.0.1:{}/v1/request",
+        address.port()
+    );
+    for (index, incoming) in listener.incoming().enumerate() {
+        let mut stream = incoming?;
+        stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+        stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+        serve_protocol_http_request(&mut stream, &args.output_root)?;
+        if args
+            .max_requests
+            .is_some_and(|maximum| index + 1 >= maximum as usize)
+        {
+            break;
+        }
+    }
+    Ok(())
+}
+
+struct ProtocolHttpRequest {
+    method: String,
+    path: String,
+    content_type: Option<String>,
+    body: Vec<u8>,
+}
+
+fn serve_protocol_http_request(stream: &mut TcpStream, output_root: &Path) -> Result<()> {
+    let request = match read_protocol_http_request(stream) {
+        Ok(request) => request,
+        Err(error) => {
+            return write_protocol_http_response(
+                stream,
+                "400 Bad Request",
+                &protocol_failure("", "invalid_http", error.to_string()),
+            );
+        }
+    };
+    if request.method == "GET" && request.path == "/health" {
+        let body = serde_json::to_vec(&serde_json::json!({
+            "protocol_version": PROTOCOL_VERSION,
+            "status": "ok",
+            "transport": "loopback_http",
+        }))
+        .map_err(|error| {
+            DocxError::Parse(format!("failed to serialize health response: {error}"))
+        })?;
+        return write_http_response(stream, "200 OK", "application/json; charset=utf-8", &body);
+    }
+    if request.method != "POST" || request.path != "/v1/request" {
+        return write_protocol_http_response(
+            stream,
+            "404 Not Found",
+            &protocol_failure("", "not_found", "use POST /v1/request or GET /health"),
+        );
+    }
+    if !request
+        .content_type
+        .as_deref()
+        .is_some_and(|value| value.to_ascii_lowercase().starts_with("application/json"))
+    {
+        return write_protocol_http_response(
+            stream,
+            "415 Unsupported Media Type",
+            &protocol_failure(
+                "",
+                "unsupported_media_type",
+                "Content-Type must be application/json",
+            ),
+        );
+    }
+    let response = match serde_json::from_slice::<ProtocolRequest>(&request.body) {
+        Ok(request) => execute_protocol_request(request, output_root),
+        Err(error) => protocol_failure("", "invalid_json", error.to_string()),
+    };
+    let status = if response.ok {
+        "200 OK"
+    } else if response.error.as_ref().is_some_and(|error| {
+        matches!(
+            error.code.as_str(),
+            "validation_failed" | "render_failed" | "write_failed"
+        )
+    }) {
+        "422 Unprocessable Content"
+    } else {
+        "400 Bad Request"
+    };
+    write_protocol_http_response(stream, status, &response)
+}
+
+fn read_protocol_http_request(stream: &mut TcpStream) -> Result<ProtocolHttpRequest> {
+    const MAX_HEADERS: usize = 16 * 1024;
+    let mut bytes = Vec::with_capacity(8192);
+    let mut chunk = [0_u8; 8192];
+    let (header_end, content_length) = loop {
+        let read = stream.read(&mut chunk)?;
+        if read == 0 {
+            return Err(DocxError::Parse("incomplete HTTP request".to_string()));
+        }
+        bytes.extend_from_slice(&chunk[..read]);
+        if bytes.len() > MAX_HEADERS + MAX_PROTOCOL_REQUEST_BYTES {
+            return Err(DocxError::ResourceLimit(format!(
+                "HTTP request exceeds {} bytes",
+                MAX_HEADERS + MAX_PROTOCOL_REQUEST_BYTES
+            )));
+        }
+        if let Some(position) = bytes.windows(4).position(|window| window == b"\r\n\r\n") {
+            let header_end = position + 4;
+            if header_end > MAX_HEADERS {
+                return Err(DocxError::ResourceLimit(
+                    "HTTP headers exceed 16384 bytes".to_string(),
+                ));
+            }
+            let headers = std::str::from_utf8(&bytes[..position])
+                .map_err(|error| DocxError::Parse(format!("invalid HTTP headers: {error}")))?;
+            let content_length = headers
+                .lines()
+                .skip(1)
+                .find_map(|line| {
+                    line.split_once(':').and_then(|(name, value)| {
+                        name.trim()
+                            .eq_ignore_ascii_case("content-length")
+                            .then(|| value.trim())
+                    })
+                })
+                .map_or(Ok(0_usize), |value| {
+                    value.parse::<usize>().map_err(|error| {
+                        DocxError::Parse(format!("invalid Content-Length: {error}"))
+                    })
+                })?;
+            if content_length > MAX_PROTOCOL_REQUEST_BYTES {
+                return Err(DocxError::ResourceLimit(format!(
+                    "JSON request exceeds the {} byte limit",
+                    MAX_PROTOCOL_REQUEST_BYTES
+                )));
+            }
+            break (header_end, content_length);
+        }
+    };
+    while bytes.len() < header_end + content_length {
+        let read = stream.read(&mut chunk)?;
+        if read == 0 {
+            return Err(DocxError::Parse("incomplete HTTP body".to_string()));
+        }
+        bytes.extend_from_slice(&chunk[..read]);
+        if bytes.len() > header_end + MAX_PROTOCOL_REQUEST_BYTES {
+            return Err(DocxError::ResourceLimit(format!(
+                "JSON request exceeds the {} byte limit",
+                MAX_PROTOCOL_REQUEST_BYTES
+            )));
+        }
+    }
+    let header_text = std::str::from_utf8(&bytes[..header_end - 4])
+        .map_err(|error| DocxError::Parse(format!("invalid HTTP headers: {error}")))?;
+    let mut lines = header_text.lines();
+    let request_line = lines
+        .next()
+        .ok_or_else(|| DocxError::Parse("missing HTTP request line".to_string()))?;
+    let mut request_parts = request_line.split_whitespace();
+    let method = request_parts.next().unwrap_or_default().to_string();
+    let path = request_parts
+        .next()
+        .unwrap_or_default()
+        .split('?')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    if request_parts.next().is_none() || method.is_empty() || path.is_empty() {
+        return Err(DocxError::Parse("invalid HTTP request line".to_string()));
+    }
+    let content_type = lines.find_map(|line| {
+        line.split_once(':').and_then(|(name, value)| {
+            name.trim()
+                .eq_ignore_ascii_case("content-type")
+                .then(|| value.trim().to_string())
+        })
+    });
+    Ok(ProtocolHttpRequest {
+        method,
+        path,
+        content_type,
+        body: bytes[header_end..header_end + content_length].to_vec(),
+    })
+}
+
+fn write_protocol_http_response(
+    stream: &mut TcpStream,
+    status: &str,
+    response: &ProtocolResponse,
+) -> Result<()> {
+    let body = serde_json::to_vec(response).map_err(|error| {
+        DocxError::Parse(format!("failed to serialize protocol response: {error}"))
+    })?;
+    write_http_response(stream, status, "application/json; charset=utf-8", &body)
 }
 
 fn start_dev_server(port: u16) -> Result<DevServer> {

@@ -149,6 +149,26 @@ rusdox watch examples --with-pdf
 
 RusDox watches the spec input plus the active config path. Without `--config`, it tracks `./rusdox.toml` and the user config fallback automatically.
 
+## Local integration protocol
+
+Start the stable newline-delimited JSON worker. Stdout contains responses only:
+
+```bash
+rusdox serve stdio --output-root target/rusdox-output
+```
+
+For a local application that cannot own a child process, opt into the same
+contract over HTTP:
+
+```bash
+rusdox serve http --port 4175 --output-root target/rusdox-output
+```
+
+HTTP always binds to `127.0.0.1`; requests go to `POST /v1/request`, and
+`GET /health` exposes only transport status. `--max-requests` bounds either
+transport for jobs and tests. See [Integration protocol](integrations.md) for
+the request schema, limits, output confinement, and executable language examples.
+
 ## Benchmarking
 
 Benchmark one spec:

@@ -21,6 +21,7 @@ For most users:
 For advanced users:
 
 - use `spec::DocumentSpec` from Rust when you still want a data-shaped document model
+- use the object-safe `Renderer` boundary when an integration needs validated in-memory DOCX/PDF bytes
 - use `studio::Studio` helpers when you want config-driven paragraphs and tables
 - use `Document`, `Paragraph`, `Run`, `Table`, and `Visual` directly when you need full control
 
@@ -92,6 +93,39 @@ This is the best Rust path when:
 - you still want the document to stay easy to reason about
 
 `DocumentSpec` also exposes `metadata` and `styles`, so document properties and reusable named styles can be defined once and reused consistently.
+
+## Stable Renderer Boundary
+
+`NativeRenderer` accepts the same versioned request used by local JSON
+integrations while keeping artifact bytes in memory:
+
+```rust
+use rusdox::config::RusdoxConfig;
+use rusdox::{
+    NativeRenderer, RenderRequest, RenderSource, Renderer, SpecFormat,
+    RENDERER_API_VERSION,
+};
+
+let renderer = NativeRenderer::new(RusdoxConfig::default());
+let output = renderer.render(&RenderRequest {
+    renderer_api_version: RENDERER_API_VERSION,
+    source: RenderSource::Inline {
+        format: SpecFormat::Yaml,
+        content: "version: 1\nblocks: []\n".into(),
+    },
+    emit_pdf: true,
+})?;
+
+assert!(output.docx.starts_with(b"PK"));
+assert!(output.pdf.as_deref().is_some_and(|pdf| pdf.starts_with(b"%PDF")));
+# Ok::<(), rusdox::DocxError>(())
+```
+
+Use `RenderSource::Path` when includes or assets should resolve relative to a
+local file. Use inline YAML/JSON/TOML for a filesystem-independent boundary.
+`validate` returns structured diagnostics and source spans without rendering.
+The [integration protocol](integrations.md) adapts this interface to
+stdin/stdout and loopback HTTP without changing request semantics.
 
 ```rust
 use rusdox::spec::{body, section, title, DocumentSpec};

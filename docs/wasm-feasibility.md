@@ -31,3 +31,18 @@ A future full browser renderer must satisfy all of these gates:
 6. Prove through a network test that author content is never uploaded.
 
 Until those gates pass, the CLI remains the source of truth for edited DOCX/PDF output.
+
+## Integration update
+
+The transport redesign gate is now smaller: public `Renderer` and
+`NativeRenderer` APIs accept an inline YAML/JSON/TOML `RenderSource` and return
+DOCX plus optional PDF bytes, and JSON protocol v1 carries the same source over
+stdin/stdout. The native PDF implementation still uses a temporary filesystem
+path internally, so this does not satisfy the browser runtime gate or change the
+playground's claim.
+
+A 2026-08-24 search of public RusDox issues and Discussions found no Node, npm,
+WASM, or WebAssembly request. With no demonstrated package demand and font,
+image, memory, and cross-browser fixtures still open, an npm/WASM package would
+currently expose a partial product. The package decision remains “not yet”; the
+new boundary avoids locking a future implementation to CLI-specific JSON.

@@ -1,5 +1,6 @@
 use std::fs;
-use std::io::{Cursor, Read};
+use std::io::{BufRead, BufReader, Cursor, Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -26,6 +27,7 @@ fn spawn_cli(args: &[&str], cwd: &Path) -> std::process::Child {
     Command::new(rusdox_bin())
         .args(args)
         .current_dir(cwd)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -79,8 +81,17 @@ fn create_signed_local_registry(directory: &Path) -> (std::path::PathBuf, String
                 .expect("asset URL")
                 .to_string();
             let relative = url.strip_prefix(&base_url).expect("same-origin asset");
+            let local_path = repo.join(relative);
+            let local_sha256 = format!(
+                "{:x}",
+                Sha256::digest(fs::read(&local_path).expect("local registry asset"))
+            );
             *entry.pointer_mut(pointer).expect("asset pointer") =
-                serde_json::Value::String(repo.join(relative).display().to_string());
+                serde_json::Value::String(local_path.display().to_string());
+            let hash_pointer = pointer.replace("/url", "/sha256");
+            *entry
+                .pointer_mut(&hash_pointer)
+                .expect("asset hash pointer") = serde_json::Value::String(local_sha256);
         }
     }
     let index = serde_json::to_vec_pretty(&registry).expect("serialize registry");
@@ -1084,6 +1095,111 @@ fn template_registry_rejects_tampering_before_install() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("SHA-256 does not match"));
     assert!(!install_root.exists());
+}
+
+#[test]
+fn stdio_protocol_renders_one_bounded_json_request() {
+    let temp = tempdir().expect("temp dir");
+    let output_root = temp.path().join("service-output");
+    let mut child = spawn_cli(
+        &[
+            "serve",
+            "stdio",
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--max-requests",
+            "1",
+        ],
+        temp.path(),
+    );
+    let request = serde_json::json!({
+        "protocol_version": 1,
+        "request_id": "node-1",
+        "operation": "render",
+        "source": {
+            "kind": "inline",
+            "format": "yaml",
+            "content": "version: 1\noutput_name: protocol\nblocks:\n  - type: body\n    text: Hello protocol\n"
+        },
+        "output": { "directory": "node", "name": "hello", "pdf": true }
+    });
+    writeln!(
+        child.stdin.take().expect("stdin"),
+        "{}",
+        serde_json::to_string(&request).expect("request JSON")
+    )
+    .expect("request");
+    let output = child.wait_with_output().expect("protocol output");
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let response: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("response JSON");
+    assert_eq!(response["protocol_version"], 1);
+    assert_eq!(response["request_id"], "node-1");
+    assert_eq!(response["ok"], true);
+    assert_eq!(response["artifacts"].as_array().map(Vec::len), Some(2));
+    assert!(output_root.join("node/hello.docx").is_file());
+    assert!(output_root.join("node/hello.pdf").is_file());
+}
+
+#[test]
+fn loopback_http_protocol_reuses_the_v1_request_contract() {
+    let temp = tempdir().expect("temp dir");
+    let output_root = temp.path().join("service-output");
+    let probe = TcpListener::bind("127.0.0.1:0").expect("reserve port");
+    let port = probe.local_addr().expect("address").port();
+    let port_string = port.to_string();
+    drop(probe);
+    let mut child = spawn_cli(
+        &[
+            "serve",
+            "http",
+            "--port",
+            &port_string,
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--max-requests",
+            "1",
+        ],
+        temp.path(),
+    );
+    let mut readiness = String::new();
+    BufReader::new(child.stderr.take().expect("stderr"))
+        .read_line(&mut readiness)
+        .expect("ready line");
+    assert!(readiness.contains("protocol v1 listening"));
+
+    let body = serde_json::to_vec(&serde_json::json!({
+        "protocol_version": 1,
+        "request_id": "http-1",
+        "operation": "validate",
+        "source": {
+            "kind": "inline",
+            "format": "yaml",
+            "content": "version: 1\noutput_name: protocol\nblocks:\n  - type: body\n    text: Hello HTTP\n"
+        }
+    }))
+    .expect("request JSON");
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect");
+    write!(
+        stream,
+        "POST /v1/request HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+        body.len()
+    )
+    .expect("headers");
+    stream.write_all(&body).expect("body");
+    let mut response = String::new();
+    stream.read_to_string(&mut response).expect("response");
+    assert!(response.starts_with("HTTP/1.1 200 OK"));
+    let json = response.split("\r\n\r\n").nth(1).expect("response body");
+    let parsed: serde_json::Value = serde_json::from_str(json).expect("response JSON");
+    assert_eq!(parsed["request_id"], "http-1");
+    assert_eq!(parsed["ok"], true);
+    assert!(parsed["artifacts"].as_array().is_some_and(Vec::is_empty));
+    assert!(child.wait().expect("server exit").success());
 }
 
 #[test]
