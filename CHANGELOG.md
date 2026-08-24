@@ -24,6 +24,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A signed curated template registry with hash-verified `template list`, `search`, `add`, and `update` commands; seven discovery categories; contributor credit; accessibility metadata; a featured monthly template; and pull-request preview artifacts.
 - A reusable source-built GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
 - An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
+- A contributor field guide with an end-to-end architecture map, ten fixture-backed starter tasks, isolated fixture preparation, visual-diff commands, contributor credit checks, and a published governance policy.
+
+### Contributors
+
+- Othmane Blial — maintainer and author of the current unreleased document engine, parity, distribution, integration, and contributor-experience work.
+- Dependabot — automated dependency update pull requests.
+
+No external human contribution has landed in this unreleased cycle yet. New
+contributors will be added here when a meaningful pull request is merged.
 
 ### Changed
 

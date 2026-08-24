@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "issues": [
+    {
+      "id": "protocol-inline-toml",
+      "title": "Test an inline TOML request through the stdio protocol",
+      "labels": ["good first issue", "help wanted", "rust"],
+      "fixture": "contributor-fixtures/protocol/inline-toml.json",
+      "why": "Protocol v1 promises inline TOML, while the CLI integration test currently exercises inline YAML.",
+      "acceptance": [
+        "Add one focused CLI or protocol test that sends the checked-in request unchanged.",
+        "Assert ok=true, the same request_id, and two non-empty hash-described artifacts.",
+        "Do not change the protocol schema or add a TOML dependency."
+      ]
+    },
+    {
+      "id": "protocol-docx-only",
+      "title": "Cover DOCX-only output in protocol v1",
+      "labels": ["good first issue", "help wanted", "rust"],
+      "fixture": "contributor-fixtures/protocol/docx-only.json",
+      "why": "The protocol supports pdf=false, but its CLI contract test currently requests both artifacts.",
+      "acceptance": [
+        "Send the checked-in request through rusdox serve stdio in a test.",
+        "Assert exactly one DOCX artifact and no PDF file.",
+        "Keep existing dual-output behavior unchanged."
+      ]
+    },
+    {
+      "id": "protocol-invalid-version",
+      "title": "Assert the protocol v1 unknown-version error contract",
+      "labels": ["good first issue", "help wanted", "rust"],
+      "fixture": "contributor-fixtures/protocol/invalid-version.json",
+      "why": "Unknown protocol versions must fail explicitly so integrations never guess future semantics.",
+      "acceptance": [
+        "Add a test using the fixture without rewriting its protocol_version.",
+        "Assert ok=false, error.code=invalid_request, and no output files.",
+        "Keep the process available for the next request when max-requests is greater than one."
+      ]
+    },
+    {
+      "id": "protocol-unsafe-output",
+      "title": "Add a regression test for unsafe protocol artifact names",
+      "labels": ["good first issue", "help wanted", "rust"],
+      "fixture": "contributor-fixtures/protocol/unsafe-output-name.json",
+      "why": "Output confinement also depends on rejecting separators and punctuation in artifact stems.",
+      "acceptance": [
+        "Exercise the checked-in request through the public protocol function or CLI.",
+        "Assert error.code=invalid_output and that no outside.docx file appears.",
+        "Do not weaken the existing ASCII safe-name rule."
+      ]
+    },
+    {
+      "id": "http-media-type",
+      "title": "Cover HTTP 415 for non-JSON protocol requests",
+      "labels": ["good first issue", "help wanted", "rust"],
+      "fixture": "contributor-fixtures/http/wrong-content-type.http",
+      "why": "The loopback adapter rejects non-JSON bodies, and that defensive response should remain executable evidence.",
+      "acceptance": [
+        "Add one bounded loopback test based on the raw request fixture.",
+        "Assert HTTP 415 and error.code=unsupported_media_type.",
+        "Do not add CORS or broaden the bind address."
+      ]
+    },
+    {
+      "id": "registry-empty-search",
+      "title": "Test an empty signed-registry search result in JSON mode",
+      "labels": ["good first issue", "help wanted", "template"],
+      "fixture": "contributor-fixtures/registry/no-match-query.txt",
+      "why": "Automation should receive a successful empty templates array instead of an error for a valid query with no matches.",
+      "acceptance": [
+        "Reuse the signed local-registry test helper and the query fixture.",
+        "Assert exit code 0, signed=true, and templates=[] in JSON output.",
+        "Do not make network requests."
+      ]
+    },
+    {
+      "id": "registry-category-search",
+      "title": "Cover category matching in signed template search",
+      "labels": ["good first issue", "help wanted", "template"],
+      "fixture": "contributor-fixtures/registry/operations-query.txt",
+      "why": "Category search is user-facing discovery behavior and deserves a small regression assertion.",
+      "acceptance": [
+        "Search the signed local registry using the fixture text.",
+        "Assert invoice and proposal are present and board-report is absent.",
+        "Keep ordering identical to the signed registry."
+      ]
+    },
+    {
+      "id": "minimal-json-example",
+      "title": "Add a minimal JSON authoring example",
+      "labels": ["good first issue", "help wanted", "docs"],
+      "fixture": "contributor-fixtures/spec/minimal.json",
+      "why": "The schema supports JSON, but the public examples folder is intentionally YAML-heavy and lacks a tiny copyable JSON entry.",
+      "acceptance": [
+        "Add the fixture as a clearly named example without changing its content.",
+        "Document the render command and expected DOCX/PDF names in examples/README.md.",
+        "Run validate and verify successfully; do not add the file to the flagship gallery."
+      ]
+    },
+    {
+      "id": "minimal-toml-example",
+      "title": "Add a minimal TOML authoring example",
+      "labels": ["good first issue", "help wanted", "docs"],
+      "fixture": "contributor-fixtures/spec/minimal.toml",
+      "why": "A checked-in TOML example would make the existing parser support easier to discover without expanding the gallery.",
+      "acceptance": [
+        "Add the fixture as a clearly named example without changing its content.",
+        "Document validate and render commands in examples/README.md.",
+        "Assert both artifacts render; do not introduce format-specific semantics."
+      ]
+    },
+    {
+      "id": "powershell-integration",
+      "title": "Add a standard-library PowerShell protocol example",
+      "labels": ["good first issue", "help wanted", "docs"],
+      "fixture": "contributor-fixtures/integrations/powershell-request.json",
+      "why": "Windows users have installer coverage but no copyable stdio protocol example beside Node, Python, Go, and shell.",
+      "acceptance": [
+        "Add examples/integrations/powershell.ps1 using the checked-in request and no external module.",
+        "Check ok=true plus non-empty DOCX/PDF files under the supplied output root.",
+        "Run it from scripts/test_integrations.mjs only when pwsh is available and document the optional path."
+      ]
+    }
+  ]
+}

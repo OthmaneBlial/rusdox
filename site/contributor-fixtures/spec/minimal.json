@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "output_name": "minimal-json",
+  "blocks": [
+    { "type": "title", "text": "Minimal JSON" },
+    { "type": "body", "text": "The same versioned authoring contract in JSON." }
+  ]
+}

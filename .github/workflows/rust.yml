@@ -65,6 +65,9 @@ jobs:
           node scripts/build_template_registry.mjs --check
           node scripts/test_github_action.mjs
           node scripts/test_integrations.mjs
+          node scripts/starter_issues.mjs
+          node scripts/test_contributor_lab.mjs
+          node scripts/check_contributors.mjs
 
       - name: Verify crate package
         if: matrix.os == 'ubuntu-latest'

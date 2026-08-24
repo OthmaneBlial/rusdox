@@ -21,7 +21,10 @@ Explain the user or project problem this PR solves.
 - [ ] `cargo clippy --all-targets --all-features -- -D warnings`
 - [ ] `cargo test`
 - [ ] Regenerated examples if output behavior changed
+- [ ] Added semantic/visual parity evidence if output behavior changed
+- [ ] Included viewer, OS, version, fixture hash, and date for compatibility claims
 - [ ] Updated docs if YAML/config/CLI behavior changed
+- [ ] Ran `node scripts/check_contributors.mjs` or explained a pending credit update
 
 ## Notes
 

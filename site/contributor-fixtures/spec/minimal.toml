@@ -1,0 +1,10 @@
+version = 1
+output_name = "minimal-toml"
+
+[[blocks]]
+type = "title"
+text = "Minimal TOML"
+
+[[blocks]]
+type = "body"
+text = "The same versioned authoring contract in TOML."

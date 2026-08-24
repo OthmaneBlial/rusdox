@@ -1,0 +1,11 @@
+{
+  "protocol_version": 1,
+  "request_id": "starter-unsafe-output",
+  "operation": "render",
+  "source": {
+    "kind": "inline",
+    "format": "yaml",
+    "content": "version: 1\nblocks: []\n"
+  },
+  "output": { "directory": ".", "name": "../outside", "pdf": false }
+}

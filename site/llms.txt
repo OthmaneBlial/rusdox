@@ -28,6 +28,9 @@
 - [Roadmap](https://othmaneblial.github.io/rusdox/docs/roadmap.html): Follow the path to verified parity, Word templates, integrations, and v1.
 - [Changelog](https://othmaneblial.github.io/rusdox/docs/changelog.html): Review user-facing additions, changes, fixes, and migrations.
 - [Contributing](https://othmaneblial.github.io/rusdox/docs/contributing.html): Set up the repository and submit a focused contribution.
+- [Architecture](https://othmaneblial.github.io/rusdox/docs/architecture.html): Follow one typed document model from authoring and validation through DOCX, PDF, parity, and every adapter.
+- [Governance](https://othmaneblial.github.io/rusdox/docs/governance.html): Review the decision model, path to committer, release authority, and conflict policy.
+- [Contributors](https://othmaneblial.github.io/rusdox/docs/contributors.html): Meet the people credited by the actual Git history and learn how new contributions are recognized.
 - [Support](https://othmaneblial.github.io/rusdox/docs/support.html): Find the right place for questions, reproducible bugs, and security reports.
 - [Security policy](https://othmaneblial.github.io/rusdox/docs/security.html): Understand supported releases, reporting scope, and private disclosure.
 - [Code of conduct](https://othmaneblial.github.io/rusdox/docs/code-of-conduct.html): Behavior and enforcement standards for a healthy community.

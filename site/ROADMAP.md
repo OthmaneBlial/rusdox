@@ -337,12 +337,26 @@ Section evidence: public `Renderer`/`NativeRenderer` types accept path-backed or
 
 ### Contributor experience
 
-- [ ] Publish 10 genuinely small starter issues with fixtures and acceptance criteria.
-- [ ] Document the architecture from spec parsing through composition, DOCX packaging, PDF layout, validation, and CLI.
-- [ ] Add fixture-generation and visual-diff commands to the contributor workflow.
-- [ ] Recognize contributors in release notes and the site.
-- [ ] Use Discussions to collect real output examples and prioritize compatibility work.
-- [ ] Publish a short governance and maintainer policy before adding committers.
+- [x] Publish 10 genuinely small starter issues with fixtures and acceptance criteria.
+- [x] Document the architecture from spec parsing through composition, DOCX packaging, PDF layout, validation, and CLI.
+- [x] Add fixture-generation and visual-diff commands to the contributor workflow.
+- [x] Recognize contributors in release notes and the site.
+- [x] Use Discussions to collect real output examples and prioritize compatibility work.
+- [x] Publish a short governance and maintainer policy before adding committers.
+
+Section evidence: `.github/starter-issues.json` defines exactly ten idempotently
+published `good first issue` tasks, each bound to one immutable fixture, a user
+reason, and three acceptance criteria. `contributor_lab.mjs` lists and prepares
+isolated tasks and exposes the same `verify` visual-baseline path used by CI;
+contract tests prevent the queue or commands from drifting. The architecture
+map traces every input through validation, the typed model, OOXML packaging,
+native PDF layout, parity, and adapters, while the governance policy documents
+review, release, security, committer, inactivity, and conflict decisions before
+access expands. Git-derived contributor credit is checked in CI and rendered in
+the release notes and static site. Dedicated Show-and-tell and compatibility
+Discussions request only reproducible, non-confidential evidence. The final M3
+adoption gate remains honestly open until an external human contribution is
+actually merged and released.
 
 #### Exit gate
 

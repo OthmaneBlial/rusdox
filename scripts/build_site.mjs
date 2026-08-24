@@ -35,6 +35,9 @@ const pages = [
   ["ROADMAP.md", "docs/roadmap.html", "Roadmap", "Project", "Follow the path to verified parity, Word templates, integrations, and v1.", "Project"],
   ["CHANGELOG.md", "docs/changelog.html", "Changelog", "Project", "Review user-facing additions, changes, fixes, and migrations.", "Project"],
   ["CONTRIBUTING.md", "docs/contributing.html", "Contributing", "Community", "Set up the repository and submit a focused contribution.", "Community"],
+  ["docs/architecture.md", "docs/architecture.html", "Architecture", "Community", "Follow one typed document model from authoring and validation through DOCX, PDF, parity, and every adapter.", "Community"],
+  ["GOVERNANCE.md", "docs/governance.html", "Governance", "Community", "Review the decision model, path to committer, release authority, and conflict policy.", "Community"],
+  ["CONTRIBUTORS.md", "docs/contributors.html", "Contributors", "Community", "Meet the people credited by the actual Git history and learn how new contributions are recognized.", "Community"],
   ["SUPPORT.md", "docs/support.html", "Support", "Community", "Find the right place for questions, reproducible bugs, and security reports.", "Community"],
   ["SECURITY.md", "docs/security.html", "Security policy", "Community", "Understand supported releases, reporting scope, and private disclosure.", "Community"],
   ["CODE_OF_CONDUCT.md", "docs/code-of-conduct.html", "Code of conduct", "Community", "Behavior and enforcement standards for a healthy community.", "Community"],
@@ -105,6 +108,8 @@ const sourceCopies = [
   "ROADMAP.md",
   "CHANGELOG.md",
   "CONTRIBUTING.md",
+  "CONTRIBUTORS.md",
+  "GOVERNANCE.md",
   "SUPPORT.md",
   "SECURITY.md",
   "CODE_OF_CONDUCT.md",
@@ -127,6 +132,13 @@ const sourceCopies = [
   "scripts/github_action_comment.mjs",
   "scripts/test_github_action.mjs",
   "scripts/test_integrations.mjs",
+  "scripts/starter_issues.mjs",
+  "scripts/contributor_lab.mjs",
+  "scripts/check_contributors.mjs",
+  "scripts/test_contributor_lab.mjs",
+  ".github/starter-issues.json",
+  ...walkFiles(path.join(root, "contributor-fixtures"))
+    .map((file) => normalize(path.relative(root, file))),
   ...walkFiles(path.join(root, "examples", "github-actions"))
     .map((file) => normalize(path.relative(root, file))),
   ...walkFiles(path.join(root, "examples", "integrations"))

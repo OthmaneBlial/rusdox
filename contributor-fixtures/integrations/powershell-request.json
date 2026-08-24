@@ -1,0 +1,10 @@
+{
+  "protocol_version": 1,
+  "request_id": "powershell-example",
+  "operation": "render",
+  "source": {
+    "kind": "path",
+    "path": "examples/hello_world.yaml"
+  },
+  "output": { "directory": "powershell", "name": "powershell-report", "pdf": true }
+}

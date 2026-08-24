@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Governance | RusDox Documentation</title>
+    <meta name="description" content="Review the decision model, path to committer, release authority, and conflict policy." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/governance.html" />
+    <meta property="og:title" content="Governance | RusDox" />
+    <meta property="og:description" content="Review the decision model, path to committer, release authority, and conflict policy." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/governance.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Governance","description":"Review the decision model, path to committer, release authority, and conflict policy.","url":"https://othmaneblial.github.io/rusdox/docs/governance.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Community</p>
+            <h1>Governance</h1>
+            <p class="lede">Review the decision model, path to committer, release authority, and conflict policy.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/GOVERNANCE.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="architecture.html">Architecture</a></li><li><a class="is-active" aria-current="page" href="governance.html">Governance</a></li><li><a href="contributors.html">Contributors</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#decision-model">Decision model</a></li><li class="toc-level-2"><a href="#contribution-and-review">Contribution and review</a></li><li class="toc-level-2"><a href="#path-to-committer">Path to committer</a></li><li class="toc-level-2"><a href="#releases-and-security">Releases and security</a></li><li class="toc-level-2"><a href="#inactivity-removal-and-conflicts">Inactivity, removal, and conflicts</a></li><li class="toc-level-2"><a href="#policy-changes">Policy changes</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox is currently maintained by Othmane Blial. This policy is published before adding committers so access decisions remain predictable rather than social or ad hoc.</p>
+<h2 id="decision-model">Decision model</h2>
+<p>The maintainer is accountable for releases, security response, compatibility claims, repository settings, and final merge decisions. Product decisions favor the documented contracts: editable DOCX, native PDF, measurable parity, local-first integrations, bounded inputs, and honest evidence.</p>
+<p>Normal changes are discussed in issues or pull requests. Decisions that alter a stable spec, protocol, template syntax, security boundary, compatibility claim, or release process require a written rationale in the pull request and the corresponding documentation or migration note. Private vulnerability reports follow <code>SECURITY.md</code>, not public consensus.</p>
+<h2 id="contribution-and-review">Contribution and review</h2>
+<ul><li>Anyone may open an issue, Discussion, or pull request under the Code of Conduct.</li><li>Contributors retain authorship credit in Git history and release notes.</li><li>Pull requests should be small enough to review, include proportionate tests, and disclose generated artifacts or viewer evidence.</li><li>The author does not approve their own change when another active maintainer is available. Until then, CI evidence and an explicit self-review checklist are required.</li><li>Being declined on one proposal does not reduce standing or future access.</li></ul>
+<h2 id="path-to-committer">Path to committer</h2>
+<p>Commit access is never granted for star count, employment, sponsorship, or a single large contribution. A candidate should demonstrate, over multiple merged changes:</p>
+<ol><li>sound judgment across code, tests, documentation, and user impact;</li><li>respect for privacy, compatibility, accessibility, and scope boundaries;</li><li>constructive reviews of other contributors;</li><li>reliable follow-through on regressions they introduced;</li><li>understanding of the release and security policies.</li></ol>
+<p>The current maintainer proposes the role publicly in a governance issue. The candidate must accept, enable strong account security, and begin with scoped write access. Maintainer status is recorded in this file and <code>CODEOWNERS</code>.</p>
+<h2 id="releases-and-security">Releases and security</h2>
+<p>Only maintainers may publish crates, tags, GitHub Releases, Pages, or signed artifacts. Releases require green protected CI and the evidence listed in the release checklist. Credentials must be short-lived or platform-managed; secrets must not be committed, logged, or copied into issues.</p>
+<p>Security reports are acknowledged and handled according to <code>SECURITY.md</code>. Embargoed details remain limited to the smallest response group until a fix and coordinated disclosure are ready.</p>
+<h2 id="inactivity-removal-and-conflicts">Inactivity, removal, and conflicts</h2>
+<p>A maintainer may step down at any time. Access may be reduced after six months of inactivity following a private check-in, or removed immediately for a security risk or Code of Conduct enforcement. Removal does not erase authorship credit.</p>
+<p>Maintainers disclose material conflicts and recuse from decisions where they cannot be impartial. Governance disputes are documented in an issue; if there is only one maintainer, that maintainer records the final decision and rationale.</p>
+<h2 id="policy-changes">Policy changes</h2>
+<p>Changes to this policy use a normal pull request with at least seven days for community comment, except urgent security corrections. The changelog records material governance changes.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="architecture.html"><span>Previous</span><strong>Architecture</strong></a>
+    <a class="docs-pager-next" href="contributors.html"><span>Next</span><strong>Contributors</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

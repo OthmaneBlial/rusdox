@@ -1,0 +1,10 @@
+{
+  "protocol_version": 99,
+  "request_id": "starter-future",
+  "operation": "validate",
+  "source": {
+    "kind": "inline",
+    "format": "yaml",
+    "content": "version: 1\nblocks: []\n"
+  }
+}

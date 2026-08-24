@@ -1,0 +1,11 @@
+{
+  "protocol_version": 1,
+  "request_id": "starter-docx-only",
+  "operation": "render",
+  "source": {
+    "kind": "inline",
+    "format": "yaml",
+    "content": "version: 1\noutput_name: starter-docx\nblocks:\n  - type: body\n    text: DOCX only\n"
+  },
+  "output": { "directory": "docx", "name": "starter-docx", "pdf": false }
+}

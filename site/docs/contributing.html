@@ -48,7 +48,7 @@
         <div class="docs-static-layout">
           <aside class="docs-static-nav" aria-label="Documentation navigation">
     <p class="docs-nav-label">Field guide</p>
-    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a class="is-active" aria-current="page" href="contributing.html">Contributing</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a class="is-active" aria-current="page" href="contributing.html">Contributing</a></li><li><a href="architecture.html">Architecture</a></li><li><a href="governance.html">Governance</a></li><li><a href="contributors.html">Contributors</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
@@ -58,10 +58,13 @@
 <ul><li>author documents as YAML</li><li>render DOCX and PDF in pure Rust</li><li>keep the experience easy for normal users</li></ul>
 <h2 id="before-you-start">Before You Start</h2>
 <p>Read these first:</p>
-<ul><li><a href="project-overview.html">README.md</a></li><li><a href="../docs.html">docs/README.md</a></li><li><a href="yaml-guide.html">docs/yaml-guide.md</a></li><li><a href="rust-api.html">docs/rust-api.md</a></li></ul>
+<ul><li><a href="project-overview.html">README.md</a></li><li><a href="../docs.html">docs/README.md</a></li><li><a href="yaml-guide.html">docs/yaml-guide.md</a></li><li><a href="rust-api.html">docs/rust-api.md</a></li><li><a href="architecture.html">docs/architecture.md</a></li><li><a href="governance.html">GOVERNANCE.md</a></li></ul>
 <h2 id="best-first-contributions">Best First Contributions</h2>
 <p>Good contributions include:</p>
 <ul><li>new YAML document examples</li><li>docs improvements</li><li>bug fixes with regression tests</li><li>better config wizard wording</li><li>higher-quality output rendering</li><li>template gallery improvements</li></ul>
+<p>The maintained <a href="https://github.com/OthmaneBlial/rusdox/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22" target="_blank" rel="noreferrer"><code>good first issue</code></a> queue contains ten bounded tasks, each with a checked-in fixture and three acceptance criteria. List or prepare one without modifying the source fixture:</p>
+<pre><code class="language-bash">node scripts/contributor_lab.mjs list
+node scripts/contributor_lab.mjs prepare protocol-inline-toml</code></pre>
 <h2 id="before-opening-a-large-pr">Before Opening A Large PR</h2>
 <p>For substantial changes, open an issue first and explain:</p>
 <ul><li>the problem</li><li>the proposed solution</li><li>user-facing impact</li><li>whether it changes YAML, config, or rendering behavior</li></ul>
@@ -73,17 +76,23 @@ cargo test</code></pre>
 <p>If you touch visual assets or examples, also run:</p>
 <pre><code class="language-bash">cargo run -- examples
 ./scripts/generate_gallery_assets.sh</code></pre>
+<p>For a compatibility or rendering change, generate the normal parity bundle and compare it with a dated page baseline:</p>
+<pre><code class="language-bash">target/debug/rusdox verify examples/hello_world.yaml --output-root target/contributor-parity
+node scripts/contributor_lab.mjs visual-diff \
+  --spec examples/hello_world.yaml \
+  --baseline tests/golden/pages/linux-x86_64/hello-world</code></pre>
+<p>Use <code>--threshold</code> only when the pull request explains why a non-zero visual budget is justified. Template changes follow the fixture and evidence commands in <a href="template-registry.html">the registry guide</a>.</p>
 <h2 id="contribution-rules">Contribution Rules</h2>
 <ul><li>Keep the user-facing story YAML-first.</li><li>Do not add complexity unless it clearly improves authoring or output quality.</li><li>Prefer readable examples over clever abstractions.</li><li>Keep configuration centralized instead of scattering styling through examples.</li><li>Add or update tests when behavior changes.</li><li>Update docs when changing YAML, config, CLI, or output behavior.</li></ul>
 <h2 id="pull-request-checklist">Pull Request Checklist</h2>
-<ul><li>explain what changed and why</li><li>mention any user-visible behavior change</li><li>include tests or explain why tests were not needed</li><li>update docs/examples if relevant</li><li>keep the worktree clean and focused</li></ul>
+<ul><li>explain what changed and why</li><li>mention any user-visible behavior change</li><li>include tests or explain why tests were not needed</li><li>update docs/examples if relevant</li><li>keep the worktree clean and focused</li><li>include parity or viewer evidence when output behavior changes</li><li>confirm that contributor credit remains current with <code>node scripts/check_contributors.mjs</code></li></ul>
 <h2 id="areas-that-matter-most">Areas That Matter Most</h2>
 <ul><li>YAML authoring experience</li><li>output quality</li><li>speed</li><li>cross-platform reliability</li><li>docs clarity</li><li>template usefulness</li></ul>
 <h2 id="questions">Questions</h2>
-<p>If you are not sure where to start, read <a href="support.html">SUPPORT.md</a>.</p></div>
+<p>If you are not sure where to start, read <a href="support.html">SUPPORT.md</a>. Accepted contributors are credited in <a href="contributors.html">CONTRIBUTORS.md</a> and the release notes for their merged change.</p></div>
             <nav class="docs-pager" aria-label="Documentation pagination">
     <a href="changelog.html"><span>Previous</span><strong>Changelog</strong></a>
-    <a class="docs-pager-next" href="support.html"><span>Next</span><strong>Support</strong></a>
+    <a class="docs-pager-next" href="architecture.html"><span>Next</span><strong>Architecture</strong></a>
   </nav>
           </article>
         </div>

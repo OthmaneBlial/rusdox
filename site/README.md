@@ -77,6 +77,22 @@ examples cover [Node, Python, Go, and CI](examples/integrations/) without four
 premature SDKs. A tiny opt-in HTTP adapter binds loopback only and reuses the
 identical request contract; see the [integration protocol](docs/integrations.md).
 
+## Make a first contribution without learning OOXML
+
+Ten maintained starter tasks each have one checked-in fixture, a narrow scope,
+and three acceptance criteria. Prepare an isolated work area with:
+
+```bash
+node scripts/contributor_lab.mjs list
+node scripts/contributor_lab.mjs prepare protocol-inline-toml
+```
+
+Start from the [`good first issue` queue](https://github.com/OthmaneBlial/rusdox/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),
+read the [architecture map](docs/architecture.md) and [contribution guide](CONTRIBUTING.md),
+then use the contributor lab for parity and visual diffs. Merged work is credited
+in [CONTRIBUTORS.md](CONTRIBUTORS.md) and the relevant release notes. Real,
+non-confidential examples and viewer priorities belong in [Discussions](https://github.com/OthmaneBlial/rusdox/discussions).
+
 ## Schema-first authoring
 
 Every current spec declares version 1. Generate the same JSON Schema used by

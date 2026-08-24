@@ -1,0 +1,11 @@
+{
+  "protocol_version": 1,
+  "request_id": "starter-inline-toml",
+  "operation": "render",
+  "source": {
+    "kind": "inline",
+    "format": "toml",
+    "content": "version = 1\noutput_name = \"starter-toml\"\n\n[[blocks]]\ntype = \"body\"\ntext = \"Hello from inline TOML\"\n"
+  },
+  "output": { "directory": "toml", "name": "starter-toml", "pdf": true }
+}

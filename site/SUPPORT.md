@@ -15,6 +15,11 @@ Before opening an issue, check:
 
 For usage and authoring questions, start a thread in [GitHub Discussions Q&A](https://github.com/OthmaneBlial/rusdox/discussions/categories/q-a). Keep Issues for reproducible bugs and scoped feature work.
 
+Share a real, non-confidential output in [Show and tell](https://github.com/OthmaneBlial/rusdox/discussions/categories/show-and-tell),
+or propose a viewer/format priority in [Ideas](https://github.com/OthmaneBlial/rusdox/discussions/categories/ideas).
+Use synthetic or public fixtures only: never attach client documents, secrets,
+personal data, proprietary templates, or private parity artifacts.
+
 ## Use Issues For
 
 - confirmed bugs

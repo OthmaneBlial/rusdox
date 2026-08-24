@@ -16,6 +16,8 @@ Read these first:
 - [docs/README.md](docs/README.md)
 - [docs/yaml-guide.md](docs/yaml-guide.md)
 - [docs/rust-api.md](docs/rust-api.md)
+- [docs/architecture.md](docs/architecture.md)
+- [GOVERNANCE.md](GOVERNANCE.md)
 
 ## Best First Contributions
 
@@ -27,6 +29,15 @@ Good contributions include:
 - better config wizard wording
 - higher-quality output rendering
 - template gallery improvements
+
+The maintained [`good first issue`](https://github.com/OthmaneBlial/rusdox/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+queue contains ten bounded tasks, each with a checked-in fixture and three
+acceptance criteria. List or prepare one without modifying the source fixture:
+
+```bash
+node scripts/contributor_lab.mjs list
+node scripts/contributor_lab.mjs prepare protocol-inline-toml
+```
 
 ## Before Opening A Large PR
 
@@ -54,6 +65,20 @@ cargo run -- examples
 ./scripts/generate_gallery_assets.sh
 ```
 
+For a compatibility or rendering change, generate the normal parity bundle and
+compare it with a dated page baseline:
+
+```bash
+target/debug/rusdox verify examples/hello_world.yaml --output-root target/contributor-parity
+node scripts/contributor_lab.mjs visual-diff \
+  --spec examples/hello_world.yaml \
+  --baseline tests/golden/pages/linux-x86_64/hello-world
+```
+
+Use `--threshold` only when the pull request explains why a non-zero visual
+budget is justified. Template changes follow the fixture and evidence commands
+in [the registry guide](docs/template-registry.md).
+
 ## Contribution Rules
 
 - Keep the user-facing story YAML-first.
@@ -70,6 +95,8 @@ cargo run -- examples
 - include tests or explain why tests were not needed
 - update docs/examples if relevant
 - keep the worktree clean and focused
+- include parity or viewer evidence when output behavior changes
+- confirm that contributor credit remains current with `node scripts/check_contributors.mjs`
 
 ## Areas That Matter Most
 
@@ -83,3 +110,5 @@ cargo run -- examples
 ## Questions
 
 If you are not sure where to start, read [SUPPORT.md](SUPPORT.md).
+Accepted contributors are credited in [CONTRIBUTORS.md](CONTRIBUTORS.md) and the
+release notes for their merged change.
