@@ -280,11 +280,13 @@ Section evidence: `cargo check --locked --target wasm32-unknown-unknown --lib` s
 
 ### Developer feedback loop
 
-- [ ] Add `rusdox dev` as the polished successor to raw watch mode.
-- [ ] Open a local preview showing the latest PDF, validation issues, timings, and output paths.
-- [ ] Preserve the current successful output when a rebuild fails.
-- [ ] Debounce file changes and explain which input/config/asset triggered each rebuild.
-- [ ] Add `--open`, `--json`, and quiet CI-friendly modes.
+- [x] Add `rusdox dev` as the polished successor to raw watch mode.
+- [x] Open a local preview showing the latest PDF, validation issues, timings, and output paths.
+- [x] Preserve the current successful output when a rebuild fails.
+- [x] Debounce file changes and explain which input/config/asset triggered each rebuild.
+- [x] Add `--open`, `--json`, and quiet CI-friendly modes.
+
+Section evidence: `rusdox dev` serves a dependency-free dashboard from loopback only with no-store headers, a restrictive CSP, a live status JSON route, fixed latest-DOCX/PDF routes, explicit failure output, and parse/validate/compose/DOCX/PDF/total timings. The polling watcher now follows local `path:` includes and assets recursively, coalesces save bursts, and labels triggers as input, config, or asset/include. JSON Lines tests prove a future-version failure preserves the byte-identical previous DOCX and previous artifact manifest; server tests cover the CSP/status contract; a quiet one-build test emits no terminal noise; `watch` remains backward compatible on the shared debouncer.
 
 #### Exit gate
 

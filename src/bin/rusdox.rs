@@ -1,7 +1,11 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::{Read, Write};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -69,6 +73,8 @@ enum Commands {
     Validate(ValidateArgs),
     /// Rebuild a document spec automatically when the spec or config changes.
     Watch(WatchArgs),
+    /// Rebuild with a local PDF/status dashboard and structured feedback.
+    Dev(DevArgs),
     /// Reproducibly measure one validation or rendering pipeline.
     Bench(BenchArgs),
     /// Inspect or render a Word-native DOCX template from JSON data.
@@ -294,6 +300,48 @@ struct WatchArgs {
     /// Poll interval in milliseconds.
     #[arg(long, default_value_t = 750)]
     poll_interval_ms: u64,
+    /// Wait for a burst of file writes to settle before rebuilding.
+    #[arg(long, default_value_t = 150)]
+    debounce_ms: u64,
+    /// Stop after this many build attempts, including the initial build.
+    #[arg(long)]
+    max_builds: Option<u32>,
+}
+
+#[derive(Debug, Args)]
+struct DevArgs {
+    /// Spec file or directory to rebuild.
+    input: PathBuf,
+    /// Optional explicit output DOCX path for a single watched spec file.
+    #[arg(long)]
+    output: Option<PathBuf>,
+    /// Optional config path used while rebuilding.
+    #[arg(long)]
+    config: Option<PathBuf>,
+    /// Force DOCX-only generation (the dashboard still reports status and DOCX paths).
+    #[arg(long)]
+    docx_only: bool,
+    /// Force PDF generation even when disabled by config.
+    #[arg(long, conflicts_with = "docx_only")]
+    with_pdf: bool,
+    /// Poll interval in milliseconds.
+    #[arg(long, default_value_t = 250)]
+    poll_interval_ms: u64,
+    /// Wait for a burst of file writes to settle before rebuilding.
+    #[arg(long, default_value_t = 150)]
+    debounce_ms: u64,
+    /// Local dashboard port. Use 0 to let the operating system choose a free port.
+    #[arg(long, default_value_t = 4174)]
+    port: u16,
+    /// Open the local dashboard in the default browser.
+    #[arg(long)]
+    open: bool,
+    /// Emit one machine-readable JSON object per lifecycle/build event.
+    #[arg(long, conflicts_with = "quiet")]
+    json: bool,
+    /// Suppress normal terminal output while retaining the local dashboard.
+    #[arg(long, short = 'q', conflicts_with = "json")]
+    quiet: bool,
     /// Stop after this many build attempts, including the initial build.
     #[arg(long)]
     max_builds: Option<u32>,
@@ -499,6 +547,50 @@ struct WatchSnapshot {
     states: Vec<(PathBuf, u64)>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+struct DevTimings {
+    parse_ms: f64,
+    validate_ms: f64,
+    compose_ms: f64,
+    docx_ms: f64,
+    pdf_ms: f64,
+    total_ms: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct DevArtifact {
+    source: String,
+    docx: String,
+    pdf: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct DevEvent {
+    event: String,
+    build: u32,
+    status: String,
+    reason: String,
+    changed: Vec<String>,
+    documents: usize,
+    warnings: usize,
+    timings: Option<DevTimings>,
+    artifacts: Vec<DevArtifact>,
+    error: Option<String>,
+    dashboard: String,
+}
+
+#[derive(Debug, Clone)]
+struct DevServerState {
+    event: DevEvent,
+    latest_pdf: Option<PathBuf>,
+    latest_docx: Option<PathBuf>,
+}
+
+struct DevServer {
+    url: String,
+    state: Arc<RwLock<DevServerState>>,
+}
+
 fn main() {
     if let Err(error) = run() {
         eprintln!("error: {error}");
@@ -521,6 +613,7 @@ fn run() -> Result<()> {
             Commands::Migrate(args) => run_migrate(args),
             Commands::Validate(args) => run_validate(args),
             Commands::Watch(args) => run_watch(args),
+            Commands::Dev(args) => run_dev(args),
             Commands::Bench(args) => run_bench(args),
             Commands::Template { command } => run_template_command(command),
             Commands::Verify(args) => run_verify(args),
@@ -959,30 +1052,535 @@ fn run_watch(args: WatchArgs) -> Result<()> {
             break;
         }
 
-        loop {
-            thread::sleep(poll_interval);
-            let next_snapshot = capture_watch_snapshot(&args.input, args.config.as_deref())?;
-            if next_snapshot != snapshot {
-                let changed = changed_paths(&snapshot, &next_snapshot);
-                pending_reason = if changed.is_empty() {
-                    "change detected".to_string()
-                } else {
-                    format!(
-                        "change detected in {}",
-                        changed
-                            .iter()
-                            .map(|path| path.display().to_string())
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    )
-                };
-                snapshot = next_snapshot;
-                break;
-            }
-        }
+        let (next_snapshot, changed) = wait_for_watch_change(
+            &args.input,
+            args.config.as_deref(),
+            &snapshot,
+            poll_interval,
+            Duration::from_millis(args.debounce_ms),
+        )?;
+        pending_reason = if changed.is_empty() {
+            "change detected".to_string()
+        } else {
+            format!(
+                "change detected in {}",
+                changed
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+        snapshot = next_snapshot;
     }
 
     Ok(())
+}
+
+fn run_dev(args: DevArgs) -> Result<()> {
+    if args.input.is_dir() && args.output.is_some() {
+        return Err(DocxError::Parse(
+            "--output is only supported for a single watched spec file".to_string(),
+        ));
+    }
+
+    let poll_interval = Duration::from_millis(args.poll_interval_ms.max(50));
+    let debounce = Duration::from_millis(args.debounce_ms);
+    let mut snapshot = capture_watch_snapshot(&args.input, args.config.as_deref())?;
+    let server = start_dev_server(args.port)?;
+    emit_dev_lifecycle(&args, "listening", &server.url)?;
+    if args.open {
+        open_dev_dashboard(&server.url)?;
+    }
+
+    let mut build_attempts = 0_u32;
+    let mut changed = Vec::new();
+    let mut reason = "initial build".to_string();
+
+    loop {
+        build_attempts += 1;
+        let config = runtime_config(args.config.as_deref(), args.docx_only, args.with_pdf);
+        let result = config.and_then(|config| {
+            build_spec_input(&args.input, args.output.as_deref(), &config, false, false)
+                .map(|summary| (config, summary))
+        });
+
+        let changed_strings = changed
+            .iter()
+            .map(|path: &PathBuf| path.display().to_string())
+            .collect::<Vec<_>>();
+        match result {
+            Ok((config, summary)) => {
+                let resolved = resolve_dev_artifacts(&args.input, args.output.as_deref(), &config)?;
+                let artifacts = resolved
+                    .iter()
+                    .map(|(artifact, _, _)| artifact.clone())
+                    .collect::<Vec<_>>();
+                let latest_docx = resolved.first().map(|(_, path, _)| path.clone());
+                let latest_pdf = resolved
+                    .first()
+                    .and_then(|(_, _, path)| path.as_ref().cloned());
+                let event = DevEvent {
+                    event: "build".to_string(),
+                    build: build_attempts,
+                    status: "success".to_string(),
+                    reason: reason.clone(),
+                    changed: changed_strings,
+                    documents: summary.documents,
+                    warnings: summary.warning_count,
+                    timings: Some(dev_timings(summary)),
+                    artifacts,
+                    error: None,
+                    dashboard: server.url.clone(),
+                };
+                replace_dev_server_state(&server, event.clone(), latest_pdf, latest_docx)?;
+                emit_dev_event(&args, &event)?;
+            }
+            Err(error) => {
+                let previous = server
+                    .state
+                    .read()
+                    .map_err(|_| DocxError::Parse("dev server state is poisoned".to_string()))?
+                    .clone();
+                let event = DevEvent {
+                    event: "build".to_string(),
+                    build: build_attempts,
+                    status: "failed".to_string(),
+                    reason: reason.clone(),
+                    changed: changed_strings,
+                    documents: previous.event.documents,
+                    warnings: previous.event.warnings,
+                    timings: previous.event.timings.clone(),
+                    artifacts: previous.event.artifacts.clone(),
+                    error: Some(error.to_string()),
+                    dashboard: server.url.clone(),
+                };
+                replace_dev_server_state(
+                    &server,
+                    event.clone(),
+                    previous.latest_pdf,
+                    previous.latest_docx,
+                )?;
+                emit_dev_event(&args, &event)?;
+            }
+        }
+
+        if args
+            .max_builds
+            .is_some_and(|limit| build_attempts >= limit.max(1))
+        {
+            break;
+        }
+
+        let (next_snapshot, next_changed) = wait_for_watch_change(
+            &args.input,
+            args.config.as_deref(),
+            &snapshot,
+            poll_interval,
+            debounce,
+        )?;
+        reason = dev_change_reason(&next_changed, &args.input, args.config.as_deref());
+        snapshot = next_snapshot;
+        changed = next_changed;
+    }
+
+    Ok(())
+}
+
+fn dev_timings(summary: BuildSummary) -> DevTimings {
+    DevTimings {
+        parse_ms: duration_ms(summary.parse_duration),
+        validate_ms: duration_ms(summary.validation_duration),
+        compose_ms: duration_ms(summary.compose_duration),
+        docx_ms: duration_ms(summary.output_stats.docx_write),
+        pdf_ms: duration_ms(summary.output_stats.pdf_render),
+        total_ms: duration_ms(summary.total_duration),
+    }
+}
+
+fn emit_dev_lifecycle(args: &DevArgs, event: &str, dashboard: &str) -> Result<()> {
+    if args.json {
+        println!(
+            "{}",
+            serde_json::json!({ "event": event, "dashboard": dashboard })
+        );
+    } else if !args.quiet {
+        println!("RusDox dev dashboard: {dashboard}");
+    }
+    Ok(())
+}
+
+fn emit_dev_event(args: &DevArgs, event: &DevEvent) -> Result<()> {
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string(event).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize dev event: {error}"))
+            })?
+        );
+    } else if !args.quiet {
+        if event.status == "success" {
+            println!(
+                "dev build {} succeeded in {:.2} ms · {} · {} document(s), {} warning(s)",
+                event.build,
+                event
+                    .timings
+                    .as_ref()
+                    .map_or(0.0, |timings| timings.total_ms),
+                event.reason,
+                event.documents,
+                event.warnings,
+            );
+            for artifact in &event.artifacts {
+                println!("  DOCX: {}", artifact.docx);
+                if let Some(pdf) = &artifact.pdf {
+                    println!("  PDF:  {pdf}");
+                }
+            }
+        } else {
+            eprintln!(
+                "dev build {} failed · {}\n{}\nlast successful output is still available at {}",
+                event.build,
+                event.reason,
+                event.error.as_deref().unwrap_or("unknown build failure"),
+                event.dashboard,
+            );
+        }
+    }
+    Ok(())
+}
+
+fn replace_dev_server_state(
+    server: &DevServer,
+    event: DevEvent,
+    latest_pdf: Option<PathBuf>,
+    latest_docx: Option<PathBuf>,
+) -> Result<()> {
+    *server
+        .state
+        .write()
+        .map_err(|_| DocxError::Parse("dev server state is poisoned".to_string()))? =
+        DevServerState {
+            event,
+            latest_pdf,
+            latest_docx,
+        };
+    Ok(())
+}
+
+fn resolve_dev_artifacts(
+    input: &Path,
+    output: Option<&Path>,
+    config: &RusdoxConfig,
+) -> Result<Vec<(DevArtifact, PathBuf, Option<PathBuf>)>> {
+    let inputs = collect_spec_inputs(input)?;
+    let mut artifacts = Vec::with_capacity(inputs.len());
+    for spec_path in inputs {
+        let spec = DocumentSpec::load_from_path(&spec_path)?;
+        let output_name = spec
+            .output_name
+            .unwrap_or_else(|| default_output_name_for_spec(&spec_path));
+        let docx_path = if let Some(path) = output {
+            to_absolute_path(path)?
+        } else {
+            to_absolute_path(
+                &Path::new(&config.output.docx_dir).join(format!("{output_name}.docx")),
+            )?
+        };
+        let pdf_name = if output.is_some() {
+            docx_path
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .unwrap_or(&output_name)
+        } else {
+            &output_name
+        };
+        let pdf_path = config.output.emit_pdf_preview.then(|| {
+            to_absolute_path(&Path::new(&config.output.pdf_dir).join(format!("{pdf_name}.pdf")))
+        });
+        let pdf_path = match pdf_path {
+            Some(path) => Some(path?),
+            None => None,
+        };
+        artifacts.push((
+            DevArtifact {
+                source: spec_path.display().to_string(),
+                docx: docx_path.display().to_string(),
+                pdf: pdf_path.as_ref().map(|path| path.display().to_string()),
+            },
+            docx_path,
+            pdf_path,
+        ));
+    }
+    Ok(artifacts)
+}
+
+fn start_dev_server(port: u16) -> Result<DevServer> {
+    let listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port))?;
+    listener.set_nonblocking(true)?;
+    let address = listener.local_addr()?;
+    let url = format!("http://127.0.0.1:{}/", address.port());
+    let state = Arc::new(RwLock::new(DevServerState {
+        event: DevEvent {
+            event: "build".to_string(),
+            build: 0,
+            status: "starting".to_string(),
+            reason: "waiting for initial build".to_string(),
+            changed: Vec::new(),
+            documents: 0,
+            warnings: 0,
+            timings: None,
+            artifacts: Vec::new(),
+            error: None,
+            dashboard: url.clone(),
+        },
+        latest_pdf: None,
+        latest_docx: None,
+    }));
+    let server_state = Arc::clone(&state);
+    thread::spawn(move || loop {
+        match listener.accept() {
+            Ok((stream, _)) => {
+                if let Err(error) = serve_dev_request(stream, &server_state) {
+                    eprintln!("rusdox dev server error: {error}");
+                }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(25));
+            }
+            Err(error) => {
+                eprintln!("rusdox dev server stopped: {error}");
+                break;
+            }
+        }
+    });
+    Ok(DevServer { url, state })
+}
+
+fn serve_dev_request(mut stream: TcpStream, state: &Arc<RwLock<DevServerState>>) -> Result<()> {
+    stream.set_nonblocking(false)?;
+    stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+    let mut request = [0_u8; 8192];
+    let bytes = match stream.read(&mut request) {
+        Ok(0) => return Ok(()),
+        Ok(bytes) => bytes,
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ) =>
+        {
+            return Ok(());
+        }
+        Err(error) => return Err(error.into()),
+    };
+    let request = String::from_utf8_lossy(&request[..bytes]);
+    let path = request
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .unwrap_or("/")
+        .split('?')
+        .next()
+        .unwrap_or("/");
+    let state = state
+        .read()
+        .map_err(|_| DocxError::Parse("dev server state is poisoned".to_string()))?
+        .clone();
+
+    match path {
+        "/" | "/index.html" => write_http_response(
+            &mut stream,
+            "200 OK",
+            "text/html; charset=utf-8",
+            render_dev_dashboard(&state).as_bytes(),
+        )?,
+        "/status.json" => {
+            let body = serde_json::to_vec_pretty(&state.event).map_err(|error| {
+                DocxError::Parse(format!("failed to serialize dev status: {error}"))
+            })?;
+            write_http_response(&mut stream, "200 OK", "application/json", &body)?;
+        }
+        "/latest.pdf" => {
+            write_dev_artifact(&mut stream, state.latest_pdf.as_deref(), "application/pdf")?
+        }
+        "/latest.docx" => write_dev_artifact(
+            &mut stream,
+            state.latest_docx.as_deref(),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )?,
+        _ => write_http_response(
+            &mut stream,
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            b"Not found",
+        )?,
+    }
+    Ok(())
+}
+
+fn write_dev_artifact(
+    stream: &mut TcpStream,
+    path: Option<&Path>,
+    content_type: &str,
+) -> Result<()> {
+    let Some(path) = path.filter(|path| path.is_file()) else {
+        return write_http_response(
+            stream,
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            b"No successful artifact is available yet.",
+        );
+    };
+    let body = fs::read(path)?;
+    write_http_response(stream, "200 OK", content_type, &body)
+}
+
+fn write_http_response(
+    stream: &mut TcpStream,
+    status: &str,
+    content_type: &str,
+    body: &[u8],
+) -> Result<()> {
+    write!(
+        stream,
+        "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nContent-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-src 'self'; base-uri 'none'; form-action 'none'\r\nConnection: close\r\n\r\n",
+        body.len()
+    )?;
+    stream.write_all(body)?;
+    Ok(())
+}
+
+fn render_dev_dashboard(state: &DevServerState) -> String {
+    let event = &state.event;
+    let status_class = if event.status == "success" {
+        "success"
+    } else if event.status == "failed" {
+        "failed"
+    } else {
+        "starting"
+    };
+    let timings = event.timings.as_ref().map_or_else(
+        || "<p class=muted>No successful timing sample yet.</p>".to_string(),
+        |timings| {
+            format!(
+                "<dl class=metrics><div><dt>Total</dt><dd>{:.2} ms</dd></div><div><dt>Parse</dt><dd>{:.2} ms</dd></div><div><dt>Validate</dt><dd>{:.2} ms</dd></div><div><dt>Compose</dt><dd>{:.2} ms</dd></div><div><dt>DOCX</dt><dd>{:.2} ms</dd></div><div><dt>PDF</dt><dd>{:.2} ms</dd></div></dl>",
+                timings.total_ms,
+                timings.parse_ms,
+                timings.validate_ms,
+                timings.compose_ms,
+                timings.docx_ms,
+                timings.pdf_ms,
+            )
+        },
+    );
+    let artifacts = if event.artifacts.is_empty() {
+        "<p class=muted>No successful output yet.</p>".to_string()
+    } else {
+        event
+            .artifacts
+            .iter()
+            .map(|artifact| {
+                format!(
+                    "<li><strong>{}</strong><code>{}</code>{}</li>",
+                    dev_escape_html(&artifact.source),
+                    dev_escape_html(&artifact.docx),
+                    artifact
+                        .pdf
+                        .as_ref()
+                        .map_or_else(String::new, |pdf| format!(
+                            "<code>{}</code>",
+                            dev_escape_html(pdf)
+                        )),
+                )
+            })
+            .collect::<String>()
+    };
+    let issue = event.error.as_ref().map_or_else(
+        || "<p class=success-copy>Latest build completed successfully.</p>".to_string(),
+        |error| {
+            format!(
+                "<pre class=error-copy>{}</pre><p class=muted>The previous successful DOCX/PDF remains available.</p>",
+                dev_escape_html(error)
+            )
+        },
+    );
+    let preview = if state.latest_pdf.as_ref().is_some_and(|path| path.is_file()) {
+        format!(
+            "<iframe title=\"Latest RusDox PDF\" src=\"/latest.pdf?build={}\"></iframe>",
+            event.build
+        )
+    } else {
+        "<div class=empty>PDF preview is disabled or no successful PDF exists yet.</div>"
+            .to_string()
+    };
+
+    format!(
+        r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="2"><title>RusDox dev</title><style>
+:root{{--ink:#182019;--muted:#687068;--paper:#fffdf8;--bg:#eee9df;--line:#d5cdbf;--accent:#b85c30;--green:#17633a;--red:#9d2f2f}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,sans-serif}}main{{width:min(1500px,calc(100% - 28px));margin:24px auto;display:grid;gap:16px}}header,.panel{{background:var(--paper);border:1px solid var(--line);padding:20px}}header{{display:flex;align-items:end;justify-content:space-between;gap:20px;border-top:5px solid var(--accent)}}h1,h2{{margin:.2rem 0;font-family:Georgia,serif}}h1{{font-size:clamp(2rem,5vw,4rem)}}h2{{font-size:1.3rem}}.eyebrow{{margin:0;color:var(--accent);font:bold .72rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.12em}}.badge{{padding:.65rem .8rem;border:2px solid currentColor;font:bold .75rem ui-monospace,monospace;text-transform:uppercase}}.badge.success{{color:var(--green)}}.badge.failed{{color:var(--red)}}.badge.starting{{color:var(--accent)}}.grid{{display:grid;grid-template-columns:minmax(320px,.68fr) minmax(0,1.32fr);gap:16px}}.stack{{display:grid;gap:16px;align-content:start}}.muted{{color:var(--muted)}}.metrics{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 0}}.metrics div{{padding:10px;background:#f5f0e7}}dt{{color:var(--muted);font-size:.72rem;text-transform:uppercase}}dd{{margin:3px 0 0;font-weight:800}}ul{{list-style:none;padding:0;margin:0;display:grid;gap:8px}}li{{display:grid;gap:4px;padding:10px;background:#f5f0e7}}code,pre{{font-family:ui-monospace,monospace;overflow-wrap:anywhere}}.error-copy{{max-height:260px;overflow:auto;padding:14px;background:#2a1818;color:#ffdada;white-space:pre-wrap}}.success-copy{{color:var(--green);font-weight:700}}iframe,.empty{{width:100%;height:calc(100vh - 170px);min-height:640px;border:1px solid var(--line);background:white}}.empty{{display:grid;place-items:center;padding:30px;color:var(--muted)}}.actions{{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}}a{{padding:9px 12px;background:var(--accent);color:white;text-decoration:none;font-weight:700}}@media(max-width:900px){{.grid{{grid-template-columns:1fr}}iframe,.empty{{height:70vh;min-height:480px}}}}@media(max-width:520px){{header{{align-items:start;flex-direction:column}}.metrics{{grid-template-columns:repeat(2,1fr)}}}}
+</style></head><body><main><header><div><p class="eyebrow">RusDox local feedback loop</p><h1>Build {build}</h1><p class="muted">{reason}</p></div><strong class="badge {status_class}">{status}</strong></header><div class="grid"><div class="stack"><section class="panel"><p class="eyebrow">Validation</p><h2>Current status</h2>{issue}</section><section class="panel"><p class="eyebrow">Timings</p><h2>Latest successful build</h2>{timings}</section><section class="panel"><p class="eyebrow">Artifacts</p><h2>Output paths</h2><ul>{artifacts}</ul><div class="actions"><a href="/latest.docx">DOCX</a><a href="/status.json">status.json</a></div></section></div><section class="panel"><p class="eyebrow">Preview</p><h2>Latest successful PDF</h2>{preview}</section></div></main></body></html>"#,
+        build = event.build,
+        reason = dev_escape_html(&event.reason),
+        status_class = status_class,
+        status = dev_escape_html(&event.status),
+        issue = issue,
+        timings = timings,
+        artifacts = artifacts,
+        preview = preview,
+    )
+}
+
+fn dev_escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+fn open_dev_dashboard(url: &str) -> Result<()> {
+    let mut command = if cfg!(target_os = "macos") {
+        Command::new("open")
+    } else if cfg!(target_os = "windows") {
+        let mut command = Command::new("cmd");
+        command.args(["/C", "start", ""]);
+        command
+    } else {
+        Command::new("xdg-open")
+    };
+    command.arg(url).spawn().map_err(|error| {
+        DocxError::Parse(format!(
+            "could not open the dev dashboard at {url}: {error}"
+        ))
+    })?;
+    Ok(())
+}
+
+fn dev_change_reason(changed: &[PathBuf], input: &Path, config: Option<&Path>) -> String {
+    if changed.is_empty() {
+        return "change detected".to_string();
+    }
+    changed
+        .iter()
+        .map(|path| {
+            let kind = if is_config_watch_path(path, config) {
+                "config"
+            } else if path == input || (input.is_dir() && path.parent() == Some(input)) {
+                "input"
+            } else {
+                "asset/include"
+            };
+            format!("{kind} changed: {}", path.display())
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+fn is_config_watch_path(path: &Path, config: Option<&Path>) -> bool {
+    config.is_some_and(|config| path == config)
+        || path == Path::new(DEFAULT_CONFIG_FILE)
+        || default_user_config_path().as_deref() == Some(path)
 }
 
 fn run_bench(args: BenchArgs) -> Result<()> {
@@ -1849,7 +2447,12 @@ fn handle_validation_issues(
 }
 
 fn capture_watch_snapshot(input: &Path, config_path: Option<&Path>) -> Result<WatchSnapshot> {
-    let mut watched_paths = collect_spec_inputs(input)?;
+    let spec_inputs = collect_spec_inputs(input)?;
+    let mut watched_paths = spec_inputs.clone();
+    let mut visited = BTreeSet::new();
+    for spec_path in spec_inputs {
+        collect_path_dependencies(&spec_path, &mut watched_paths, &mut visited, 0)?;
+    }
     if let Some(config_path) = config_path {
         watched_paths.push(config_path.to_path_buf());
     } else {
@@ -1866,6 +2469,56 @@ fn capture_watch_snapshot(input: &Path, config_path: Option<&Path>) -> Result<Wa
         states.push((path.clone(), hash_path_state(&path)?));
     }
     Ok(WatchSnapshot { states })
+}
+
+fn collect_path_dependencies(
+    source_path: &Path,
+    watched_paths: &mut Vec<PathBuf>,
+    visited: &mut BTreeSet<PathBuf>,
+    depth: usize,
+) -> Result<()> {
+    if depth >= 16 || !source_path.is_file() || !visited.insert(source_path.to_path_buf()) {
+        return Ok(());
+    }
+    let source = fs::read_to_string(source_path)?;
+    let parent = source_path.parent().unwrap_or_else(|| Path::new("."));
+    for value in source.lines().filter_map(extract_path_value) {
+        if value.contains("://") || value.starts_with("data:") {
+            continue;
+        }
+        let path = PathBuf::from(value);
+        let path = if path.is_absolute() {
+            path
+        } else {
+            parent.join(path)
+        };
+        if !watched_paths.contains(&path) {
+            watched_paths.push(path.clone());
+        }
+        if is_spec_path(&path) {
+            collect_path_dependencies(&path, watched_paths, visited, depth + 1)?;
+        }
+    }
+    Ok(())
+}
+
+fn extract_path_value(line: &str) -> Option<String> {
+    let trimmed = line.trim();
+    let value = if let Some(value) = trimmed.strip_prefix("path:") {
+        value
+    } else if let Some(value) = trimmed.strip_prefix("path =") {
+        value
+    } else {
+        trimmed.strip_prefix("\"path\":")?
+    };
+    let value = value
+        .trim()
+        .trim_end_matches(',')
+        .trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .trim();
+    (!value.is_empty()).then(|| value.to_string())
 }
 
 fn hash_path_state(path: &Path) -> Result<u64> {
@@ -1901,6 +2554,41 @@ fn changed_paths(previous: &WatchSnapshot, next: &WatchSnapshot) -> Vec<PathBuf>
     }
 
     changed
+}
+
+fn wait_for_watch_change(
+    input: &Path,
+    config_path: Option<&Path>,
+    previous: &WatchSnapshot,
+    poll_interval: Duration,
+    debounce: Duration,
+) -> Result<(WatchSnapshot, Vec<PathBuf>)> {
+    let mut candidate = loop {
+        thread::sleep(poll_interval);
+        let next = capture_watch_snapshot(input, config_path)?;
+        if &next != previous {
+            break next;
+        }
+    };
+    let mut changed = changed_paths(previous, &candidate);
+    let mut stable_since = Instant::now();
+
+    while stable_since.elapsed() < debounce {
+        let remaining = debounce.saturating_sub(stable_since.elapsed());
+        thread::sleep(poll_interval.min(remaining).max(Duration::from_millis(1)));
+        let next = capture_watch_snapshot(input, config_path)?;
+        if next != candidate {
+            for path in changed_paths(&candidate, &next) {
+                if !changed.contains(&path) {
+                    changed.push(path);
+                }
+            }
+            candidate = next;
+            stable_since = Instant::now();
+        }
+    }
+    changed.sort();
+    Ok((candidate, changed))
 }
 
 fn format_validation_result_text(result: &ValidationCommandResult) -> String {
@@ -2749,11 +3437,17 @@ fn dialog_err(error: dialoguer::Error) -> DocxError {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
     use std::path::Path;
 
+    use tempfile::tempdir;
+
     use super::{
-        build_runner_manifest, build_runner_source, default_script_template, escape_rust_string,
-        normalize_color_hex, resolve_path, summarize_f64, ConfigFormat,
+        build_runner_manifest, build_runner_source, capture_watch_snapshot,
+        default_script_template, dev_change_reason, escape_rust_string, normalize_color_hex,
+        resolve_path, start_dev_server, summarize_f64, ConfigFormat,
     };
 
     #[test]
@@ -2835,5 +3529,42 @@ mod tests {
         assert!(source.contains(&expected_include));
         assert!(source.contains("let document = user_script::build_document(&studio)?;"));
         assert!(source.contains("studio.save_with_pdf(&document, output)"));
+    }
+
+    #[test]
+    fn watch_snapshot_tracks_local_asset_dependencies() {
+        let temp = tempdir().expect("temp dir");
+        let spec = temp.path().join("document.yaml");
+        let asset = temp.path().join("chart.svg");
+        fs::write(&asset, "<svg/>").expect("asset");
+        fs::write(
+            &spec,
+            "version: 1\nblocks:\n  - type: chart\n    path: chart.svg\n",
+        )
+        .expect("spec");
+        let before = capture_watch_snapshot(&spec, None).expect("before");
+        fs::write(&asset, "<svg><path/></svg>").expect("change asset");
+        let after = capture_watch_snapshot(&spec, None).expect("after");
+        let changed = super::changed_paths(&before, &after);
+        assert_eq!(changed, vec![asset.clone()]);
+        assert!(dev_change_reason(&changed, &spec, None).contains("asset/include changed"));
+    }
+
+    #[test]
+    fn dev_server_exposes_script_free_status_dashboard() {
+        let server = start_dev_server(0).expect("server");
+        let address = server
+            .url
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        let mut stream = TcpStream::connect(address).expect("connect");
+        stream
+            .write_all(b"GET /status.json HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .expect("request");
+        let mut response = String::new();
+        stream.read_to_string(&mut response).expect("response");
+        assert!(response.contains("200 OK"));
+        assert!(response.contains("Content-Security-Policy: default-src 'none'"));
+        assert!(response.contains("\"status\": \"starting\""));
     }
 }

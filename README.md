@@ -53,6 +53,12 @@ There is deliberately no general-purpose expression runtime. Read the
 [spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
 [VS Code extension](editors/vscode/README.md).
 
+For the local feedback loop, run `rusdox dev mydoc.yaml --open`. The loop keeps
+the last successful PDF visible while reporting the current validation issue,
+timings, output paths, and whether an input, config, include, or asset triggered
+the rebuild. Use `--json` for JSON Lines automation or `--quiet --port 0
+--max-builds 1` for a bounded CI smoke check.
+
 ## Try it without installing
 
 The [local-first playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
@@ -227,7 +233,7 @@ rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
 - Reusable named paragraph, run, and table styles with inheritance
 - YAML composition features for variables, includes, and repeaters
 - First-class document metadata in specs and the Rust API
-- First-class `validate`, `watch`, and `bench` CLI workflows
+- First-class `validate`, `dev`, `watch`, and `bench` CLI workflows
 
 ## Examples
 

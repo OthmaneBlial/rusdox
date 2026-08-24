@@ -129,6 +129,12 @@ There is deliberately no general-purpose expression runtime. Read the
 [spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
 [VS Code extension](editors/vscode/README.md).
 
+For the local feedback loop, run `rusdox dev mydoc.yaml --open`. The loop keeps
+the last successful PDF visible while reporting the current validation issue,
+timings, output paths, and whether an input, config, include, or asset triggered
+the rebuild. Use `--json` for JSON Lines automation or `--quiet --port 0
+--max-builds 1` for a bounded CI smoke check.
+
 ## Try it without installing
 
 The [local-first playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
@@ -303,7 +309,7 @@ rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
 - Reusable named paragraph, run, and table styles with inheritance
 - YAML composition features for variables, includes, and repeaters
 - First-class document metadata in specs and the Rust API
-- First-class `validate`, `watch`, and `bench` CLI workflows
+- First-class `validate`, `dev`, `watch`, and `bench` CLI workflows
 
 ## Examples
 
@@ -1625,10 +1631,10 @@ Validate a file before render:
 rusdox validate mydoc.yaml
 ```
 
-Watch a file and rebuild on change:
+Rebuild on change with a local PDF/status dashboard:
 
 ```bash
-rusdox watch mydoc.yaml
+rusdox dev mydoc.yaml --open
 ```
 
 Benchmark a spec:
@@ -1702,27 +1708,47 @@ atomic replacement, --output for a separate destination, and --check in CI to
 reject legacy unversioned specs. RusDox rejects future versions instead of
 silently downgrading them. See [Spec Versioning](spec-versioning.md).
 
-## Watch Mode
+## Development feedback loop
 
-Watch one file with the default poller:
+Start the recommended development loop:
 
 ```bash
-rusdox watch mydoc.yaml
+rusdox dev mydoc.yaml --open
 ```
 
-Watch a file with faster polling and DOCX-only output:
+The loop binds only to `127.0.0.1`. Its script-free dashboard refreshes to show
+the latest successful PDF, validation or parsing failure, per-stage timings,
+and absolute DOCX/PDF paths. A failed rebuild does not replace the previous
+successful artifact, so the preview remains useful while you repair the spec.
+
+Tune polling and debounce for editors that save in several writes:
+
+```bash
+rusdox dev mydoc.yaml --poll-interval-ms 100 --debounce-ms 250
+```
+
+Use JSON Lines for tooling, or quiet mode for a bounded CI smoke check:
+
+```bash
+rusdox dev mydoc.yaml --json --port 0
+rusdox dev mydoc.yaml --quiet --port 0 --max-builds 1
+```
+
+Each JSON build event includes status, trigger reason, changed paths, any error,
+timings, artifact paths, warnings, and dashboard URL. `--port 0` asks the
+operating system for a free local port. `--docx-only` retains status and DOCX
+downloads while intentionally omitting PDF preview.
+
+RusDox watches the input, active config, local includes, and asset paths. The
+terminal and dashboard identify the trigger as input, config, or asset/include.
+
+The original `rusdox watch` command remains available for compatibility and now
+shares the debounced dependency watcher:
 
 ```bash
 rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250
-```
-
-Watch a whole folder and keep PDF generation enabled:
-
-```bash
 rusdox watch examples --with-pdf
 ```
-
-Use `--max-builds 2` or another small number when you want the watcher to stop automatically, which is useful for tests and scripted workflows.
 
 RusDox watches the spec input plus the active config path. Without `--config`, it tracks `./rusdox.toml` and the user config fallback automatically.
 
@@ -3290,11 +3316,13 @@ Section evidence: `cargo check --locked --target wasm32-unknown-unknown --lib` s
 
 ### Developer feedback loop
 
-- [ ] Add `rusdox dev` as the polished successor to raw watch mode.
-- [ ] Open a local preview showing the latest PDF, validation issues, timings, and output paths.
-- [ ] Preserve the current successful output when a rebuild fails.
-- [ ] Debounce file changes and explain which input/config/asset triggered each rebuild.
-- [ ] Add `--open`, `--json`, and quiet CI-friendly modes.
+- [x] Add `rusdox dev` as the polished successor to raw watch mode.
+- [x] Open a local preview showing the latest PDF, validation issues, timings, and output paths.
+- [x] Preserve the current successful output when a rebuild fails.
+- [x] Debounce file changes and explain which input/config/asset triggered each rebuild.
+- [x] Add `--open`, `--json`, and quiet CI-friendly modes.
+
+Section evidence: `rusdox dev` serves a dependency-free dashboard from loopback only with no-store headers, a restrictive CSP, a live status JSON route, fixed latest-DOCX/PDF routes, explicit failure output, and parse/validate/compose/DOCX/PDF/total timings. The polling watcher now follows local `path:` includes and assets recursively, coalesces save bursts, and labels triggers as input, config, or asset/include. JSON Lines tests prove a future-version failure preserves the byte-identical previous DOCX and previous artifact manifest; server tests cover the CSP/status contract; a quiet one-build test emits no terminal noise; `watch` remains backward compatible on the shared debouncer.
 
 #### Exit gate
 
@@ -3513,6 +3541,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Schema generation, atomic migration, source-located validation, bounded conditional branches, nested paths, deterministic filters, and literal-brace escaping.
 - A zero-install, local-first spec playground with six verified examples, structural preview, editable YAML downloads, exact CLI reproduction commands, and artifact integrity guards.
 - A dated WASM feasibility spike and explicit browser-rendering capability boundary.
+- A `rusdox dev` feedback loop with a loopback-only PDF/status dashboard, debounced input/config/include/asset watching, last-success preservation, per-stage timings, JSON Lines events, browser opening, and quiet bounded runs.
 
 ### Changed
 

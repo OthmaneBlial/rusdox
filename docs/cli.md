@@ -28,10 +28,10 @@ Validate a file before render:
 rusdox validate mydoc.yaml
 ```
 
-Watch a file and rebuild on change:
+Rebuild on change with a local PDF/status dashboard:
 
 ```bash
-rusdox watch mydoc.yaml
+rusdox dev mydoc.yaml --open
 ```
 
 Benchmark a spec:
@@ -105,27 +105,47 @@ atomic replacement, --output for a separate destination, and --check in CI to
 reject legacy unversioned specs. RusDox rejects future versions instead of
 silently downgrading them. See [Spec Versioning](spec-versioning.md).
 
-## Watch Mode
+## Development feedback loop
 
-Watch one file with the default poller:
+Start the recommended development loop:
 
 ```bash
-rusdox watch mydoc.yaml
+rusdox dev mydoc.yaml --open
 ```
 
-Watch a file with faster polling and DOCX-only output:
+The loop binds only to `127.0.0.1`. Its script-free dashboard refreshes to show
+the latest successful PDF, validation or parsing failure, per-stage timings,
+and absolute DOCX/PDF paths. A failed rebuild does not replace the previous
+successful artifact, so the preview remains useful while you repair the spec.
+
+Tune polling and debounce for editors that save in several writes:
+
+```bash
+rusdox dev mydoc.yaml --poll-interval-ms 100 --debounce-ms 250
+```
+
+Use JSON Lines for tooling, or quiet mode for a bounded CI smoke check:
+
+```bash
+rusdox dev mydoc.yaml --json --port 0
+rusdox dev mydoc.yaml --quiet --port 0 --max-builds 1
+```
+
+Each JSON build event includes status, trigger reason, changed paths, any error,
+timings, artifact paths, warnings, and dashboard URL. `--port 0` asks the
+operating system for a free local port. `--docx-only` retains status and DOCX
+downloads while intentionally omitting PDF preview.
+
+RusDox watches the input, active config, local includes, and asset paths. The
+terminal and dashboard identify the trigger as input, config, or asset/include.
+
+The original `rusdox watch` command remains available for compatibility and now
+shares the debounced dependency watcher:
 
 ```bash
 rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250
-```
-
-Watch a whole folder and keep PDF generation enabled:
-
-```bash
 rusdox watch examples --with-pdf
 ```
-
-Use `--max-builds 2` or another small number when you want the watcher to stop automatically, which is useful for tests and scripted workflows.
 
 RusDox watches the spec input plus the active config path. Without `--config`, it tracks `./rusdox.toml` and the user config fallback automatically.
 

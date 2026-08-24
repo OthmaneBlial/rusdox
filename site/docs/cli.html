@@ -52,7 +52,7 @@
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#parity-verification">Parity Verification</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#schema-and-migration">Schema and migration</a></li><li class="toc-level-2"><a href="#watch-mode">Watch Mode</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#word-native-templates">Word-native templates</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#parity-verification">Parity Verification</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#schema-and-migration">Schema and migration</a></li><li class="toc-level-2"><a href="#development-feedback-loop">Development feedback loop</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#word-native-templates">Word-native templates</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox renders document specs into <code>.docx</code> and <code>.pdf</code>, validates them before render, can rebuild while you edit, and can benchmark the full pipeline.</p>
 <h2 id="most-common-commands">Most Common Commands</h2>
 <p>Render one document:</p>
@@ -63,8 +63,8 @@
 <pre><code class="language-bash">rusdox init-doc mydoc.yaml</code></pre>
 <p>Validate a file before render:</p>
 <pre><code class="language-bash">rusdox validate mydoc.yaml</code></pre>
-<p>Watch a file and rebuild on change:</p>
-<pre><code class="language-bash">rusdox watch mydoc.yaml</code></pre>
+<p>Rebuild on change with a local PDF/status dashboard:</p>
+<pre><code class="language-bash">rusdox dev mydoc.yaml --open</code></pre>
 <p>Benchmark a spec:</p>
 <pre><code class="language-bash">rusdox bench mydoc.yaml --iterations 5 --warmup 1</code></pre>
 <p>Generate DOCX, PDF, and parity evidence:</p>
@@ -91,14 +91,20 @@
 <h2 id="schema-and-migration">Schema and migration</h2>
 <p>The schema command prints the generated version 1 JSON Schema. Use --output for an atomic file write. The same object schema powers YAML, JSON, and TOML authoring and the bundled VS Code extension.</p>
 <p>The migrate command prints a migrated spec by default. Use --in-place for an atomic replacement, --output for a separate destination, and --check in CI to reject legacy unversioned specs. RusDox rejects future versions instead of silently downgrading them. See <a href="spec-versioning.html">Spec Versioning</a>.</p>
-<h2 id="watch-mode">Watch Mode</h2>
-<p>Watch one file with the default poller:</p>
-<pre><code class="language-bash">rusdox watch mydoc.yaml</code></pre>
-<p>Watch a file with faster polling and DOCX-only output:</p>
-<pre><code class="language-bash">rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250</code></pre>
-<p>Watch a whole folder and keep PDF generation enabled:</p>
-<pre><code class="language-bash">rusdox watch examples --with-pdf</code></pre>
-<p>Use <code>--max-builds 2</code> or another small number when you want the watcher to stop automatically, which is useful for tests and scripted workflows.</p>
+<h2 id="development-feedback-loop">Development feedback loop</h2>
+<p>Start the recommended development loop:</p>
+<pre><code class="language-bash">rusdox dev mydoc.yaml --open</code></pre>
+<p>The loop binds only to <code>127.0.0.1</code>. Its script-free dashboard refreshes to show the latest successful PDF, validation or parsing failure, per-stage timings, and absolute DOCX/PDF paths. A failed rebuild does not replace the previous successful artifact, so the preview remains useful while you repair the spec.</p>
+<p>Tune polling and debounce for editors that save in several writes:</p>
+<pre><code class="language-bash">rusdox dev mydoc.yaml --poll-interval-ms 100 --debounce-ms 250</code></pre>
+<p>Use JSON Lines for tooling, or quiet mode for a bounded CI smoke check:</p>
+<pre><code class="language-bash">rusdox dev mydoc.yaml --json --port 0
+rusdox dev mydoc.yaml --quiet --port 0 --max-builds 1</code></pre>
+<p>Each JSON build event includes status, trigger reason, changed paths, any error, timings, artifact paths, warnings, and dashboard URL. <code>--port 0</code> asks the operating system for a free local port. <code>--docx-only</code> retains status and DOCX downloads while intentionally omitting PDF preview.</p>
+<p>RusDox watches the input, active config, local includes, and asset paths. The terminal and dashboard identify the trigger as input, config, or asset/include.</p>
+<p>The original <code>rusdox watch</code> command remains available for compatibility and now shares the debounced dependency watcher:</p>
+<pre><code class="language-bash">rusdox watch mydoc.yaml --docx-only --poll-interval-ms 250
+rusdox watch examples --with-pdf</code></pre>
 <p>RusDox watches the spec input plus the active config path. Without <code>--config</code>, it tracks <code>./rusdox.toml</code> and the user config fallback automatically.</p>
 <h2 id="benchmarking">Benchmarking</h2>
 <p>Benchmark one spec:</p>

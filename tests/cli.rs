@@ -1111,3 +1111,103 @@ body_size_pt = 13
     assert!(stdout.contains(config_path.to_string_lossy().as_ref()));
     assert!(stdout.contains("succeeded"));
 }
+
+#[test]
+fn dev_json_preserves_last_success_when_rebuild_fails() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+
+    let child = spawn_cli(
+        &[
+            "dev",
+            spec_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--json",
+            "--port",
+            "0",
+            "--poll-interval-ms",
+            "50",
+            "--debounce-ms",
+            "120",
+            "--max-builds",
+            "2",
+        ],
+        temp.path(),
+    );
+
+    let docx_path = temp.path().join("generated").join("mydoc.docx");
+    for _ in 0..80 {
+        if docx_path.exists() {
+            break;
+        }
+        thread::sleep(Duration::from_millis(50));
+    }
+    let successful_docx = fs::read(&docx_path).expect("initial successful DOCX");
+
+    fs::write(
+        &spec_path,
+        r#"version: 2
+output_name: mydoc
+blocks:
+  - type: title
+    text: Invalid future version
+"#,
+    )
+    .expect("write invalid spec");
+
+    let output = child.wait_with_output().expect("dev should exit");
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        fs::read(&docx_path).expect("preserved successful DOCX"),
+        successful_docx
+    );
+
+    let events = String::from_utf8(output.stdout)
+        .expect("UTF-8 JSON Lines")
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).expect("valid JSON event"))
+        .collect::<Vec<_>>();
+    assert_eq!(events[0]["event"], "listening");
+    assert_eq!(events[1]["status"], "success");
+    assert_eq!(events[2]["status"], "failed");
+    assert!(events[2]["reason"]
+        .as_str()
+        .is_some_and(|reason| reason.contains("input changed")));
+    assert!(events[2]["error"]
+        .as_str()
+        .is_some_and(|error| error.contains("unsupported document spec version")));
+    assert_eq!(events[2]["artifacts"], events[1]["artifacts"]);
+}
+
+#[test]
+fn dev_quiet_mode_is_ci_friendly() {
+    let temp = tempdir().expect("temp dir");
+    let spec_path = temp.path().join("mydoc.yaml");
+    fs::write(&spec_path, spec_source()).expect("write spec");
+    let output = run_cli(
+        &[
+            "dev",
+            spec_path.to_string_lossy().as_ref(),
+            "--docx-only",
+            "--quiet",
+            "--port",
+            "0",
+            "--max-builds",
+            "1",
+        ],
+        temp.path(),
+    );
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(output.stdout.is_empty());
+    assert!(output.stderr.is_empty());
+    assert!(temp.path().join("generated/mydoc.docx").is_file());
+}

@@ -20,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Schema generation, atomic migration, source-located validation, bounded conditional branches, nested paths, deterministic filters, and literal-brace escaping.
 - A zero-install, local-first spec playground with six verified examples, structural preview, editable YAML downloads, exact CLI reproduction commands, and artifact integrity guards.
 - A dated WASM feasibility spike and explicit browser-rendering capability boundary.
+- A `rusdox dev` feedback loop with a loopback-only PDF/status dashboard, debounced input/config/include/asset watching, last-success preservation, per-stage timings, JSON Lines events, browser opening, and quiet bounded runs.
 
 ### Changed
 
