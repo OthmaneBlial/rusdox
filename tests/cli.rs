@@ -1146,6 +1146,61 @@ fn stdio_protocol_renders_one_bounded_json_request() {
 }
 
 #[test]
+fn stdio_protocol_applies_the_operator_limits_file() {
+    let temp = tempdir().expect("temp dir");
+    let output_root = temp.path().join("service-output");
+    let profile_path = temp.path().join("limits.toml");
+    let profile = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/hosted-limits.toml"),
+    )
+    .expect("hosted profile")
+    .replace("max_spec_bytes = 2097152", "max_spec_bytes = 64");
+    fs::write(&profile_path, profile).expect("custom limits");
+    let mut child = spawn_cli(
+        &[
+            "serve",
+            "stdio",
+            "--limits-file",
+            profile_path.to_string_lossy().as_ref(),
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--max-requests",
+            "1",
+        ],
+        temp.path(),
+    );
+    let request = serde_json::json!({
+        "protocol_version": 1,
+        "request_id": "limited-1",
+        "operation": "validate",
+        "source": {
+            "kind": "inline",
+            "format": "yaml",
+            "content": format!("version: 1\nblocks: []\n# {}", "x".repeat(80))
+        }
+    });
+    writeln!(
+        child.stdin.take().expect("stdin"),
+        "{}",
+        serde_json::to_string(&request).expect("request JSON")
+    )
+    .expect("request");
+    let output = child.wait_with_output().expect("protocol output");
+    assert!(output.status.success());
+    let response: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("response JSON");
+    assert_eq!(response["ok"], false);
+    assert_eq!(response["error"]["code"], "parse_error");
+    assert!(
+        response["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("limit is 64 bytes")),
+        "response: {response:#}"
+    );
+    assert!(!output_root.exists());
+}
+
+#[test]
 fn loopback_http_protocol_reuses_the_v1_request_contract() {
     let temp = tempdir().expect("temp dir");
     let output_root = temp.path().join("service-output");

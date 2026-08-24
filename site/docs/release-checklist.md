@@ -25,14 +25,21 @@ release pull request; a checked box without evidence is not a release receipt.
 - [ ] Benchmark history is regenerated; no explicit runtime or memory budget is
       exceeded without a reviewed rationale.
 - [ ] Load, concurrency, cancellation, and atomic recovery tests pass.
+- [ ] `node scripts/check_security_review.mjs` and the RustSec audit pass; every
+      informational maintenance warning has an explicit owner/rationale.
+- [ ] The compatibility contract covers the exact supported feature set and
+      every spec block variant.
 
 ## Supply chain and publication
 
 - [ ] The publishable crate contains only the intended files.
 - [ ] Release archives are produced on all supported targets.
+- [ ] Every release binary builds twice to identical bytes and each target has
+      a reproducibility receipt; deterministic archives reproduce from one binary.
 - [ ] SHA-256 checksums verify after download.
 - [ ] SPDX SBOM and GitHub build provenance attestations cover every archive.
 - [ ] Installers consume the release archive and verify its checksum.
+- [ ] Installer smoke jobs verify GitHub build provenance before execution.
 - [ ] The crates.io dry run passes before the OIDC publish job.
 - [ ] Release notes credit every meaningful contributor from merged history.
 - [ ] The GitHub release, crates.io version, documentation, Pages site, and

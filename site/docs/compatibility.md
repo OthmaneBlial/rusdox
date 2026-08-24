@@ -2,6 +2,11 @@
 
 This page is the public RusDox support contract. It distinguishes implemented behavior from parity-tested behavior and planned work.
 
+The same v1 surface is checked as machine-readable data in
+[`compatibility/v1-feature-contract.json`](../compatibility/v1-feature-contract.json).
+Its executable gate requires evidence for every capability and maps every
+`BlockSpec` variant exactly once, so a new public block cannot bypass this page.
+
 The document feature matrix exposes four independent states instead of hiding nuance behind one label:
 
 - **DOCX**: the feature has an implemented DOCX path.

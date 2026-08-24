@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>v1 security review | RusDox Documentation</title>
+    <meta name="description" content="Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/security-review-v1.html" />
+    <meta property="og:title" content="v1 security review | RusDox" />
+    <meta property="og:description" content="Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/security-review-v1.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox v1 security review","description":"Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks.","url":"https://othmaneblial.github.io/rusdox/docs/security-review-v1.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Security</p>
+            <h1>v1 security review</h1>
+            <p class="lede">Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/security-review-v1.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="stability.html">Stability and support</a></li><li><a href="release-checklist.html">Release checklist</a></li><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a class="is-active" aria-current="page" href="security-review-v1.html">v1 security review</a></li><li><a href="production.html">Production and batch rendering</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="architecture.html">Architecture</a></li><li><a href="governance.html">Governance</a></li><li><a href="contributors.html">Contributors</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#threat-model-and-trust-boundaries">Threat model and trust boundaries</a></li><li class="toc-level-2"><a href="#zip-and-ooxml">ZIP and OOXML</a></li><li class="toc-level-2"><a href="#images-and-svg">Images and SVG</a></li><li class="toc-level-2"><a href="#template-expansion">Template expansion</a></li><li class="toc-level-2"><a href="#protocol-hosted-use-and-batch-work">Protocol, hosted use, and batch work</a></li><li class="toc-level-2"><a href="#verification-and-supply-chain">Verification and supply chain</a></li><li class="toc-level-2"><a href="#residual-risks-and-non-claims">Residual risks and non-claims</a></li></ol></nav>
+            <div class="docs-content prose"><p>Review date: <strong>2026-08-24</strong> Scope: RusDox v1 document/spec ingestion, Word templates, visual decoding, local integration transports, batch execution, and release supply chain.</p>
+<p>RusDox is a local document renderer, not an isolation boundary. Its parsers treat every input as untrusted and apply finite work and allocation ceilings, but callers processing hostile documents should still run the process with least privilege, a private working directory, and operating-system resource limits.</p>
+<h2 id="threat-model-and-trust-boundaries">Threat model and trust boundaries</h2>
+<p>The attacker may control a DOCX/ZIP package, OOXML parts and relationships, a YAML/JSON/TOML spec, local include contents, image bytes, SVG markup, Word template expressions, and a protocol request. They may attempt path traversal, entity expansion, decompression or image bombs, recursive expansion, excessive concurrency, overwrite outside an output root, or access to local files through an SVG reference. Network services, remote asset fetching, macros, embedded executables, and raw OOXML template injection are outside the supported input model.</p>
+<h2 id="zip-and-ooxml">ZIP and OOXML</h2>
+<ul><li>A DOCX is rejected before parsing when the compressed archive, entry count, one uncompressed entry, aggregate uncompressed bytes, or per-entry expansion ratio exceeds <code>InputLimits</code>.</li><li>Every member path is enclosed and normalized; absolute paths, parent traversal, backslash aliases, duplicate names, unsafe relationship targets, missing targets, and undeclared content types fail closed.</li><li>XML and relationships parts have a byte ceiling. <code>DOCTYPE</code> declarations are forbidden, so DTD-defined entities and external entities cannot enter the OOXML parser. Only the XML parser&#39;s built-in character references remain.</li><li>Opening an existing package preserves untouched parts, but validates the package before exposing it. Saving uses a same-directory temporary file, flush/sync, and atomic replacement so failure does not destroy the previous valid destination.</li></ul>
+<h2 id="images-and-svg">Images and SVG</h2>
+<ul><li>PNG/JPEG/SVG source bytes are bounded before decode. Declared dimensions and requested raster targets are checked against the pixel budget before large allocations.</li><li>The SVG resolver accepts bounded <code>data:</code> resources but deliberately refuses string/file references. An SVG therefore cannot read an arbitrary local path through an image <code>href</code>; RusDox does not fetch remote SVG resources.</li><li>System font parsing remains native dependency code. Hosted deployments should expose only a curated font directory through their container or sandbox.</li></ul>
+<h2 id="template-expansion">Template expansion</h2>
+<ul><li>Template syntax is data substitution, not code execution: it has no network, filesystem, shell, evaluator, or raw-OOXML escape hatch.</li><li>Package, XML, and data inputs retain their normal ceilings. Separate limits bound total placeholder/block expansions, nested partial depth, and output bytes for every rendered textual OOXML part.</li><li>Partial cycles, unclosed blocks, unsupported placements, missing strict-mode values, and output-limit violations return structured diagnostics without replacing the last good output.</li></ul>
+<h2 id="protocol-hosted-use-and-batch-work">Protocol, hosted use, and batch work</h2>
+<ul><li><code>serve</code> defaults to the conservative <code>hosted</code> resource profile. Limits come from operator-owned CLI flags or a complete TOML/JSON file; a request cannot raise its own ceilings.</li><li>HTTP binds to <code>127.0.0.1</code>, grants no CORS access, bounds headers and request bodies, sets defensive response headers, and confines relative writes below a fixed output root with symlink-aware containment. It is intentionally not an authenticated public or LAN service.</li><li><code>BatchRenderer</code> preflights job count, per-job bytes, and aggregate source bytes before workers start. A fixed worker budget bounds concurrency. A cooperative token cancels queued jobs and is checked between native render stages; it is not hard CPU preemption inside a decoder already executing.</li></ul>
+<h2 id="verification-and-supply-chain">Verification and supply chain</h2>
+<ul><li>The crate&#39;s own <code>src/</code> contains no <code>unsafe</code> blocks. This is enforced by <code>scripts/check_security_review.mjs</code>; third-party native/parser code remains inside the threat model.</li><li>Unit/integration tests cover malformed packages, DTD rejection, SVG local-file denial, template expansion ceilings, service-owned limits, batch load, concurrency, memory preflight, cancellation, and interrupted writes. Three libFuzzer targets compile in CI, and CodeQL scans the repository.</li><li>The official RustSec audit runs on dependency changes and weekly. On the review date there are no known vulnerabilities or unsound dependencies in <code>Cargo.lock</code>. RustSec separately marks the current upstream <code>rustybuzz</code> and <code>ttf-parser</code> releases as unmaintained; both remain transitive/direct rendering dependencies until the upstream <code>resvg</code>/font stack has a supported migration.</li><li>Tagged binaries are built twice from the lockfile and compared byte-for-byte. Deterministic archives, SHA-256 checksums, SPDX SBOM, GitHub build-provenance attestations, and SBOM attestations are attached to every release. Installer smoke jobs verify the provenance before execution.</li></ul>
+<h2 id="residual-risks-and-non-claims">Residual risks and non-claims</h2>
+<ul><li>Cancellation is stage-bound and does not forcibly interrupt a parser or image decoder in the middle of one call.</li><li>Viewer rendering and font substitution can differ by operating system and installed fonts; reproducible bytes do not mean identical visual behavior on every host.</li><li>Existing-DOCX preservation is bounded, not a guarantee that every optional or proprietary Word extension is understood.</li><li>PDFs are not currently claimed to be tagged PDF, PDF/UA, or PDF/A. The accessibility/archival requirements and present gap are documented before any such marketing claim.</li></ul>
+<p>Report a suspected vulnerability privately through the process in <a href="security.html"><code>SECURITY.md</code></a>. Do not attach confidential source documents to a public issue.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="input-safety.html"><span>Previous</span><strong>Input safety and limits</strong></a>
+    <a class="docs-pager-next" href="production.html"><span>Next</span><strong>Production and batch rendering</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

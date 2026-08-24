@@ -51,8 +51,12 @@ jobs:
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
 
-      - name: Build release binary
-        run: cargo build --release --locked --bin rusdox --target ${{ matrix.target }}
+      - name: Build twice and verify reproducible binary bytes
+        run: >-
+          python scripts/verify_reproducible_build.py
+          --target ${{ matrix.target }}
+          --binary ${{ matrix.bin }}
+          --report rusdox-${{ matrix.target }}.reproducibility.json
 
       - name: Verify binary version
         if: matrix.os != 'windows-latest'
@@ -69,24 +73,27 @@ jobs:
 
       - name: Package tar.gz
         if: matrix.archive == 'tar.gz'
-        run: |
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ matrix.bin }} dist/${{ matrix.bin }}
-          tar -czf rusdox-${{ matrix.target }}.tar.gz -C dist ${{ matrix.bin }}
+        run: >-
+          python scripts/package_release.py
+          --binary target/${{ matrix.target }}/release/${{ matrix.bin }}
+          --format tar.gz
+          --output rusdox-${{ matrix.target }}.tar.gz
 
       - name: Package zip
         if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/${{ matrix.bin }}"
-          Compress-Archive -Path "dist/${{ matrix.bin }}" -DestinationPath "rusdox-${{ matrix.target }}.zip" -Force
+        run: >-
+          python scripts/package_release.py
+          --binary target/${{ matrix.target }}/release/${{ matrix.bin }}
+          --format zip
+          --output rusdox-${{ matrix.target }}.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: rusdox-${{ matrix.target }}
-          path: rusdox-${{ matrix.target }}.${{ matrix.archive }}
+          path: |
+            rusdox-${{ matrix.target }}.${{ matrix.archive }}
+            rusdox-${{ matrix.target }}.reproducibility.json
 
   release:
     name: Publish signed release
@@ -119,7 +126,7 @@ jobs:
 
       - name: Generate SHA-256 checksums
         run: |
-          sha256sum rusdox-*.tar.gz rusdox-*.zip > SHA256SUMS
+          sha256sum rusdox-*.tar.gz rusdox-*.zip rusdox-*.reproducibility.json > SHA256SUMS
           sha256sum --check SHA256SUMS
 
       - name: Attest build provenance
@@ -147,6 +154,7 @@ jobs:
             rusdox-*.tar.gz
             rusdox-*.zip
             rusdox-${{ github.ref_name }}.spdx.json
+            rusdox-*.reproducibility.json
             SHA256SUMS
 
       - name: Publish release after every asset is attached
@@ -185,13 +193,33 @@ jobs:
     name: Smoke install (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     needs: release
+    permissions:
+      contents: read
+      attestations: read
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Download and verify signed build provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$GITHUB_REF_NAME" --pattern "rusdox-${{ matrix.target }}.${{ matrix.archive }}" --dir attestation-check
+          gh attestation verify "attestation-check/rusdox-${{ matrix.target }}.${{ matrix.archive }}" --repo "$GITHUB_REPOSITORY"
 
       - name: Test release installer
         if: matrix.os != 'windows-latest'

@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RusDox performance budgets</title><meta name="description" content="Long-term RusDox runtime and memory budgets backed by reproducible benchmark evidence."><link rel="canonical" href="https://othmaneblial.github.io/rusdox/benchmarks/"><style>
+  :root{color-scheme:dark;--bg:#07111e;--panel:#0d1b2b;--line:#23354b;--text:#f4f0e8;--muted:#a7b4c5;--mint:#5eead4;--amber:#fbbf24;--red:#fb7185}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 82% 0,#16334a 0,transparent 36rem),var(--bg);color:var(--text);font:15px/1.55 Inter,system-ui,sans-serif}main{width:min(1180px,calc(100% - 32px));margin:auto;padding:48px 0 80px}a{color:var(--mint)}header{display:grid;gap:16px;padding:44px;border:1px solid var(--line);border-radius:28px;background:linear-gradient(145deg,#11283a,#0a1725)}.eyebrow{margin:0;color:var(--mint);font:700 12px ui-monospace,monospace;text-transform:uppercase;letter-spacing:.13em}h1{font-size:clamp(38px,7vw,76px);line-height:.98;max-width:850px;margin:0}header>p:not(.eyebrow){max-width:760px;color:var(--muted);font-size:18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{padding:20px;border:1px solid var(--line);border-radius:18px;background:#081522}.stat strong{display:block;font-size:28px}.stat span{color:var(--muted)}section{margin-top:48px}h2{font-size:30px}p{color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:20px;background:var(--panel)}table{border-collapse:collapse;width:100%;min-width:920px}th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line)}thead th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.meter{display:flex;align-items:center;gap:8px}.track{width:90px;height:7px;border-radius:9px;background:#23354b;overflow:hidden}.fill{height:100%;background:var(--mint)}.status{font-weight:700}.pass{color:var(--mint)}.fail{color:var(--red)}.runs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.runs article{display:grid;gap:4px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}.runs p{margin:0;color:var(--amber);font:12px ui-monospace,monospace}.runs span,.runs small{color:var(--muted)}footer{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);display:flex;gap:20px;flex-wrap:wrap}@media(max-width:720px){main{width:min(100% - 20px,1180px);padding-top:10px}header{padding:28px 22px}.stats{grid-template-columns:1fr}h1{font-size:44px}}
+  </style></head><body><main><header><p class="eyebrow">Performance contract · reviewed 2026-08-24</p><h1>Fast is a budget, not a screenshot.</h1><p>Every scheduled Ubuntu run is compared with a comparable baseline, a relative regression floor, and these absolute runtime and peak-memory ceilings. A threshold change requires review and history.</p><div class="stats"><div class="stat"><strong>13/13</strong><span>scenarios within budget</span></div><div class="stat"><strong>41%</strong><span>tightest runtime headroom · pages-1000-pdf</span></div><div class="stat"><strong>42%</strong><span>tightest memory headroom · pages-1000-pdf</span></div></div></header><section><p class="eyebrow">Reference host</p><h2>Explicit ceilings for ubuntu-latest</h2><p>Baseline 2026-08-23T23:20:09.154Z · linux/x64. Cross-host observations remain visible below but are never compared as regressions.</p><div class="table-wrap" tabindex="0" aria-label="Scrollable performance budget table"><table><thead><tr><th>Scenario</th><th>Median</th><th>Runtime budget</th><th>Usage</th><th>Peak memory</th><th>Memory budget</th><th>Result</th></tr></thead><tbody><tr>
+    <th scope="row"><code>small-validation</code></th>
+    <td>0.04 ms</td><td>2.00 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:1.8%"></div></div><span>2%</span></div></td>
+    <td>6.5 MiB</td><td>32.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>small-docx</code></th>
+    <td>1.15 ms</td><td>10 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:11.5%"></div></div><span>12%</span></div></td>
+    <td>7.1 MiB</td><td>32.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>small-pdf</code></th>
+    <td>4.35 ms</td><td>25 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:17.4%"></div></div><span>17%</span></div></td>
+    <td>11.1 MiB</td><td>64.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>small-dual</code></th>
+    <td>5.53 ms</td><td>30 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:18.4%"></div></div><span>18%</span></div></td>
+    <td>12.0 MiB</td><td>64.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>medium-validation</code></th>
+    <td>0.21 ms</td><td>3.00 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:7.1%"></div></div><span>7%</span></div></td>
+    <td>6.7 MiB</td><td>32.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>medium-docx</code></th>
+    <td>1.80 ms</td><td>15 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:12.0%"></div></div><span>12%</span></div></td>
+    <td>7.5 MiB</td><td>32.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>medium-pdf</code></th>
+    <td>5.79 ms</td><td>35 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:16.6%"></div></div><span>17%</span></div></td>
+    <td>11.5 MiB</td><td>64.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>medium-dual</code></th>
+    <td>6.96 ms</td><td>45 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:15.5%"></div></div><span>15%</span></div></td>
+    <td>12.0 MiB</td><td>64.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>pages-1000-validation</code></th>
+    <td>131 ms</td><td>300 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:43.8%"></div></div><span>44%</span></div></td>
+    <td>70.1 MiB</td><td>128 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>pages-1000-docx</code></th>
+    <td>315 ms</td><td>600 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:52.4%"></div></div><span>52%</span></div></td>
+    <td>101 MiB</td><td>192 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>pages-1000-pdf</code></th>
+    <td>1.29 s</td><td>2.20 s</td><td><div class="meter"><div class="track"><div class="fill" style="width:58.5%"></div></div><span>59%</span></div></td>
+    <td>149 MiB</td><td>256 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>pages-1000-dual</code></th>
+    <td>1.40 s</td><td>2.50 s</td><td><div class="meter"><div class="track"><div class="fill" style="width:56.1%"></div></div><span>56%</span></div></td>
+    <td>152 MiB</td><td>288 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr><tr>
+    <th scope="row"><code>external-docx-open-save</code></th>
+    <td>1.36 ms</td><td>15 ms</td><td><div class="meter"><div class="track"><div class="fill" style="width:9.0%"></div></div><span>9%</span></div></td>
+    <td>6.7 MiB</td><td>32.0 MiB</td><td><span class="status pass">Within budget</span></td>
+  </tr></tbody></table></div></section><section><p class="eyebrow">Long-term evidence</p><h2>Checked-in runs, separated by host.</h2><div class="runs"><article><p>2026-08-23</p><strong>darwin/arm64</strong><span>Apple M2</span><small>13 isolated scenarios · commit 49fa5a5</small></article><article><p>2026-08-23</p><strong>linux/x64</strong><span>AMD EPYC 9V74 80-Core Processor</span><small>13 isolated scenarios · commit 8b21d2e</small></article></div></section><footer><a href="../docs/performance.html">Methodology and limitations</a><a href="dashboard.json">Machine-readable dashboard</a><a href="../benchmarks/history.json">Full history</a><a href="https://github.com/OthmaneBlial/rusdox/actions/workflows/benchmark.yml">Scheduled workflow</a></footer></main></body></html>

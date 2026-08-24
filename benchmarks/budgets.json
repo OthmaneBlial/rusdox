@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-08-24",
+  "reference_host": {
+    "platform": "linux",
+    "architecture": "x64",
+    "runner": "ubuntu-latest"
+  },
+  "scenarios": [
+    {"id":"small-validation","max_median_ms":2,"max_peak_memory_bytes":33554432},
+    {"id":"small-docx","max_median_ms":10,"max_peak_memory_bytes":33554432},
+    {"id":"small-pdf","max_median_ms":25,"max_peak_memory_bytes":67108864},
+    {"id":"small-dual","max_median_ms":30,"max_peak_memory_bytes":67108864},
+    {"id":"medium-validation","max_median_ms":3,"max_peak_memory_bytes":33554432},
+    {"id":"medium-docx","max_median_ms":15,"max_peak_memory_bytes":33554432},
+    {"id":"medium-pdf","max_median_ms":35,"max_peak_memory_bytes":67108864},
+    {"id":"medium-dual","max_median_ms":45,"max_peak_memory_bytes":67108864},
+    {"id":"pages-1000-validation","max_median_ms":300,"max_peak_memory_bytes":134217728},
+    {"id":"pages-1000-docx","max_median_ms":600,"max_peak_memory_bytes":201326592},
+    {"id":"pages-1000-pdf","max_median_ms":2200,"max_peak_memory_bytes":268435456},
+    {"id":"pages-1000-dual","max_median_ms":2500,"max_peak_memory_bytes":301989888},
+    {"id":"external-docx-open-save","max_median_ms":15,"max_peak_memory_bytes":33554432}
+  ]
+}

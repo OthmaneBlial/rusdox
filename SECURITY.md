@@ -4,6 +4,10 @@
 
 RusDox is currently maintained as a fast-moving project.
 
+The dated [v1 security review](docs/security-review-v1.md) documents the threat
+model, enforced ZIP/XML/image/template limits, hosted boundary, supply-chain
+controls, and residual non-claims.
+
 Security fixes are most likely to land in:
 
 - the latest release line

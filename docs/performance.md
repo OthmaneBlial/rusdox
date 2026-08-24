@@ -4,6 +4,11 @@ RusDox performance claims come from a versioned protocol, not a hand-timed scree
 
 ![RusDox reproducible benchmark history](../assets/benchmark-history.svg)
 
+Open the [long-term performance budget dashboard](https://othmaneblial.github.io/rusdox/benchmarks/)
+for per-scenario runtime, peak-memory ceilings, current usage, and headroom. Its
+machine-readable source is `benchmarks/budgets.json`; every scheduled run must
+stay inside both the relative regression policy and these absolute ceilings.
+
 The chart is generated from [`benchmarks/history.json`](../benchmarks/history.json). Full, unrounded evidence lives in [`benchmarks/results/`](../benchmarks/results/). Results from different CPUs or operating systems are separate observations, not interchangeable scores.
 
 ## Reproduce a Run
@@ -69,6 +74,10 @@ On a comparable Ubuntu/`x86_64` host, [`scripts/check_benchmark_regression.mjs`]
 
 - runtime: more than 20% and more than 5 ms slower;
 - peak memory: more than 25% and more than 16 MiB higher.
+
+The same run also fails when any scenario exceeds its absolute median-runtime or
+peak-memory ceiling in `benchmarks/budgets.json`, even if a recently changed
+baseline would otherwise hide the regression.
 
 Every scheduled report and regression comparison is retained as a downloadable Actions artifact. A baseline change should come from a successful scheduled/manual run and explain the code or environment change; do not raise thresholds to conceal a regression.
 

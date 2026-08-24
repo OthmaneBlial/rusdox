@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Build RusDox twice and compare release bytes")
+    parser.add_argument("--target", required=True)
+    parser.add_argument("--binary", required=True)
+    parser.add_argument("--report", required=True)
+    args = parser.parse_args()
+
+    root = Path(__file__).resolve().parent.parent
+    epoch = subprocess.check_output(
+        ["git", "log", "-1", "--format=%ct"], cwd=root, text=True
+    ).strip()
+    command = [
+        "cargo", "build", "--release", "--locked", "--bin", "rusdox",
+        "--target", args.target,
+    ]
+    target_parent = root / "target"
+    target_parent.mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="repro-a-", dir=target_parent) as first_dir:
+        first_binary = build(command, root, epoch, Path(first_dir), args.target, args.binary)
+        first = digest(first_binary)
+    with tempfile.TemporaryDirectory(prefix="repro-b-", dir=target_parent) as second_dir:
+        second_binary = build(command, root, epoch, Path(second_dir), args.target, args.binary)
+        second = digest(second_binary)
+        canonical = root / "target" / args.target / "release" / args.binary
+        canonical.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(second_binary, canonical)
+    if first != second:
+        print(f"release binary is not reproducible: {first} != {second}", file=sys.stderr)
+        return 1
+
+    report = {
+        "schema_version": 1,
+        "target": args.target,
+        "binary": args.binary,
+        "source_date_epoch": int(epoch),
+        "cargo_locked": True,
+        "incremental": False,
+        "isolated_target_directories": True,
+        "builds_compared": 2,
+        "sha256": first,
+        "reproducible": True,
+    }
+    destination = root / args.report
+    destination.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    print(f"reproducible {args.target} {first}")
+    return 0
+
+
+def digest(path: Path) -> str:
+    value = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+
+def build(command, root: Path, epoch: str, target_dir: Path, target: str, binary: str) -> Path:
+    environment = os.environ.copy()
+    environment["SOURCE_DATE_EPOCH"] = epoch
+    environment["CARGO_INCREMENTAL"] = "0"
+    environment["CARGO_TARGET_DIR"] = str(target_dir)
+    subprocess.run(command, cwd=root, env=environment, check=True)
+    artifact = target_dir / target / "release" / binary
+    if not artifact.is_file():
+        raise FileNotFoundError(f"release binary was not created: {artifact}")
+    return artifact
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

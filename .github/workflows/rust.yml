@@ -59,6 +59,7 @@ jobs:
       - name: Verify generated static documentation
         if: matrix.os == 'ubuntu-latest'
         run: |
+          node scripts/build_benchmark_dashboard.mjs --check
           node scripts/build_site.mjs --check
           node scripts/check_site.mjs
           node playground/test.mjs
@@ -69,6 +70,10 @@ jobs:
           node scripts/test_contributor_lab.mjs
           node scripts/check_contributors.mjs
           node scripts/check_stable_contracts.mjs
+          node scripts/check_compatibility_contract.mjs
+          node scripts/test_benchmark_contract.mjs
+          node scripts/test_reproducible_release.mjs
+          node scripts/check_security_review.mjs
 
       - name: Build complete public API documentation
         if: matrix.os == 'ubuntu-latest'

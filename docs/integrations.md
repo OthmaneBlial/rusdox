@@ -10,7 +10,8 @@ stdin/stdout or an explicitly started loopback HTTP service.
 Start a bounded worker:
 
 ```bash
-rusdox serve stdio --output-root target/rusdox-output --max-requests 1
+rusdox serve stdio --limits-profile hosted \
+  --output-root target/rusdox-output --max-requests 1
 ```
 
 Send one compact JSON object followed by a newline:
@@ -49,7 +50,8 @@ output paths containing absolute roots or `..` are rejected explicitly.
 Start the opt-in service only when a local tool cannot manage a child process:
 
 ```bash
-rusdox serve http --port 4175 --output-root target/rusdox-output
+rusdox serve http --limits-profile hosted \
+  --port 4175 --output-root target/rusdox-output
 curl -fsS http://127.0.0.1:4175/health
 curl -fsS -H 'Content-Type: application/json' \
   --data-binary @request.json \
@@ -60,6 +62,11 @@ The server always binds `127.0.0.1`, has no CORS permission, reads at most 16
 KiB of headers and 2 MiB of JSON, returns `no-store` and `nosniff` headers, and
 processes requests sequentially. It has no authentication and is deliberately
 not a hosted, LAN, daemon, or multi-tenant API. Use stdin/stdout when possible.
+
+`serve` uses the conservative hosted resource profile by default. A service
+owner can select `--limits-profile default` for trusted local inputs or pass a
+complete TOML/JSON profile through `--limits-file`; request JSON cannot increase
+these ceilings. The `/health` response exposes the effective profile values.
 
 ## Rust embedding
 
@@ -87,6 +94,12 @@ The result keeps DOCX and optional PDF bytes in memory. Durable caller-visible
 artifact writes belong to the protocol adapter, which lets a future WASM
 implementation reuse request semantics without pretending the current native
 font/PDF stack or its internal temporary path already runs in browsers.
+
+Rust job runners can wrap the same object-safe renderer with `BatchRenderer`.
+It validates batch/job source-byte budgets before starting, applies a fixed
+worker ceiling, preserves result order, and accepts a shared
+`CancellationToken`. See [Production and batch rendering](production.md) for a
+complete example and the deployment boundary.
 
 ## Node, Python, Go, and CI
 

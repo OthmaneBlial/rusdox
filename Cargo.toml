@@ -28,6 +28,7 @@ include = [
   "/tests/**",
   "!/tests/golden/**",
   "/examples/*.yaml",
+  "/examples/*.toml",
   "/examples/fragments/**",
   "/examples/github-actions/**",
   "/examples/integrations/**",

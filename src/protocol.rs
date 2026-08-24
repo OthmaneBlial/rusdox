@@ -9,7 +9,7 @@ use crate::config::RusdoxConfig;
 use crate::renderer::{
     NativeRenderer, RenderRequest, RenderSource, Renderer, RENDERER_API_VERSION,
 };
-use crate::{atomic_write_file, ValidationIssue};
+use crate::{atomic_write_file, InputLimits, ValidationIssue};
 
 /// Stable protocol version accepted by local integrations.
 pub const PROTOCOL_VERSION: u32 = 1;
@@ -124,11 +124,27 @@ pub fn execute_protocol_request(
     request: ProtocolRequest,
     output_root: impl AsRef<Path>,
 ) -> ProtocolResponse {
+    execute_protocol_request_with_limits(request, output_root, InputLimits::default())
+}
+
+/// Executes one request with service-owner resource ceilings.
+///
+/// Limits are supplied out of band so an untrusted request cannot raise its
+/// own ZIP, XML, spec, include, or visual allocation budget.
+pub fn execute_protocol_request_with_limits(
+    request: ProtocolRequest,
+    output_root: impl AsRef<Path>,
+    limits: InputLimits,
+) -> ProtocolResponse {
     let request_id = request.request_id.clone();
     if let Err(message) = validate_request_envelope(&request) {
         return protocol_failure(request_id, "invalid_request", message);
     }
-    let renderer = NativeRenderer::new(request.config.clone().unwrap_or_default());
+    if let Err(error) = limits.validate() {
+        return protocol_failure(request_id, "invalid_limits", error.to_string());
+    }
+    let renderer =
+        NativeRenderer::new(request.config.clone().unwrap_or_default()).with_limits(limits);
     let render_request = RenderRequest {
         renderer_api_version: RENDERER_API_VERSION,
         source: request.source.clone(),

@@ -2,6 +2,8 @@
 
 use std::io::Cursor;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -14,6 +16,37 @@ use crate::{attach_source_spans, attach_source_spans_from_str, DocxError, InputL
 
 /// Version of the transport-neutral Rust rendering request.
 pub const RENDERER_API_VERSION: u32 = 1;
+
+/// Thread-safe cooperative cancellation signal for rendering and batch work.
+#[derive(Debug, Clone, Default)]
+pub struct CancellationToken {
+    cancelled: Arc<AtomicBool>,
+}
+
+impl CancellationToken {
+    /// Creates a token in the active state.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Requests cancellation for every clone of this token.
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+    }
+
+    /// Returns whether cancellation has been requested.
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::Acquire)
+    }
+
+    fn check(&self) -> Result<()> {
+        if self.is_cancelled() {
+            Err(DocxError::Cancelled)
+        } else {
+            Ok(())
+        }
+    }
+}
 
 /// Supported document-spec serialization formats for inline requests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -108,6 +141,22 @@ pub trait Renderer: Send + Sync {
     fn validate(&self, request: &RenderRequest) -> Result<RendererValidation>;
     /// Validate, compose, and return requested artifacts in memory.
     fn render(&self, request: &RenderRequest) -> Result<RenderedDocument>;
+
+    /// Renders while checking a cooperative cancellation signal.
+    ///
+    /// Implementations that do not override this method are cancellable before
+    /// and after their render call. [`NativeRenderer`] also checks between
+    /// inspection, composition, DOCX writing, and PDF rendering.
+    fn render_cancellable(
+        &self,
+        request: &RenderRequest,
+        cancellation: &CancellationToken,
+    ) -> Result<RenderedDocument> {
+        cancellation.check()?;
+        let output = self.render(request)?;
+        cancellation.check()?;
+        Ok(output)
+    }
 }
 
 /// Pure-Rust renderer used by the CLI and local JSON transports.
@@ -176,7 +225,17 @@ impl Renderer for NativeRenderer {
     }
 
     fn render(&self, request: &RenderRequest) -> Result<RenderedDocument> {
+        self.render_cancellable(request, &CancellationToken::new())
+    }
+
+    fn render_cancellable(
+        &self,
+        request: &RenderRequest,
+        cancellation: &CancellationToken,
+    ) -> Result<RenderedDocument> {
+        cancellation.check()?;
         let (spec, validation) = self.inspect(request)?;
+        cancellation.check()?;
         if !validation.valid {
             return Err(DocxError::Parse(format!(
                 "rendering rejected by {} validation error(s)",
@@ -191,19 +250,23 @@ impl Renderer for NativeRenderer {
         let compose_started = Instant::now();
         let document = studio.compose(&spec);
         let compose_duration = compose_started.elapsed();
+        cancellation.check()?;
 
         let docx_started = Instant::now();
         let mut cursor = Cursor::new(Vec::new());
         document.save_to_writer(&mut cursor)?;
         let docx = cursor.into_inner();
         let docx_duration = docx_started.elapsed();
+        cancellation.check()?;
 
         let (pdf, pdf_duration) = if request.emit_pdf {
             let pdf_started = Instant::now();
             let workspace = tempfile::tempdir()?;
             let pdf_path = workspace.path().join("rendered.pdf");
             studio.render_pdf_with_evidence(&document, &pdf_path, None)?;
-            (Some(std::fs::read(pdf_path)?), pdf_started.elapsed())
+            let bytes = std::fs::read(pdf_path)?;
+            cancellation.check()?;
+            (Some(bytes), pdf_started.elapsed())
         } else {
             (None, Duration::ZERO)
         };

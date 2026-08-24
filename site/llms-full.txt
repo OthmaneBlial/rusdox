@@ -295,6 +295,21 @@ node scripts/run_benchmark_protocol.mjs --output target/benchmarks/local.json
 
 Read the [methodology, regression thresholds, and limitations](docs/performance.md), inspect the derived [history data](benchmarks/history.json), or open the unrounded [raw reports](benchmarks/results/). Results from different machines are not presented as directly comparable scores.
 
+## Production boundaries
+
+The public Rust API includes a bounded `BatchRenderer`, fixed worker
+concurrency, ordered per-job results, and cooperative cancellation. `rusdox
+serve` defaults to a conservative hosted resource profile; operators can supply
+a complete TOML/JSON profile, while request payloads cannot raise their own
+limits. ZIP/XML/image/template ceilings are enforced before expensive work.
+
+Read the [production runner guide](docs/production.md), [input-safety contract](docs/input-safety.md),
+and dated [v1 security review](docs/security-review-v1.md). Tagged release jobs
+build binaries twice, compare their bytes, create deterministic archives,
+publish checksums and an SPDX SBOM, and attach GitHub provenance/SBOM
+attestations. The live [performance budget dashboard](https://othmaneblial.github.io/rusdox/benchmarks/)
+shows all 13 scenarios against explicit runtime and peak-memory ceilings.
+
 ## First document
 
 Create a starter doc:
@@ -1476,14 +1491,21 @@ release pull request; a checked box without evidence is not a release receipt.
 - [ ] Benchmark history is regenerated; no explicit runtime or memory budget is
       exceeded without a reviewed rationale.
 - [ ] Load, concurrency, cancellation, and atomic recovery tests pass.
+- [ ] `node scripts/check_security_review.mjs` and the RustSec audit pass; every
+      informational maintenance warning has an explicit owner/rationale.
+- [ ] The compatibility contract covers the exact supported feature set and
+      every spec block variant.
 
 ## Supply chain and publication
 
 - [ ] The publishable crate contains only the intended files.
 - [ ] Release archives are produced on all supported targets.
+- [ ] Every release binary builds twice to identical bytes and each target has
+      a reproducibility receipt; deterministic archives reproduce from one binary.
 - [ ] SHA-256 checksums verify after download.
 - [ ] SPDX SBOM and GitHub build provenance attestations cover every archive.
 - [ ] Installers consume the release archive and verify its checksum.
+- [ ] Installer smoke jobs verify GitHub build provenance before execution.
 - [ ] The crates.io dry run passes before the OIDC publish job.
 - [ ] Release notes credit every meaningful contributor from merged history.
 - [ ] The GitHub release, crates.io version, documentation, Pages site, and
@@ -2004,7 +2026,8 @@ stdin/stdout or an explicitly started loopback HTTP service.
 Start a bounded worker:
 
 ```bash
-rusdox serve stdio --output-root target/rusdox-output --max-requests 1
+rusdox serve stdio --limits-profile hosted \
+  --output-root target/rusdox-output --max-requests 1
 ```
 
 Send one compact JSON object followed by a newline:
@@ -2043,7 +2066,8 @@ output paths containing absolute roots or `..` are rejected explicitly.
 Start the opt-in service only when a local tool cannot manage a child process:
 
 ```bash
-rusdox serve http --port 4175 --output-root target/rusdox-output
+rusdox serve http --limits-profile hosted \
+  --port 4175 --output-root target/rusdox-output
 curl -fsS http://127.0.0.1:4175/health
 curl -fsS -H 'Content-Type: application/json' \
   --data-binary @request.json \
@@ -2054,6 +2078,11 @@ The server always binds `127.0.0.1`, has no CORS permission, reads at most 16
 KiB of headers and 2 MiB of JSON, returns `no-store` and `nosniff` headers, and
 processes requests sequentially. It has no authentication and is deliberately
 not a hosted, LAN, daemon, or multi-tenant API. Use stdin/stdout when possible.
+
+`serve` uses the conservative hosted resource profile by default. A service
+owner can select `--limits-profile default` for trusted local inputs or pass a
+complete TOML/JSON profile through `--limits-file`; request JSON cannot increase
+these ceilings. The `/health` response exposes the effective profile values.
 
 ## Rust embedding
 
@@ -2081,6 +2110,12 @@ The result keeps DOCX and optional PDF bytes in memory. Durable caller-visible
 artifact writes belong to the protocol adapter, which lets a future WASM
 implementation reuse request semantics without pretending the current native
 font/PDF stack or its internal temporary path already runs in browsers.
+
+Rust job runners can wrap the same object-safe renderer with `BatchRenderer`.
+It validates batch/job source-byte budgets before starting, applies a fixed
+worker ceiling, preserves result order, and accepts a shared
+`CancellationToken`. See [Production and batch rendering](production.md) for a
+complete example and the deployment boundary.
 
 ## Node, Python, Go, and CI
 
@@ -2900,6 +2935,11 @@ Source: https://othmaneblial.github.io/rusdox/docs/compatibility.html
 
 This page is the public RusDox support contract. It distinguishes implemented behavior from parity-tested behavior and planned work.
 
+The same v1 surface is checked as machine-readable data in
+[`compatibility/v1-feature-contract.json`](../compatibility/v1-feature-contract.json).
+Its executable gate requires evidence for every capability and maps every
+`BlockSpec` variant exactly once, so a new public block cannot bypass this page.
+
 The document feature matrix exposes four independent states instead of hiding nuance behind one label:
 
 - **DOCX**: the feature has an implemented DOCX path.
@@ -3056,6 +3096,9 @@ RusDox treats DOCX packages, document specs, includes, XML, ZIP entries, images,
 | One PNG/JPEG source | 32 MiB |
 | One SVG source | 8 MiB |
 | Decoded or target visual raster | 64 million pixels |
+| Template substitutions/block expansions | 100,000 |
+| One rendered template XML part | 64 MiB |
+| Nested template partial depth | 32 |
 
 Unsafe ZIP paths, duplicate entries, missing required package parts, malformed XML, unresolved internal relationships, and missing content-type declarations are rejected by the package validator.
 
@@ -3078,6 +3121,29 @@ let document = Document::open_with_limits("large-but-trusted.docx", limits)?;
 
 `DocumentSpec::load_from_path_with_limits` and the `from_*_str_with_limits` methods cover YAML/JSON/TOML. `Visual::from_path_with_limits` and `Visual::from_bytes_with_limits` apply explicit visual ceilings.
 
+## Hosted profile
+
+`InputLimits::hosted()` is the conservative service profile and the default for
+`rusdox serve`. Compared with the library defaults it caps a compressed DOCX at
+16 MiB, total expanded DOCX data at 64 MiB, one spec at 2 MiB, one image at 8
+MiB, one SVG at 2 MiB, a decoded visual at 16 million pixels, template work at
+10,000 expansions, rendered template XML at 8 MiB, and include/partial depth at
+12. The complete checked-in profile is [`examples/hosted-limits.toml`](../examples/hosted-limits.toml).
+
+```bash
+rusdox serve stdio --limits-profile hosted --output-root target/jobs
+rusdox serve http --limits-file examples/hosted-limits.toml \
+  --port 4175 --output-root target/jobs
+```
+
+A limit file is a complete TOML or JSON `InputLimits` value. Unknown fields,
+zero ceilings, and an entry ceiling larger than the aggregate DOCX ceiling are
+rejected. It is operator-owned and cannot be overridden by a protocol request.
+
+For concurrent Rust workloads, [`BatchRenderer`](production.md) also preflights
+the number of jobs, one source's bytes, aggregate source bytes, and worker
+concurrency before rendering starts.
+
 ## Fuzzing
 
 The `fuzz/` workspace contains buildable libFuzzer targets for:
@@ -3091,6 +3157,205 @@ CI compiles all targets under nightly Rust. Maintainers can run bounded campaign
 ## Atomic outputs
 
 DOCX, PDF, and serialized spec writes use a same-directory temporary file, flush and sync it, then atomically replace the destination. If rendering or writing fails, the previous known-good output remains in place and the temporary file is cleaned. Tests simulate an interrupted write and a failed PDF layout to enforce this contract.
+
+---
+
+# v1 security review
+
+Source: https://othmaneblial.github.io/rusdox/docs/security-review-v1.html
+
+Review date: **2026-08-24**
+Scope: RusDox v1 document/spec ingestion, Word templates, visual decoding,
+local integration transports, batch execution, and release supply chain.
+
+RusDox is a local document renderer, not an isolation boundary. Its parsers
+treat every input as untrusted and apply finite work and allocation ceilings,
+but callers processing hostile documents should still run the process with
+least privilege, a private working directory, and operating-system resource
+limits.
+
+## Threat model and trust boundaries
+
+The attacker may control a DOCX/ZIP package, OOXML parts and relationships, a
+YAML/JSON/TOML spec, local include contents, image bytes, SVG markup, Word
+template expressions, and a protocol request. They may attempt path traversal,
+entity expansion, decompression or image bombs, recursive expansion, excessive
+concurrency, overwrite outside an output root, or access to local files through
+an SVG reference. Network services, remote asset fetching, macros, embedded
+executables, and raw OOXML template injection are outside the supported input
+model.
+
+## ZIP and OOXML
+
+- A DOCX is rejected before parsing when the compressed archive, entry count,
+  one uncompressed entry, aggregate uncompressed bytes, or per-entry expansion
+  ratio exceeds `InputLimits`.
+- Every member path is enclosed and normalized; absolute paths, parent
+  traversal, backslash aliases, duplicate names, unsafe relationship targets,
+  missing targets, and undeclared content types fail closed.
+- XML and relationships parts have a byte ceiling. `DOCTYPE` declarations are
+  forbidden, so DTD-defined entities and external entities cannot enter the
+  OOXML parser. Only the XML parser's built-in character references remain.
+- Opening an existing package preserves untouched parts, but validates the
+  package before exposing it. Saving uses a same-directory temporary file,
+  flush/sync, and atomic replacement so failure does not destroy the previous
+  valid destination.
+
+## Images and SVG
+
+- PNG/JPEG/SVG source bytes are bounded before decode. Declared dimensions and
+  requested raster targets are checked against the pixel budget before large
+  allocations.
+- The SVG resolver accepts bounded `data:` resources but deliberately refuses
+  string/file references. An SVG therefore cannot read an arbitrary local path
+  through an image `href`; RusDox does not fetch remote SVG resources.
+- System font parsing remains native dependency code. Hosted deployments should
+  expose only a curated font directory through their container or sandbox.
+
+## Template expansion
+
+- Template syntax is data substitution, not code execution: it has no network,
+  filesystem, shell, evaluator, or raw-OOXML escape hatch.
+- Package, XML, and data inputs retain their normal ceilings. Separate limits
+  bound total placeholder/block expansions, nested partial depth, and output
+  bytes for every rendered textual OOXML part.
+- Partial cycles, unclosed blocks, unsupported placements, missing strict-mode
+  values, and output-limit violations return structured diagnostics without
+  replacing the last good output.
+
+## Protocol, hosted use, and batch work
+
+- `serve` defaults to the conservative `hosted` resource profile. Limits come
+  from operator-owned CLI flags or a complete TOML/JSON file; a request cannot
+  raise its own ceilings.
+- HTTP binds to `127.0.0.1`, grants no CORS access, bounds headers and request
+  bodies, sets defensive response headers, and confines relative writes below a
+  fixed output root with symlink-aware containment. It is intentionally not an
+  authenticated public or LAN service.
+- `BatchRenderer` preflights job count, per-job bytes, and aggregate source
+  bytes before workers start. A fixed worker budget bounds concurrency. A
+  cooperative token cancels queued jobs and is checked between native render
+  stages; it is not hard CPU preemption inside a decoder already executing.
+
+## Verification and supply chain
+
+- The crate's own `src/` contains no `unsafe` blocks. This is enforced by
+  `scripts/check_security_review.mjs`; third-party native/parser code remains
+  inside the threat model.
+- Unit/integration tests cover malformed packages, DTD rejection, SVG local-file
+  denial, template expansion ceilings, service-owned limits, batch load,
+  concurrency, memory preflight, cancellation, and interrupted writes. Three
+  libFuzzer targets compile in CI, and CodeQL scans the repository.
+- The official RustSec audit runs on dependency changes and weekly. On the
+  review date there are no known vulnerabilities or unsound dependencies in
+  `Cargo.lock`. RustSec separately marks the current upstream `rustybuzz` and
+  `ttf-parser` releases as unmaintained; both remain transitive/direct rendering
+  dependencies until the upstream `resvg`/font stack has a supported migration.
+- Tagged binaries are built twice from the lockfile and compared byte-for-byte.
+  Deterministic archives, SHA-256 checksums, SPDX SBOM, GitHub build-provenance
+  attestations, and SBOM attestations are attached to every release. Installer
+  smoke jobs verify the provenance before execution.
+
+## Residual risks and non-claims
+
+- Cancellation is stage-bound and does not forcibly interrupt a parser or image
+  decoder in the middle of one call.
+- Viewer rendering and font substitution can differ by operating system and
+  installed fonts; reproducible bytes do not mean identical visual behavior on
+  every host.
+- Existing-DOCX preservation is bounded, not a guarantee that every optional or
+  proprietary Word extension is understood.
+- PDFs are not currently claimed to be tagged PDF, PDF/UA, or PDF/A. The
+  accessibility/archival requirements and present gap are documented before any
+  such marketing claim.
+
+Report a suspected vulnerability privately through the process in
+[`SECURITY.md`](../SECURITY.md). Do not attach confidential source documents to
+a public issue.
+
+---
+
+# Production and batch rendering
+
+Source: https://othmaneblial.github.io/rusdox/docs/production.html
+
+RusDox exposes bounded building blocks for a job runner without pretending that
+the local HTTP adapter is a hosted service. A production owner supplies the
+queue, authentication, tenant isolation, process/container limits, retention,
+and observability. RusDox supplies deterministic preflight, bounded concurrency,
+cooperative cancellation, and in-memory artifacts.
+
+## Bounded Rust batches
+
+```rust
+use std::sync::Arc;
+use rusdox::config::RusdoxConfig;
+use rusdox::{
+    BatchLimits, BatchRenderer, BatchRequest, CancellationToken, NativeRenderer,
+    RenderRequest, RenderSource, SpecFormat, RENDERER_API_VERSION,
+};
+
+let batch = BatchRenderer::new(
+    Arc::new(NativeRenderer::new(RusdoxConfig::default())),
+    BatchLimits {
+        max_jobs: 100,
+        max_concurrency: 4,
+        max_source_bytes_per_job: 2 * 1024 * 1024,
+        max_total_source_bytes: 32 * 1024 * 1024,
+    },
+)?;
+let cancellation = CancellationToken::new();
+let results = batch.render(vec![BatchRequest {
+    id: "invoice-42".into(),
+    request: RenderRequest {
+        renderer_api_version: RENDERER_API_VERSION,
+        source: RenderSource::Inline {
+            format: SpecFormat::Yaml,
+            content: "version: 1\nblocks: []\n".into(),
+        },
+        emit_pdf: true,
+    },
+}], &cancellation)?;
+assert_eq!(results[0].id, "invoice-42");
+# Ok::<(), rusdox::DocxError>(())
+```
+
+Results preserve request order. Invalid capacity or aggregate-source limits fail
+before worker creation. Per-item parse/layout failures do not erase successful
+siblings. Cancelling a token prevents queued jobs and is observed between parse,
+composition, DOCX, and PDF stages.
+
+The test suite renders a 16-document real batch, proves a three-worker ceiling
+under contention, cancels queued work, and rejects an aggregate source-memory
+budget before any renderer is called. It does not claim hard memory isolation:
+use a process/container memory limit when tenants are mutually untrusted.
+
+## Service-owned profiles
+
+The local protocol defaults to the stricter hosted profile:
+
+```bash
+rusdox serve stdio --limits-profile hosted --output-root target/jobs
+rusdox serve http --limits-file examples/hosted-limits.toml \
+  --port 4175 --output-root target/jobs
+```
+
+`--limits-file` accepts one complete TOML or JSON `InputLimits` object, rejects
+unknown fields and zero/inconsistent ceilings, and overrides
+`--limits-profile`. Profiles belong to the service owner; protocol clients have
+no field that can increase them. The HTTP health response publishes effective
+limits so operators can confirm what is active.
+
+## Operational boundary
+
+Prefer one isolated worker process per trust domain. Keep the HTTP adapter on
+loopback behind an authenticated owner-controlled gateway, provide a private
+output root, bound `--max-requests` to recycle long-lived workers, and use
+read-only/curated font and template directories. Treat artifacts as sensitive
+tenant data and delete them according to the owner's retention policy.
+
+See [Input safety](input-safety.md), the [v1 security review](security-review-v1.md),
+and the [integration protocol](integrations.md) for the complete boundary.
 
 ---
 
@@ -3215,6 +3480,11 @@ RusDox performance claims come from a versioned protocol, not a hand-timed scree
 
 ![RusDox reproducible benchmark history](../assets/benchmark-history.svg)
 
+Open the [long-term performance budget dashboard](https://othmaneblial.github.io/rusdox/benchmarks/)
+for per-scenario runtime, peak-memory ceilings, current usage, and headroom. Its
+machine-readable source is `benchmarks/budgets.json`; every scheduled run must
+stay inside both the relative regression policy and these absolute ceilings.
+
 The chart is generated from [`benchmarks/history.json`](../benchmarks/history.json). Full, unrounded evidence lives in [`benchmarks/results/`](../benchmarks/results/). Results from different CPUs or operating systems are separate observations, not interchangeable scores.
 
 ## Reproduce a Run
@@ -3280,6 +3550,10 @@ On a comparable Ubuntu/`x86_64` host, [`scripts/check_benchmark_regression.mjs`]
 
 - runtime: more than 20% and more than 5 ms slower;
 - peak memory: more than 25% and more than 16 MiB higher.
+
+The same run also fails when any scenario exceeds its absolute median-runtime or
+peak-memory ceiling in `benchmarks/budgets.json`, even if a recently changed
+baseline would otherwise hide the regression.
 
 Every scheduled report and regression comparison is retained as a downloadable Actions artifact. A baseline change should come from a successful scheduled/manual run and explain the code or environment change; do not raise thresholds to conceal a regression.
 
@@ -4032,12 +4306,28 @@ and evidence-based release checklist are all public.
 
 ### Production quality
 
-- [ ] Complete the compatibility matrix for the supported v1 feature set.
-- [ ] Add load, memory, concurrency, and cancellation tests for batch generation.
-- [ ] Support configurable resource limits for hosted or multi-tenant use.
-- [ ] Complete the security review of ZIP/XML/image parsing and template expansion.
-- [ ] Provide reproducible builds and signed release artifacts.
-- [ ] Add a long-term benchmark dashboard with explicit regression budgets.
+- [x] Complete the compatibility matrix for the supported v1 feature set.
+- [x] Add load, memory, concurrency, and cancellation tests for batch generation.
+- [x] Support configurable resource limits for hosted or multi-tenant use.
+- [x] Complete the security review of ZIP/XML/image parsing and template expansion.
+- [x] Provide reproducible builds and signed release artifacts.
+- [x] Add a long-term benchmark dashboard with explicit regression budgets.
+
+Section evidence: `compatibility/v1-feature-contract.json` records 30
+capabilities and maps every one of the 23 spec block variants exactly once.
+`BatchRenderer` preflights job/per-job/aggregate-source budgets, preserves order,
+caps workers, renders a 16-document real load, and proves queued cancellation;
+native cancellation is observed between parse, compose, DOCX, and PDF stages.
+`InputLimits::hosted()` plus complete TOML/JSON profiles keep ceilings under
+operator control, including template expansion/depth/output limits. The dated
+v1 security review is backed by a source contract, DTD rejection, SVG external
+resource denial, three fuzz targets, CodeQL, and the official weekly RustSec
+audit; two unsound dependency advisories were removed and two upstream
+maintenance notices remain explicit residual risks. Release targets build twice
+to identical bytes, use deterministic archives, publish checksums/SPDX SBOM and
+GitHub attestations, and verify provenance before install. The accessible
+dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
+Ubuntu scenarios in addition to the existing relative regression policy.
 
 ### International and accessible output
 
@@ -4179,6 +4469,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
 - A contributor field guide with an end-to-end architecture map, ten fixture-backed starter tasks, isolated fixture preparation, visual-diff commands, contributor credit checks, and a published governance policy.
 - Frozen v1 spec, template, renderer, and local-protocol contracts; cross-surface SemVer, deprecation, support, and release policies; an exact Rust 1.88.0 MSRV gate; complete public-item rustdoc; and release-time API compatibility scanning.
+- A machine-enforced 30-capability v1 feature contract covering every document block variant and its DOCX/PDF/parity status.
+- Bounded concurrent batch rendering with aggregate source-memory preflight, ordered outcomes, and cooperative cancellation between native render stages.
+- Default and hosted TOML/JSON resource profiles, including expansion/depth/output ceilings for Word templates and operator-owned limits for local protocol workers.
+- A dated, executable v1 security review with DTD rejection, SVG external-resource denial, weekly RustSec auditing, and explicit residual-risk tracking.
+- Reproducibility receipts for twice-built release binaries, deterministic tar/ZIP packaging, release provenance verification before installer smoke tests, and per-target receipts attached to releases.
+- An accessible long-term benchmark dashboard backed by absolute runtime and peak-memory budgets for all 13 protocol scenarios.
 
 ### Contributors
 
@@ -4194,6 +4490,7 @@ contributors will be added here when a meaningful pull request is merged.
 - PDF page geometry now comes from the document's `PageSetup`; PDF config geometry remains a compatibility fallback when no document-level value is supplied.
 - PDF nested tables use a bounded flattened-row representation and do not claim exact nested-grid geometry.
 - Benchmark summaries now report true extrema plus medians; the previous multi-iteration maximum accidentally reported the sum of samples.
+- Updated `anyhow` and `memmap2` lockfile entries to versions that clear the 2026-08-24 RustSec unsoundness advisories; upstream `rustybuzz`/`ttf-parser` maintenance warnings remain tracked in the security review.
 
 ### Fixed
 
@@ -4298,6 +4595,10 @@ This keeps the project direction consistent.
 cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
+node scripts/check_compatibility_contract.mjs
+node scripts/test_benchmark_contract.mjs
+node scripts/test_reproducible_release.mjs
+node scripts/check_security_review.mjs
 ```
 
 If you touch visual assets or examples, also run:
@@ -4320,6 +4621,11 @@ node scripts/contributor_lab.mjs visual-diff \
 Use `--threshold` only when the pull request explains why a non-zero visual
 budget is justified. Template changes follow the fixture and evidence commands
 in [the registry guide](docs/template-registry.md).
+
+Security-sensitive parser, template, protocol, or dependency changes must also
+keep the [v1 security review](docs/security-review-v1.md) accurate and pass
+`cargo audit --deny unsound`. Performance-budget changes require a measured
+comparable-host report; do not increase a ceiling solely to make CI green.
 
 ## Contribution Rules
 
@@ -4667,6 +4973,10 @@ Source: https://othmaneblial.github.io/rusdox/docs/security.html
 ## Supported Versions
 
 RusDox is currently maintained as a fast-moving project.
+
+The dated [v1 security review](docs/security-review-v1.md) documents the threat
+model, enforced ZIP/XML/image/template limits, hosted boundary, supply-chain
+controls, and residual non-claims.
 
 Security fixes are most likely to land in:
 

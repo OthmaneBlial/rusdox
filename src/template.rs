@@ -114,6 +114,7 @@ impl TemplateRenderReport {
 #[derive(Debug, Clone)]
 pub struct DocxTemplate {
     parts: BTreeMap<String, Vec<u8>>,
+    limits: InputLimits,
 }
 
 impl DocxTemplate {
@@ -131,7 +132,7 @@ impl DocxTemplate {
                 "DOCX template is missing word/document.xml",
             ));
         }
-        Ok(Self { parts })
+        Ok(Self { parts, limits })
     }
 
     /// Inspects every supported textual part without modifying the template.
@@ -178,6 +179,7 @@ impl DocxTemplate {
             expanded_blocks: 0,
             partial_stack: Vec::new(),
             diagnostics: Vec::new(),
+            limits: self.limits,
         };
         let context = RenderContext {
             root: data,
@@ -201,8 +203,23 @@ impl DocxTemplate {
                 }
             };
             let segments = split_segments(xml);
-            let rendered = expand_segments(part, &segments, context, &mut state);
-            parts.insert(part.to_string(), join_segments(&rendered).into_bytes());
+            let rendered = join_segments(&expand_segments(part, &segments, context, &mut state));
+            if rendered.len() as u64 > state.limits.max_template_output_xml_bytes {
+                state.diagnostics.push(diagnostic(
+                    TemplateDiagnosticSeverity::Error,
+                    part,
+                    "part",
+                    "",
+                    &format!(
+                        "rendered XML is {} bytes; limit is {} bytes",
+                        rendered.len(),
+                        state.limits.max_template_output_xml_bytes
+                    ),
+                    "reduce repeated data or use a larger trusted limit profile",
+                ));
+                continue;
+            }
+            parts.insert(part.to_string(), rendered.into_bytes());
         }
 
         let written = !state
@@ -587,6 +604,30 @@ struct RenderState {
     expanded_blocks: usize,
     partial_stack: Vec<String>,
     diagnostics: Vec<TemplateDiagnostic>,
+    limits: InputLimits,
+}
+
+impl RenderState {
+    fn record_expansion(&mut self, part: &str, segment: &Segment, expression: &str) -> bool {
+        if self.replacements.saturating_add(self.expanded_blocks)
+            >= self.limits.max_template_expansions
+        {
+            self.diagnostics.push(diagnostic(
+                TemplateDiagnosticSeverity::Error,
+                part,
+                &segment.location,
+                expression,
+                &format!(
+                    "template expansion limit {} exceeded",
+                    self.limits.max_template_expansions
+                ),
+                "reduce loop data/placeholders or use a larger trusted limit profile",
+            ));
+            false
+        } else {
+            true
+        }
+    }
 }
 
 fn expand_segments(
@@ -617,6 +658,9 @@ fn expand_segments(
                 match resolve_path(context, &path) {
                     Some(Value::Array(items)) => {
                         for (item_index, item) in items.iter().enumerate() {
+                            if !state.record_expansion(part, segment, &format!("#each {path}")) {
+                                break;
+                            }
                             let child = RenderContext {
                                 root: context.root,
                                 current: item,
@@ -671,8 +715,10 @@ fn expand_segments(
                         block.end,
                     )
                 };
-                output.extend(expand_segments(part, &segments[start..end], context, state));
-                state.expanded_blocks += 1;
+                if state.record_expansion(part, segment, &format!("#if {path}")) {
+                    output.extend(expand_segments(part, &segments[start..end], context, state));
+                    state.expanded_blocks += 1;
+                }
                 index = block.end + 1;
             }
             Some(BlockMarker::Else | BlockMarker::CloseEach | BlockMarker::CloseIf) => {
@@ -801,10 +847,12 @@ fn render_segment(
                 "move the marker into its own paragraph or row",
             ));
         } else {
-            let replacement = evaluate_expression(part, segment, expression, context, state);
-            if let Some(node_index) = node_for_offset(&nodes, span.start) {
-                output_nodes[node_index].push_str(&replacement);
-                state.replacements += 1;
+            if state.record_expansion(part, segment, expression) {
+                let replacement = evaluate_expression(part, segment, expression, context, state);
+                if let Some(node_index) = node_for_offset(&nodes, span.start) {
+                    output_nodes[node_index].push_str(&replacement);
+                    state.replacements += 1;
+                }
             }
         }
         cursor = span.end;
@@ -949,6 +997,17 @@ fn evaluate_expression(
             ));
             return String::new();
         }
+        if state.partial_stack.len() >= state.limits.max_template_partial_depth {
+            state.diagnostics.push(diagnostic(
+                TemplateDiagnosticSeverity::Error,
+                part,
+                &segment.location,
+                expression,
+                "template partial depth limit exceeded",
+                "flatten the partial chain or use a larger trusted limit profile",
+            ));
+            return String::new();
+        }
         state.partial_stack.push(name.to_string());
         let rendered = render_inline_text(part, segment, &partial, context, state);
         state.partial_stack.pop();
@@ -1024,10 +1083,12 @@ fn render_inline_text(
                 "move loops and conditions into complete Word paragraphs or rows",
             ));
         } else {
-            rendered.push_str(&evaluate_expression(
-                part, segment, expression, context, state,
-            ));
-            state.replacements += 1;
+            if state.record_expansion(part, segment, expression) {
+                rendered.push_str(&evaluate_expression(
+                    part, segment, expression, context, state,
+                ));
+                state.replacements += 1;
+            }
         }
         cursor = span.end;
     }
@@ -1154,6 +1215,7 @@ mod tests {
         apply_filter, placeholder_spans, render_segment, split_segments, visible_text,
         RenderContext, RenderState,
     };
+    use crate::InputLimits;
     use serde_json::json;
 
     #[test]
@@ -1194,6 +1256,7 @@ mod tests {
             expanded_blocks: 0,
             partial_stack: Vec::new(),
             diagnostics: Vec::new(),
+            limits: InputLimits::default(),
         };
         let rendered = render_segment(
             "word/document.xml",
@@ -1210,5 +1273,39 @@ mod tests {
         assert!(rendered.contains("<w:i/>"));
         assert_eq!(state.replacements, 1);
         assert!(state.diagnostics.is_empty());
+    }
+
+    #[test]
+    fn template_expansion_budget_fails_closed() {
+        let segment =
+            split_segments(r#"<w:p><w:r><w:t>{{ first }} {{ second }}</w:t></w:r></w:p>"#)
+                .remove(0);
+        let data = json!({"first": "one", "second": "two"});
+        let mut state = RenderState {
+            strict: true,
+            replacements: 0,
+            expanded_blocks: 0,
+            partial_stack: Vec::new(),
+            diagnostics: Vec::new(),
+            limits: InputLimits {
+                max_template_expansions: 1,
+                ..InputLimits::default()
+            },
+        };
+        let _ = render_segment(
+            "word/document.xml",
+            &segment,
+            RenderContext {
+                root: &data,
+                current: &data,
+                index: None,
+            },
+            &mut state,
+        );
+        assert_eq!(state.replacements, 1);
+        assert!(state
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.message.contains("expansion limit")));
     }
 }

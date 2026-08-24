@@ -216,6 +216,21 @@ node scripts/run_benchmark_protocol.mjs --output target/benchmarks/local.json
 
 Read the [methodology, regression thresholds, and limitations](docs/performance.md), inspect the derived [history data](benchmarks/history.json), or open the unrounded [raw reports](benchmarks/results/). Results from different machines are not presented as directly comparable scores.
 
+## Production boundaries
+
+The public Rust API includes a bounded `BatchRenderer`, fixed worker
+concurrency, ordered per-job results, and cooperative cancellation. `rusdox
+serve` defaults to a conservative hosted resource profile; operators can supply
+a complete TOML/JSON profile, while request payloads cannot raise their own
+limits. ZIP/XML/image/template ceilings are enforced before expensive work.
+
+Read the [production runner guide](docs/production.md), [input-safety contract](docs/input-safety.md),
+and dated [v1 security review](docs/security-review-v1.md). Tagged release jobs
+build binaries twice, compare their bytes, create deterministic archives,
+publish checksums and an SPDX SBOM, and attach GitHub provenance/SBOM
+attestations. The live [performance budget dashboard](https://othmaneblial.github.io/rusdox/benchmarks/)
+shows all 13 scenarios against explicit runtime and peak-memory ceilings.
+
 ## First document
 
 Create a starter doc:

@@ -15,7 +15,7 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use rusdox::config::{default_user_config_path, RusdoxConfig};
 use rusdox::parity::{compare_visual_pages, ArtifactEvidence, DocumentProjection, ParityReport};
 use rusdox::protocol::{
-    execute_protocol_request, protocol_failure, ProtocolRequest, ProtocolResponse,
+    execute_protocol_request_with_limits, protocol_failure, ProtocolRequest, ProtocolResponse,
     MAX_PROTOCOL_REQUEST_BYTES, PROTOCOL_VERSION,
 };
 use rusdox::spec::DocumentSpec;
@@ -23,8 +23,8 @@ use rusdox::spec::SPEC_VERSION;
 use rusdox::studio::{OutputStats, Studio, DEFAULT_CONFIG_FILE};
 use rusdox::{
     atomic_write_file, attach_source_spans, document_spec_schema_pretty, validate_config,
-    validate_spec, Document, DocxError, DocxTemplate, Result, ValidationIssue, ValidationReport,
-    ValidationSeverity,
+    validate_spec, Document, DocxError, DocxTemplate, InputLimits, Result, ValidationIssue,
+    ValidationReport, ValidationSeverity,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -452,12 +452,24 @@ struct ServeArgs {
     /// Stop after a bounded number of non-empty requests (useful for jobs and tests).
     #[arg(long)]
     max_requests: Option<u32>,
+    /// Service-owner resource profile; hosted is conservative for untrusted work.
+    #[arg(long, value_enum, default_value_t = ServiceLimitProfile::Hosted)]
+    limits_profile: ServiceLimitProfile,
+    /// Complete TOML/JSON resource profile; overrides --limits-profile.
+    #[arg(long)]
+    limits_file: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 enum ServeTransport {
     Stdio,
     Http,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum ServiceLimitProfile {
+    Hosted,
+    Default,
 }
 
 #[derive(Debug, Args)]
@@ -1559,13 +1571,21 @@ fn resolve_dev_artifacts(
 }
 
 fn run_serve(args: ServeArgs) -> Result<()> {
+    let limits = match &args.limits_file {
+        Some(path) => InputLimits::load_from_path(path)?,
+        None => match args.limits_profile {
+            ServiceLimitProfile::Hosted => InputLimits::hosted(),
+            ServiceLimitProfile::Default => InputLimits::default(),
+        },
+    };
+    limits.validate()?;
     match args.transport {
-        ServeTransport::Stdio => run_serve_stdio(&args),
-        ServeTransport::Http => run_serve_http(&args),
+        ServeTransport::Stdio => run_serve_stdio(&args, limits),
+        ServeTransport::Http => run_serve_http(&args, limits),
     }
 }
 
-fn run_serve_stdio(args: &ServeArgs) -> Result<()> {
+fn run_serve_stdio(args: &ServeArgs, limits: InputLimits) -> Result<()> {
     let stdin = std::io::stdin();
     let mut reader = stdin.lock();
     let stdout = std::io::stdout();
@@ -1586,7 +1606,9 @@ fn run_serve_stdio(args: &ServeArgs) -> Result<()> {
             )
         } else {
             match serde_json::from_slice::<ProtocolRequest>(&line) {
-                Ok(request) => execute_protocol_request(request, &args.output_root),
+                Ok(request) => {
+                    execute_protocol_request_with_limits(request, &args.output_root, limits)
+                }
                 Err(error) => protocol_failure("", "invalid_json", error.to_string()),
             }
         };
@@ -1641,7 +1663,7 @@ fn read_bounded_protocol_line<R: BufRead>(
     }
 }
 
-fn run_serve_http(args: &ServeArgs) -> Result<()> {
+fn run_serve_http(args: &ServeArgs, limits: InputLimits) -> Result<()> {
     let listener = TcpListener::bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), args.port))?;
     let address = listener.local_addr()?;
     eprintln!(
@@ -1652,7 +1674,7 @@ fn run_serve_http(args: &ServeArgs) -> Result<()> {
         let mut stream = incoming?;
         stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-        serve_protocol_http_request(&mut stream, &args.output_root)?;
+        serve_protocol_http_request(&mut stream, &args.output_root, limits)?;
         if args
             .max_requests
             .is_some_and(|maximum| index + 1 >= maximum as usize)
@@ -1670,7 +1692,11 @@ struct ProtocolHttpRequest {
     body: Vec<u8>,
 }
 
-fn serve_protocol_http_request(stream: &mut TcpStream, output_root: &Path) -> Result<()> {
+fn serve_protocol_http_request(
+    stream: &mut TcpStream,
+    output_root: &Path,
+    limits: InputLimits,
+) -> Result<()> {
     let request = match read_protocol_http_request(stream) {
         Ok(request) => request,
         Err(error) => {
@@ -1686,6 +1712,7 @@ fn serve_protocol_http_request(stream: &mut TcpStream, output_root: &Path) -> Re
             "protocol_version": PROTOCOL_VERSION,
             "status": "ok",
             "transport": "loopback_http",
+            "limits": limits,
         }))
         .map_err(|error| {
             DocxError::Parse(format!("failed to serialize health response: {error}"))
@@ -1715,7 +1742,7 @@ fn serve_protocol_http_request(stream: &mut TcpStream, output_root: &Path) -> Re
         );
     }
     let response = match serde_json::from_slice::<ProtocolRequest>(&request.body) {
-        Ok(request) => execute_protocol_request(request, output_root),
+        Ok(request) => execute_protocol_request_with_limits(request, output_root, limits),
         Err(error) => protocol_failure("", "invalid_json", error.to_string()),
     };
     let status = if response.ok {

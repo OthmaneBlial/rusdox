@@ -1,0 +1,15 @@
+max_docx_archive_bytes = 16777216
+max_docx_entries = 1024
+max_docx_entry_bytes = 16777216
+max_docx_total_bytes = 67108864
+max_zip_compression_ratio = 100
+max_xml_bytes = 4194304
+max_spec_bytes = 2097152
+max_include_depth = 12
+max_include_files = 32
+max_image_bytes = 8388608
+max_svg_bytes = 2097152
+max_image_pixels = 16000000
+max_template_expansions = 10000
+max_template_output_xml_bytes = 8388608
+max_template_partial_depth = 12

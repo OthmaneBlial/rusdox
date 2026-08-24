@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "generated_from": [
+    "benchmarks/history.json",
+    "benchmarks/baselines/ubuntu-latest.json",
+    "benchmarks/budgets.json"
+  ],
+  "baseline_at": "2026-08-23T23:20:09.154Z",
+  "reviewed_at": "2026-08-24",
+  "reference_host": {
+    "platform": "linux",
+    "architecture": "x64",
+    "runner": "ubuntu-latest"
+  },
+  "passed": true,
+  "scenarios": [
+    {
+      "id": "small-validation",
+      "runtime_ms": 0.036494,
+      "runtime_budget_ms": 2,
+      "runtime_headroom_ratio": 0.981753,
+      "peak_memory_bytes": 6860800,
+      "memory_budget_bytes": 33554432,
+      "memory_headroom_ratio": 0.7955322265625,
+      "passed": true
+    },
+    {
+      "id": "small-docx",
+      "runtime_ms": 1.1545189999999999,
+      "runtime_budget_ms": 10,
+      "runtime_headroom_ratio": 0.8845481000000001,
+      "peak_memory_bytes": 7467008,
+      "memory_budget_bytes": 33554432,
+      "memory_headroom_ratio": 0.7774658203125,
+      "passed": true
+    },
+    {
+      "id": "small-pdf",
+      "runtime_ms": 4.353578000000001,
+      "runtime_budget_ms": 25,
+      "runtime_headroom_ratio": 0.82585688,
+      "peak_memory_bytes": 11685888,
+      "memory_budget_bytes": 67108864,
+      "memory_headroom_ratio": 0.82586669921875,
+      "passed": true
+    },
+    {
+      "id": "small-dual",
+      "runtime_ms": 5.526425,
+      "runtime_budget_ms": 30,
+      "runtime_headroom_ratio": 0.8157858333333333,
+      "peak_memory_bytes": 12603392,
+      "memory_budget_bytes": 67108864,
+      "memory_headroom_ratio": 0.81219482421875,
+      "passed": true
+    },
+    {
+      "id": "medium-validation",
+      "runtime_ms": 0.212881,
+      "runtime_budget_ms": 3,
+      "runtime_headroom_ratio": 0.9290396666666667,
+      "peak_memory_bytes": 7073792,
+      "memory_budget_bytes": 33554432,
+      "memory_headroom_ratio": 0.7891845703125,
+      "passed": true
+    },
+    {
+      "id": "medium-docx",
+      "runtime_ms": 1.800462,
+      "runtime_budget_ms": 15,
+      "runtime_headroom_ratio": 0.8799692,
+      "peak_memory_bytes": 7827456,
+      "memory_budget_bytes": 33554432,
+      "memory_headroom_ratio": 0.7667236328125,
+      "passed": true
+    },
+    {
+      "id": "medium-pdf",
+      "runtime_ms": 5.79497,
+      "runtime_budget_ms": 35,
+      "runtime_headroom_ratio": 0.8344294285714285,
+      "peak_memory_bytes": 12083200,
+      "memory_budget_bytes": 67108864,
+      "memory_headroom_ratio": 0.8199462890625,
+      "passed": true
+    },
+    {
+      "id": "medium-dual",
+      "runtime_ms": 6.956839,
+      "runtime_budget_ms": 45,
+      "runtime_headroom_ratio": 0.8454035777777777,
+      "peak_memory_bytes": 12550144,
+      "memory_budget_bytes": 67108864,
+      "memory_headroom_ratio": 0.81298828125,
+      "passed": true
+    },
+    {
+      "id": "pages-1000-validation",
+      "runtime_ms": 131.46416499999998,
+      "runtime_budget_ms": 300,
+      "runtime_headroom_ratio": 0.5617861166666667,
+      "peak_memory_bytes": 73469952,
+      "memory_budget_bytes": 134217728,
+      "memory_headroom_ratio": 0.452606201171875,
+      "passed": true
+    },
+    {
+      "id": "pages-1000-docx",
+      "runtime_ms": 314.589761,
+      "runtime_budget_ms": 600,
+      "runtime_headroom_ratio": 0.47568373166666666,
+      "peak_memory_bytes": 106004480,
+      "memory_budget_bytes": 201326592,
+      "memory_headroom_ratio": 0.47347005208333337,
+      "passed": true
+    },
+    {
+      "id": "pages-1000-pdf",
+      "runtime_ms": 1287.01705,
+      "runtime_budget_ms": 2200,
+      "runtime_headroom_ratio": 0.41499225000000006,
+      "peak_memory_bytes": 156635136,
+      "memory_budget_bytes": 268435456,
+      "memory_headroom_ratio": 0.4164886474609375,
+      "passed": true
+    },
+    {
+      "id": "pages-1000-dual",
+      "runtime_ms": 1403.418762,
+      "runtime_budget_ms": 2500,
+      "runtime_headroom_ratio": 0.4386324952,
+      "peak_memory_bytes": 159805440,
+      "memory_budget_bytes": 301989888,
+      "memory_headroom_ratio": 0.4708251953125,
+      "passed": true
+    },
+    {
+      "id": "external-docx-open-save",
+      "runtime_ms": 1.3568639999999998,
+      "runtime_budget_ms": 15,
+      "runtime_headroom_ratio": 0.9095424,
+      "peak_memory_bytes": 7004160,
+      "memory_budget_bytes": 33554432,
+      "memory_headroom_ratio": 0.791259765625,
+      "passed": true
+    }
+  ]
+}

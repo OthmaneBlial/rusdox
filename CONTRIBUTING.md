@@ -57,6 +57,10 @@ This keeps the project direction consistent.
 cargo fmt --all
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test
+node scripts/check_compatibility_contract.mjs
+node scripts/test_benchmark_contract.mjs
+node scripts/test_reproducible_release.mjs
+node scripts/check_security_review.mjs
 ```
 
 If you touch visual assets or examples, also run:
@@ -79,6 +83,11 @@ node scripts/contributor_lab.mjs visual-diff \
 Use `--threshold` only when the pull request explains why a non-zero visual
 budget is justified. Template changes follow the fixture and evidence commands
 in [the registry guide](docs/template-registry.md).
+
+Security-sensitive parser, template, protocol, or dependency changes must also
+keep the [v1 security review](docs/security-review-v1.md) accurate and pass
+`cargo audit --deny unsound`. Performance-budget changes require a measured
+comparable-host report; do not increase a ceiling solely to make CI green.
 
 ## Contribution Rules
 

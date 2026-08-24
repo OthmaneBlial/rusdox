@@ -251,6 +251,11 @@ fn validate_xml(bytes: &[u8]) -> Result<()> {
     loop {
         match reader.read_event_into(&mut buffer)? {
             Event::Eof => return Ok(()),
+            Event::DocType(_) => {
+                return Err(DocxError::parse(
+                    "DOCTYPE declarations are forbidden in OOXML parts",
+                ))
+            }
             _ => buffer.clear(),
         }
     }
@@ -395,7 +400,7 @@ mod tests {
     use tempfile::tempdir;
     use zip::ZipArchive;
 
-    use super::{validate_docx_package, validate_parts};
+    use super::{validate_docx_package, validate_parts, validate_xml};
     use crate::{Document, Paragraph, Run};
 
     #[test]
@@ -443,5 +448,14 @@ mod tests {
             .errors
             .iter()
             .any(|error| error.contains("missing part 'word/missing.xml'")));
+    }
+
+    #[test]
+    fn ooxml_doctype_declarations_are_rejected() {
+        let xml = br#"<?xml version="1.0"?><!DOCTYPE root [<!ENTITY x "boom">]><root>&x;</root>"#;
+        let error = validate_xml(xml).expect_err("DOCTYPE must fail closed");
+        assert!(error
+            .to_string()
+            .contains("DOCTYPE declarations are forbidden"));
     }
 }

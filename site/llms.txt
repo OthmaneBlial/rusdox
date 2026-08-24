@@ -22,6 +22,8 @@
 - [Compatibility matrix](https://othmaneblial.github.io/rusdox/docs/compatibility.html): See exactly what works in DOCX, PDF, both outputs, or not yet.
 - [Viewer compatibility scorecard](https://othmaneblial.github.io/rusdox/docs/compatibility-scorecard.html): Review dated, hash-pinned evidence from real document viewers without universal claims.
 - [Input safety and limits](https://othmaneblial.github.io/rusdox/docs/input-safety.html): Understand resource ceilings, fuzz targets, and atomic output recovery for untrusted inputs.
+- [v1 security review](https://othmaneblial.github.io/rusdox/docs/security-review-v1.html): Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks.
+- [Production and batch rendering](https://othmaneblial.github.io/rusdox/docs/production.html): Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation.
 - [Parity verification](https://othmaneblial.github.io/rusdox/docs/parity.html): Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.
 - [Reproducible performance](https://othmaneblial.github.io/rusdox/docs/performance.html): Reproduce isolated benchmark tiers, inspect raw evidence, and understand material regression thresholds.
 - [Troubleshooting](https://othmaneblial.github.io/rusdox/docs/troubleshooting.html): Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.

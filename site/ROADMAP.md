@@ -397,12 +397,28 @@ and evidence-based release checklist are all public.
 
 ### Production quality
 
-- [ ] Complete the compatibility matrix for the supported v1 feature set.
-- [ ] Add load, memory, concurrency, and cancellation tests for batch generation.
-- [ ] Support configurable resource limits for hosted or multi-tenant use.
-- [ ] Complete the security review of ZIP/XML/image parsing and template expansion.
-- [ ] Provide reproducible builds and signed release artifacts.
-- [ ] Add a long-term benchmark dashboard with explicit regression budgets.
+- [x] Complete the compatibility matrix for the supported v1 feature set.
+- [x] Add load, memory, concurrency, and cancellation tests for batch generation.
+- [x] Support configurable resource limits for hosted or multi-tenant use.
+- [x] Complete the security review of ZIP/XML/image parsing and template expansion.
+- [x] Provide reproducible builds and signed release artifacts.
+- [x] Add a long-term benchmark dashboard with explicit regression budgets.
+
+Section evidence: `compatibility/v1-feature-contract.json` records 30
+capabilities and maps every one of the 23 spec block variants exactly once.
+`BatchRenderer` preflights job/per-job/aggregate-source budgets, preserves order,
+caps workers, renders a 16-document real load, and proves queued cancellation;
+native cancellation is observed between parse, compose, DOCX, and PDF stages.
+`InputLimits::hosted()` plus complete TOML/JSON profiles keep ceilings under
+operator control, including template expansion/depth/output limits. The dated
+v1 security review is backed by a source contract, DTD rejection, SVG external
+resource denial, three fuzz targets, CodeQL, and the official weekly RustSec
+audit; two unsound dependency advisories were removed and two upstream
+maintenance notices remain explicit residual risks. Release targets build twice
+to identical bytes, use deterministic archives, publish checksums/SPDX SBOM and
+GitHub attestations, and verify provenance before install. The accessible
+dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
+Ubuntu scenarios in addition to the existing relative regression policy.
 
 ### International and accessible output
 

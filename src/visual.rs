@@ -521,6 +521,10 @@ fn intrinsic_dimensions_for_source(
 fn parse_svg_tree(bytes: &[u8], resources_dir: Option<&Path>) -> Result<usvg::Tree> {
     let mut options = usvg::Options {
         resources_dir: resources_dir.map(Path::to_path_buf),
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            resolve_string: Box::new(|_, _| None),
+        },
         ..usvg::Options::default()
     };
     options.fontdb_mut().load_system_fonts();
@@ -680,11 +684,12 @@ pub(crate) fn twips_to_pixels_at_dpi(twips: u32, dpi: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::Path;
 
     use tempfile::tempdir;
 
     use super::{
-        ensure_pixel_budget, ensure_visual_byte_limit, pixels_to_twips,
+        ensure_pixel_budget, ensure_visual_byte_limit, parse_svg_tree, pixels_to_twips,
         resolve_dimensions_from_intrinsic, twips_to_pixels_at_dpi, Visual, VisualFormat,
         VisualKind,
     };
@@ -783,6 +788,13 @@ mod tests {
     }
 
     #[test]
+    fn svg_parser_never_reads_external_file_references() {
+        let svg = br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image href="/etc/passwd" width="10" height="10"/></svg>"#;
+        let tree = parse_svg_tree(svg, Some(Path::new("/"))).expect("safe SVG parse");
+        assert!(tree.root().children().is_empty());
+    }
+
+    #[test]
     fn docx_media_rasterizes_svg_to_png() {
         let visual = Visual::from_bytes(SIMPLE_SVG.as_bytes().to_vec(), VisualFormat::Svg)
             .with_kind(VisualKind::Chart);
@@ -792,7 +804,7 @@ mod tests {
     }
 
     #[test]
-    fn path_backed_visual_uses_relative_svg_resources_directory() {
+    fn path_backed_visual_renders_without_external_resources() {
         let temp = tempdir().expect("temp dir");
         let svg_path = temp.path().join("logo.svg");
         fs::write(&svg_path, SIMPLE_SVG).expect("write svg");

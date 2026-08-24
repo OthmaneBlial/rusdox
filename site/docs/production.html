@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Production and batch rendering | RusDox Documentation</title>
+    <meta name="description" content="Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/production.html" />
+    <meta property="og:title" content="Production and batch rendering | RusDox" />
+    <meta property="og:description" content="Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/production.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Production and batch rendering","description":"Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation.","url":"https://othmaneblial.github.io/rusdox/docs/production.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Operations</p>
+            <h1>Production and batch rendering</h1>
+            <p class="lede">Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/production.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a href="stability.html">Stability and support</a></li><li><a href="release-checklist.html">Release checklist</a></li><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="security-review-v1.html">v1 security review</a></li><li><a class="is-active" aria-current="page" href="production.html">Production and batch rendering</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="architecture.html">Architecture</a></li><li><a href="governance.html">Governance</a></li><li><a href="contributors.html">Contributors</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#bounded-rust-batches">Bounded Rust batches</a></li><li class="toc-level-2"><a href="#service-owned-profiles">Service-owned profiles</a></li><li class="toc-level-2"><a href="#operational-boundary">Operational boundary</a></li></ol></nav>
+            <div class="docs-content prose"><p>RusDox exposes bounded building blocks for a job runner without pretending that the local HTTP adapter is a hosted service. A production owner supplies the queue, authentication, tenant isolation, process/container limits, retention, and observability. RusDox supplies deterministic preflight, bounded concurrency, cooperative cancellation, and in-memory artifacts.</p>
+<h2 id="bounded-rust-batches">Bounded Rust batches</h2>
+<pre><code class="language-rust">use std::sync::Arc;
+use rusdox::config::RusdoxConfig;
+use rusdox::{
+    BatchLimits, BatchRenderer, BatchRequest, CancellationToken, NativeRenderer,
+    RenderRequest, RenderSource, SpecFormat, RENDERER_API_VERSION,
+};
+
+let batch = BatchRenderer::new(
+    Arc::new(NativeRenderer::new(RusdoxConfig::default())),
+    BatchLimits {
+        max_jobs: 100,
+        max_concurrency: 4,
+        max_source_bytes_per_job: 2 * 1024 * 1024,
+        max_total_source_bytes: 32 * 1024 * 1024,
+    },
+)?;
+let cancellation = CancellationToken::new();
+let results = batch.render(vec![BatchRequest {
+    id: &quot;invoice-42&quot;.into(),
+    request: RenderRequest {
+        renderer_api_version: RENDERER_API_VERSION,
+        source: RenderSource::Inline {
+            format: SpecFormat::Yaml,
+            content: &quot;version: 1\nblocks: []\n&quot;.into(),
+        },
+        emit_pdf: true,
+    },
+}], &amp;cancellation)?;
+assert_eq!(results[0].id, &quot;invoice-42&quot;);
+# Ok::&lt;(), rusdox::DocxError&gt;(())</code></pre>
+<p>Results preserve request order. Invalid capacity or aggregate-source limits fail before worker creation. Per-item parse/layout failures do not erase successful siblings. Cancelling a token prevents queued jobs and is observed between parse, composition, DOCX, and PDF stages.</p>
+<p>The test suite renders a 16-document real batch, proves a three-worker ceiling under contention, cancels queued work, and rejects an aggregate source-memory budget before any renderer is called. It does not claim hard memory isolation: use a process/container memory limit when tenants are mutually untrusted.</p>
+<h2 id="service-owned-profiles">Service-owned profiles</h2>
+<p>The local protocol defaults to the stricter hosted profile:</p>
+<pre><code class="language-bash">rusdox serve stdio --limits-profile hosted --output-root target/jobs
+rusdox serve http --limits-file examples/hosted-limits.toml \
+  --port 4175 --output-root target/jobs</code></pre>
+<p><code>--limits-file</code> accepts one complete TOML or JSON <code>InputLimits</code> object, rejects unknown fields and zero/inconsistent ceilings, and overrides <code>--limits-profile</code>. Profiles belong to the service owner; protocol clients have no field that can increase them. The HTTP health response publishes effective limits so operators can confirm what is active.</p>
+<h2 id="operational-boundary">Operational boundary</h2>
+<p>Prefer one isolated worker process per trust domain. Keep the HTTP adapter on loopback behind an authenticated owner-controlled gateway, provide a private output root, bound <code>--max-requests</code> to recycle long-lived workers, and use read-only/curated font and template directories. Treat artifacts as sensitive tenant data and delete them according to the owner&#39;s retention policy.</p>
+<p>See <a href="input-safety.html">Input safety</a>, the <a href="security-review-v1.html">v1 security review</a>, and the <a href="integrations.html">integration protocol</a> for the complete boundary.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="security-review-v1.html"><span>Previous</span><strong>v1 security review</strong></a>
+    <a class="docs-pager-next" href="parity.html"><span>Next</span><strong>Parity verification</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

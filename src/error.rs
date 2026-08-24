@@ -24,6 +24,9 @@ pub enum DocxError {
     /// A completed verification whose generated outputs failed the parity contract.
     #[error("parity verification failed: {0}")]
     Parity(String),
+    /// Rendering stopped after a cooperative cancellation request.
+    #[error("render cancelled")]
+    Cancelled,
 }
 
 impl DocxError {

@@ -29,6 +29,8 @@ const pages = [
   ["docs/compatibility.md", "docs/compatibility.html", "Compatibility matrix", "Trust", "See exactly what works in DOCX, PDF, both outputs, or not yet.", "Trust & operations"],
   ["docs/compatibility-scorecard.md", "docs/compatibility-scorecard.html", "Viewer compatibility scorecard", "Trust", "Review dated, hash-pinned evidence from real document viewers without universal claims.", "Trust & operations"],
   ["docs/input-safety.md", "docs/input-safety.html", "Input safety and limits", "Security", "Understand resource ceilings, fuzz targets, and atomic output recovery for untrusted inputs.", "Trust & operations"],
+  ["docs/security-review-v1.md", "docs/security-review-v1.html", "v1 security review", "Security", "Review the ZIP, XML, visual, template, protocol, batch, and release threat model with residual risks.", "Trust & operations"],
+  ["docs/production.md", "docs/production.html", "Production and batch rendering", "Operations", "Run bounded concurrent jobs with service-owned limits, ordered results, and cooperative cancellation.", "Trust & operations"],
   ["docs/parity.md", "docs/parity.html", "Parity verification", "Trust", "Generate machine-readable semantic checks and deterministic rendered-page diffs for DOCX and PDF.", "Trust & operations"],
   ["docs/performance.md", "docs/performance.html", "Reproducible performance", "Trust", "Reproduce isolated benchmark tiers, inspect raw evidence, and understand material regression thresholds.", "Trust & operations"],
   ["docs/troubleshooting.md", "docs/troubleshooting.html", "Troubleshooting", "Operations", "Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.", "Trust & operations"],
@@ -117,15 +119,22 @@ const sourceCopies = [
   "CODE_OF_CONDUCT.md",
   ...fs.readdirSync(path.join(root, "docs")).filter((name) => name.endsWith(".md")).map((name) => `docs/${name}`),
   ...walkFiles(path.join(root, "examples"))
-    .filter((file) => file.endsWith(".md") || file.endsWith(".yaml"))
+    .filter((file) => file.endsWith(".md") || file.endsWith(".yaml") || file.endsWith(".toml"))
     .map((file) => normalize(path.relative(root, file))),
   "fuzz/README.md",
   ...walkFiles(path.join(root, "benchmarks"))
     .filter((file) => file.endsWith(".json") || file.endsWith(".md"))
     .map((file) => normalize(path.relative(root, file))),
   "scripts/check_benchmark_regression.mjs",
+  "scripts/build_benchmark_dashboard.mjs",
+  "scripts/test_benchmark_contract.mjs",
   "scripts/render_benchmark_history.mjs",
   "scripts/run_benchmark_protocol.mjs",
+  "scripts/check_compatibility_contract.mjs",
+  "scripts/check_security_review.mjs",
+  "scripts/test_reproducible_release.mjs",
+  "scripts/package_release.py",
+  "scripts/verify_reproducible_build.py",
   "scripts/generate_word_templates.sh",
   "scripts/verify_word_templates.sh",
   "scripts/generate_schema.sh",

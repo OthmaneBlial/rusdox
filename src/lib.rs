@@ -22,6 +22,7 @@
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 
+pub mod batch;
 pub mod config;
 mod document;
 mod error;
@@ -49,6 +50,7 @@ pub mod validate;
 mod visual;
 mod xml_utils;
 
+pub use batch::{BatchItemResult, BatchLimits, BatchRenderer, BatchRequest, BatchStatus};
 pub use document::{Document, DocumentBlockRef, DocumentMode};
 pub use error::{DocxError, Result};
 pub use io_utils::atomic_write as atomic_write_file;
@@ -61,8 +63,8 @@ pub use package_validate::{
 };
 pub use paragraph::{Paragraph, ParagraphAlignment, ParagraphList, ParagraphListKind};
 pub use renderer::{
-    NativeRenderer, RenderRequest, RenderSource, RenderedDocument, Renderer, RendererValidation,
-    SpecFormat, RENDERER_API_VERSION,
+    CancellationToken, NativeRenderer, RenderRequest, RenderSource, RenderedDocument, Renderer,
+    RendererValidation, SpecFormat, RENDERER_API_VERSION,
 };
 pub use run::{Run, RunField, RunProperties, UnderlineStyle, VerticalAlign};
 pub use schema::{document_spec_schema, document_spec_schema_pretty, DOCUMENT_SPEC_SCHEMA_ID};
