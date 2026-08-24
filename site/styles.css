@@ -718,6 +718,7 @@ main {
   background: var(--surface-muted);
   color: var(--accent-deep);
   font-size: 0.94em;
+  overflow-wrap: anywhere;
 }
 
 .prose pre {
@@ -792,6 +793,7 @@ main {
 .docs-static-nav {
   position: sticky;
   top: 94px;
+  min-width: 0;
   max-height: calc(100vh - 112px);
   padding: 20px;
   overflow: auto;
@@ -921,6 +923,7 @@ main {
 }
 
 .table-scroll {
+  contain: inline-size;
   max-width: 100%;
   margin: 1.2rem 0 1.6rem;
   overflow-x: auto;
@@ -1161,18 +1164,17 @@ main {
 
   .docs-static-nav {
     display: grid;
-    grid-auto-columns: minmax(190px, 72vw);
-    grid-auto-flow: column;
-    grid-template-columns: none;
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
+    overflow: visible;
   }
 
   .docs-static-nav section {
-    scroll-snap-align: start;
+    min-width: 0;
   }
 
   .docs-static-nav .docs-nav-label,
