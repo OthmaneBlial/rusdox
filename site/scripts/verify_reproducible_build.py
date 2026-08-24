@@ -26,18 +26,28 @@ def main() -> int:
         "--target", args.target,
     ]
     target_dir = root / "target" / "reproducible-build" / args.target
+    diagnostics = root / "target" / "reproducibility-diagnostics" / args.target
+    clean(diagnostics)
     clean(target_dir)
     first_binary = build(command, root, epoch, target_dir, args.target, args.binary)
     first = digest(first_binary)
+    first_snapshot = diagnostics / "first" / args.binary
+    first_snapshot.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(first_binary, first_snapshot)
     clean(target_dir)
     second_binary = build(command, root, epoch, target_dir, args.target, args.binary)
     second = digest(second_binary)
+    second_snapshot = diagnostics / "second" / args.binary
+    second_snapshot.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(second_binary, second_snapshot)
     canonical = root / "target" / args.target / "release" / args.binary
     canonical.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(second_binary, canonical)
     if first != second:
         print(f"release binary is not reproducible: {first} != {second}", file=sys.stderr)
+        print(f"diagnostic binaries preserved in {diagnostics}", file=sys.stderr)
         return 1
+    clean(diagnostics)
 
     report = {
         "schema_version": 1,
@@ -48,6 +58,7 @@ def main() -> int:
         "incremental": False,
         "build_path_strategy": "fixed-clean-target-directory",
         "clean_target_directory_between_builds": True,
+        "msvc_linker_brepro": args.target.endswith("-pc-windows-msvc"),
         "builds_compared": 2,
         "sha256": first,
         "reproducible": True,
@@ -76,6 +87,9 @@ def build(command, root: Path, epoch: str, target_dir: Path, target: str, binary
     environment["SOURCE_DATE_EPOCH"] = epoch
     environment["CARGO_INCREMENTAL"] = "0"
     environment["CARGO_TARGET_DIR"] = str(target_dir)
+    if target.endswith("-pc-windows-msvc"):
+        flags = environment.get("RUSTFLAGS", "").strip()
+        environment["RUSTFLAGS"] = f"{flags} -C link-arg=/Brepro".strip()
     subprocess.run(command, cwd=root, env=environment, check=True)
     artifact = target_dir / target / "release" / binary
     if not artifact.is_file():

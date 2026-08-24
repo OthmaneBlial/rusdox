@@ -1527,6 +1527,9 @@ release pull request; a checked box without evidence is not a release receipt.
       deterministic archives reproduce from one binary. This proves clean-build
       reproducibility for the pinned runner environment, not path-independent
       output on toolchains whose linker embeds host paths.
+- [ ] Native Windows MSVC binaries use the linker's reproducible mode
+      (`/Brepro`), and any mismatch preserves both binaries as a short-lived CI
+      diagnostic artifact rather than bypassing the gate.
 - [ ] SHA-256 checksums verify after download.
 - [ ] SPDX SBOM and GitHub build provenance attestations cover every archive.
 - [ ] Installers consume the release archive and verify its checksum.
@@ -1605,6 +1608,10 @@ checksums, SPDX SBOM,
 GitHub provenance and SBOM attestations, crates.io OIDC publish, public GitHub
 Release, and three installer smoke jobs. Those live URLs are recorded after the
 workflow completes; no local check substitutes for them.
+
+The Windows target explicitly enables the MSVC linker's reproducible mode. A
+byte mismatch fails the job and retains both executables for seven days as a
+diagnostic artifact; the workflow never converts a mismatch into a warning.
 
 ---
 
@@ -4642,7 +4649,9 @@ maintenance notices remain explicit residual risks. Release targets build twice
 from a clean, stable target path to identical bytes, use deterministic archives,
 publish checksums/SPDX SBOM and GitHub attestations, and verify provenance before
 install; the receipt is scoped to the pinned runner environment instead of
-claiming path independence from linkers that may embed host paths. The accessible
+claiming path independence from linkers that may embed host paths. Windows MSVC
+uses `/Brepro`, and a mismatch retains both binaries for diagnosis while still
+failing the gate. The accessible
 dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
 Ubuntu scenarios in addition to the existing relative regression policy.
 

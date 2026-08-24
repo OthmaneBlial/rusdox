@@ -42,6 +42,9 @@ release pull request; a checked box without evidence is not a release receipt.
       deterministic archives reproduce from one binary. This proves clean-build
       reproducibility for the pinned runner environment, not path-independent
       output on toolchains whose linker embeds host paths.
+- [ ] Native Windows MSVC binaries use the linker's reproducible mode
+      (`/Brepro`), and any mismatch preserves both binaries as a short-lived CI
+      diagnostic artifact rather than bypassing the gate.
 - [ ] SHA-256 checksums verify after download.
 - [ ] SPDX SBOM and GitHub build provenance attestations cover every archive.
 - [ ] Installers consume the release archive and verify its checksum.

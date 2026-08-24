@@ -98,11 +98,21 @@ jobs:
         run: cargo package --locked --no-verify
 
       - name: Build release binary twice at a stable clean path
+        id: reproducibility
         run: >-
           python scripts/verify_reproducible_build.py
           --target ${{ matrix.target }}
           --binary ${{ matrix.bin }}
           --report rusdox-${{ matrix.target }}.reproducibility.json
+
+      - name: Upload differing binaries for reproducibility diagnosis
+        if: failure() && steps.reproducibility.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: reproducibility-diagnostics-${{ matrix.target }}-${{ github.sha }}
+          path: target/reproducibility-diagnostics/${{ matrix.target }}/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload branch reproducibility receipt
         uses: actions/upload-artifact@v7

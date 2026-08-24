@@ -418,7 +418,9 @@ maintenance notices remain explicit residual risks. Release targets build twice
 from a clean, stable target path to identical bytes, use deterministic archives,
 publish checksums/SPDX SBOM and GitHub attestations, and verify provenance before
 install; the receipt is scoped to the pinned runner environment instead of
-claiming path independence from linkers that may embed host paths. The accessible
+claiming path independence from linkers that may embed host paths. Windows MSVC
+uses `/Brepro`, and a mismatch retains both binaries for diagnosis while still
+failing the gate. The accessible
 dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
 Ubuntu scenarios in addition to the existing relative regression policy.
 
