@@ -375,12 +375,25 @@ Theme: stability, international documents, accessibility, and long-term trust.
 
 ### Stable contracts
 
-- [ ] Freeze and document spec version 1.
-- [ ] Publish SemVer guarantees for the Rust API, CLI, spec schema, template syntax, and output behavior.
-- [ ] Ship migration tooling for pre-1.0 specs.
-- [ ] Define a minimum supported Rust version and test it in CI.
-- [ ] Reach strong rustdoc coverage for the supported public API.
-- [ ] Publish a deprecation window and supported release policy.
+- [x] Freeze and document spec version 1.
+- [x] Publish SemVer guarantees for the Rust API, CLI, spec schema, template syntax, and output behavior.
+- [x] Ship migration tooling for pre-1.0 specs.
+- [x] Define a minimum supported Rust version and test it in CI.
+- [x] Reach strong rustdoc coverage for the supported public API.
+- [x] Publish a deprecation window and supported release policy.
+
+Section evidence: one policy maps the Rust API, CLI, document spec/schema, Word
+template syntax, renderer/protocol, and output semantics to explicit compatibility
+and breaking-change rules. An executable gate keeps all four independent format
+constants at v1, pins the canonical required-version schema, and verifies the
+editor copy byte-for-byte. The existing migration command covers check, stdout,
+separate output, and atomic in-place upgrades while rejecting future versions.
+Cargo declares Rust 1.88 and a dedicated CI job compiles every feature on that
+exact toolchain. The library denies missing public-item documentation and broken
+intra-doc links—rustdoc now reports complete item coverage—and tagged releases
+run `cargo-semver-checks` before crates.io publication. The six-month/two-minor
+deprecation window, supported-minor policy, MSRV notice rule, security exception,
+and evidence-based release checklist are all public.
 
 ### Production quality
 

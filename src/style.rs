@@ -14,8 +14,11 @@ const DEFAULT_TABLE_STYLE_ID: &str = "TableNormal";
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct Stylesheet {
+    /// Ordered paragraph.
     pub paragraph: Vec<ParagraphStyle>,
+    /// Ordered run.
     pub run: Vec<RunStyle>,
+    /// Ordered table.
     pub table: Vec<TableStyle>,
 }
 
@@ -274,15 +277,22 @@ impl Stylesheet {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphStyle {
+    /// Identifier.
     pub id: String,
+    /// Optional name.
     pub name: Option<String>,
+    /// Optional based on.
     pub based_on: Option<String>,
+    /// Optional next.
     pub next: Option<String>,
+    /// Paragraph.
     pub paragraph: ParagraphStyleProperties,
+    /// Run.
     pub run: RunStyleProperties,
 }
 
 impl ParagraphStyle {
+    /// Creates a value with default settings.
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -290,26 +300,31 @@ impl ParagraphStyle {
         }
     }
 
+    /// Name.
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.name = Some(name.into());
         self
     }
 
+    /// Based on.
     pub fn based_on(mut self, style_id: impl Into<String>) -> Self {
         self.based_on = Some(style_id.into());
         self
     }
 
+    /// Next.
     pub fn next(mut self, style_id: impl Into<String>) -> Self {
         self.next = Some(style_id.into());
         self
     }
 
+    /// Paragraph.
     pub fn paragraph(mut self, properties: ParagraphStyleProperties) -> Self {
         self.paragraph = properties;
         self
     }
 
+    /// Run.
     pub fn run(mut self, properties: RunStyleProperties) -> Self {
         self.run = properties;
         self
@@ -320,13 +335,18 @@ impl ParagraphStyle {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunStyle {
+    /// Identifier.
     pub id: String,
+    /// Optional name.
     pub name: Option<String>,
+    /// Optional based on.
     pub based_on: Option<String>,
+    /// Properties.
     pub properties: RunStyleProperties,
 }
 
 impl RunStyle {
+    /// Creates a value with default settings.
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -334,16 +354,19 @@ impl RunStyle {
         }
     }
 
+    /// Name.
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.name = Some(name.into());
         self
     }
 
+    /// Based on.
     pub fn based_on(mut self, style_id: impl Into<String>) -> Self {
         self.based_on = Some(style_id.into());
         self
     }
 
+    /// Properties.
     pub fn properties(mut self, properties: RunStyleProperties) -> Self {
         self.properties = properties;
         self
@@ -354,13 +377,18 @@ impl RunStyle {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct TableStyle {
+    /// Identifier.
     pub id: String,
+    /// Optional name.
     pub name: Option<String>,
+    /// Optional based on.
     pub based_on: Option<String>,
+    /// Properties.
     pub properties: TableStyleProperties,
 }
 
 impl TableStyle {
+    /// Creates a value with default settings.
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
@@ -368,16 +396,19 @@ impl TableStyle {
         }
     }
 
+    /// Name.
     pub fn name(mut self, name: impl Into<String>) -> Self {
         self.name = Some(name.into());
         self
     }
 
+    /// Based on.
     pub fn based_on(mut self, style_id: impl Into<String>) -> Self {
         self.based_on = Some(style_id.into());
         self
     }
 
+    /// Properties.
     pub fn properties(mut self, properties: TableStyleProperties) -> Self {
         self.properties = properties;
         self
@@ -388,44 +419,57 @@ impl TableStyle {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphStyleProperties {
+    /// Optional list.
     pub list: Option<ParagraphList>,
+    /// Optional alignment.
     pub alignment: Option<ParagraphAlignment>,
+    /// Optional spacing before.
     pub spacing_before: Option<u32>,
+    /// Optional spacing after.
     pub spacing_after: Option<u32>,
+    /// Whether a paragraph should stay with the following paragraph.
     pub keep_next: Option<bool>,
+    /// Whether a paragraph should start on a new page.
     pub page_break_before: Option<bool>,
 }
 
 impl ParagraphStyleProperties {
+    /// Creates a value with default settings.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// List.
     pub fn list(mut self, list: ParagraphList) -> Self {
         self.list = Some(list);
         self
     }
 
+    /// Alignment.
     pub fn alignment(mut self, alignment: ParagraphAlignment) -> Self {
         self.alignment = Some(alignment);
         self
     }
 
+    /// Spacing before.
     pub fn spacing_before(mut self, twips: u32) -> Self {
         self.spacing_before = Some(twips);
         self
     }
 
+    /// Spacing after.
     pub fn spacing_after(mut self, twips: u32) -> Self {
         self.spacing_after = Some(twips);
         self
     }
 
+    /// Keep next.
     pub fn keep_next(mut self) -> Self {
         self.keep_next = Some(true);
         self
     }
 
+    /// Page break before.
     pub fn page_break_before(mut self) -> Self {
         self.page_break_before = Some(true);
         self
@@ -436,83 +480,107 @@ impl ParagraphStyleProperties {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunStyleProperties {
+    /// Whether text is bold.
     pub bold: Option<bool>,
+    /// Whether text is italic.
     pub italic: Option<bool>,
+    /// Optional underline.
     pub underline: Option<UnderlineStyle>,
+    /// Whether text is struck through.
     pub strikethrough: Option<bool>,
+    /// Whether text uses small capitals.
     pub small_caps: Option<bool>,
+    /// Whether text has a shadow effect.
     pub shadow: Option<bool>,
+    /// Optional color.
     pub color: Option<String>,
+    /// Optional font size.
     pub font_size: Option<u16>,
+    /// Optional font family.
     pub font_family: Option<String>,
+    /// Optional vertical align.
     pub vertical_align: Option<VerticalAlign>,
 }
 
 impl RunStyleProperties {
+    /// Creates a value with default settings.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Bold.
     pub fn bold(mut self) -> Self {
         self.bold = Some(true);
         self
     }
 
+    /// Italic.
     pub fn italic(mut self) -> Self {
         self.italic = Some(true);
         self
     }
 
+    /// Underline.
     pub fn underline(mut self, underline: UnderlineStyle) -> Self {
         self.underline = Some(underline);
         self
     }
 
+    /// Strikethrough.
     pub fn strikethrough(mut self) -> Self {
         self.strikethrough = Some(true);
         self
     }
 
+    /// Small caps.
     pub fn small_caps(mut self) -> Self {
         self.small_caps = Some(true);
         self
     }
 
+    /// Shadow.
     pub fn shadow(mut self) -> Self {
         self.shadow = Some(true);
         self
     }
 
+    /// Color.
     pub fn color(mut self, color: impl Into<String>) -> Self {
         self.color = Some(color.into());
         self
     }
 
+    /// Font.
     pub fn font(mut self, family: impl Into<String>) -> Self {
         self.font_family = Some(family.into());
         self
     }
 
+    /// Size points.
     pub fn size_points(mut self, points: u16) -> Self {
         self.font_size = Some(points.saturating_mul(2));
         self
     }
 
+    /// Size half points.
     pub fn size_half_points(mut self, half_points: u16) -> Self {
         self.font_size = Some(half_points);
         self
     }
 
+    /// Vertical align.
     pub fn vertical_align(mut self, vertical_align: VerticalAlign) -> Self {
         self.vertical_align = Some(vertical_align);
         self
     }
 
+    /// Superscript.
     pub fn superscript(mut self) -> Self {
         self.vertical_align = Some(VerticalAlign::Superscript);
         self
     }
 
+    /// Subscript.
     pub fn subscript(mut self) -> Self {
         self.vertical_align = Some(VerticalAlign::Subscript);
         self
@@ -523,20 +591,25 @@ impl RunStyleProperties {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct TableStyleProperties {
+    /// Optional width.
     pub width: Option<u32>,
+    /// Optional borders.
     pub borders: Option<TableBorders>,
 }
 
 impl TableStyleProperties {
+    /// Creates a value with default settings.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Width.
     pub fn width(mut self, width: u32) -> Self {
         self.width = Some(width);
         self
     }
 
+    /// Borders.
     pub fn borders(mut self, borders: TableBorders) -> Self {
         self.borders = Some(borders);
         self

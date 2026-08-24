@@ -9,6 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  semver:
+    name: Verify public API SemVer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: obi1kenobi/cargo-semver-checks-action@v2
+
   build:
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
@@ -84,7 +91,7 @@ jobs:
   release:
     name: Publish signed release
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, semver]
     permissions:
       actions: read
       contents: write
@@ -150,7 +157,7 @@ jobs:
   publish-crate:
     name: Publish crate
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, semver]
     environment: crates-io
     permissions:
       contents: read

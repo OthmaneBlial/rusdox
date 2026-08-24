@@ -4,8 +4,10 @@
       "description": "A high-level document block.",
       "oneOf": [
         {
+          "description": "Selects the cover title form.",
           "properties": {
             "text": {
+              "description": "Cover-title text.",
               "type": "string"
             },
             "type": {
@@ -20,8 +22,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the title form.",
           "properties": {
             "text": {
+              "description": "Title text.",
               "type": "string"
             },
             "type": {
@@ -36,8 +40,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the subtitle form.",
           "properties": {
             "text": {
+              "description": "Subtitle text.",
               "type": "string"
             },
             "type": {
@@ -52,8 +58,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the hero form.",
           "properties": {
             "text": {
+              "description": "Hero statement text.",
               "type": "string"
             },
             "type": {
@@ -68,8 +76,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the centered note form.",
           "properties": {
             "text": {
+              "description": "Centered note text.",
               "type": "string"
             },
             "type": {
@@ -84,8 +94,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the page heading form.",
           "properties": {
             "text": {
+              "description": "Page-heading text.",
               "type": "string"
             },
             "type": {
@@ -100,8 +112,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the section form.",
           "properties": {
             "text": {
+              "description": "Section-heading text.",
               "type": "string"
             },
             "type": {
@@ -116,8 +130,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the body form.",
           "properties": {
             "text": {
+              "description": "Body text.",
               "type": "string"
             },
             "type": {
@@ -132,8 +148,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the tagline form.",
           "properties": {
             "text": {
+              "description": "Tagline text.",
               "type": "string"
             },
             "type": {
@@ -148,9 +166,11 @@
           "type": "object"
         },
         {
+          "description": "Selects the paragraph form.",
           "properties": {
             "spec": {
-              "$ref": "#/$defs/ParagraphSpec"
+              "$ref": "#/$defs/ParagraphSpec",
+              "description": "Rich paragraph specification."
             },
             "type": {
               "const": "paragraph",
@@ -194,6 +214,7 @@
           "properties": {
             "title": {
               "default": null,
+              "description": "Optional heading shown above the generated table of contents.",
               "type": [
                 "string",
                 "null"
@@ -210,8 +231,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the bullets form.",
           "properties": {
             "items": {
+              "description": "Ordered bullet item text.",
               "items": {
                 "type": "string"
               },
@@ -229,8 +252,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the numbered form.",
           "properties": {
             "items": {
+              "description": "Ordered numbered item text.",
               "items": {
                 "type": "string"
               },
@@ -248,8 +273,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the label values form.",
           "properties": {
             "items": {
+              "description": "Ordered label/value pairs.",
               "items": {
                 "$ref": "#/$defs/LabelValueSpec"
               },
@@ -267,8 +294,10 @@
           "type": "object"
         },
         {
+          "description": "Selects the metrics form.",
           "properties": {
             "items": {
+              "description": "Ordered metric cards.",
               "items": {
                 "$ref": "#/$defs/MetricSpec"
               },
@@ -286,9 +315,11 @@
           "type": "object"
         },
         {
+          "description": "Selects the table form.",
           "properties": {
             "spec": {
-              "$ref": "#/$defs/TableSpec"
+              "$ref": "#/$defs/TableSpec",
+              "description": "Table specification."
             },
             "type": {
               "const": "table",
@@ -302,7 +333,7 @@
           "type": "object"
         },
         {
-          "description": "A fully specified visual/image block.",
+          "description": "Selects the image form.",
           "properties": {
             "alignment": {
               "anyOf": [
@@ -313,10 +344,12 @@
                   "type": "null"
                 }
               ],
-              "default": null
+              "default": null,
+              "description": "Optional alignment."
             },
             "alt_text": {
               "default": null,
+              "description": "Optional alt text.",
               "type": [
                 "string",
                 "null"
@@ -324,6 +357,7 @@
             },
             "height_twips": {
               "default": null,
+              "description": "Height, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -333,6 +367,7 @@
             },
             "max_height_twips": {
               "default": null,
+              "description": "Maximum allowed height twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -342,6 +377,7 @@
             },
             "max_width_twips": {
               "default": null,
+              "description": "Maximum allowed width twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -351,6 +387,7 @@
             },
             "path": {
               "default": "",
+              "description": "Path.",
               "type": "string"
             },
             "type": {
@@ -359,6 +396,7 @@
             },
             "width_twips": {
               "default": null,
+              "description": "Width, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -373,7 +411,7 @@
           "type": "object"
         },
         {
-          "description": "A fully specified visual/image block.",
+          "description": "Selects the logo form.",
           "properties": {
             "alignment": {
               "anyOf": [
@@ -384,10 +422,12 @@
                   "type": "null"
                 }
               ],
-              "default": null
+              "default": null,
+              "description": "Optional alignment."
             },
             "alt_text": {
               "default": null,
+              "description": "Optional alt text.",
               "type": [
                 "string",
                 "null"
@@ -395,6 +435,7 @@
             },
             "height_twips": {
               "default": null,
+              "description": "Height, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -404,6 +445,7 @@
             },
             "max_height_twips": {
               "default": null,
+              "description": "Maximum allowed height twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -413,6 +455,7 @@
             },
             "max_width_twips": {
               "default": null,
+              "description": "Maximum allowed width twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -422,6 +465,7 @@
             },
             "path": {
               "default": "",
+              "description": "Path.",
               "type": "string"
             },
             "type": {
@@ -430,6 +474,7 @@
             },
             "width_twips": {
               "default": null,
+              "description": "Width, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -444,7 +489,7 @@
           "type": "object"
         },
         {
-          "description": "A fully specified visual/image block.",
+          "description": "Selects the signature form.",
           "properties": {
             "alignment": {
               "anyOf": [
@@ -455,10 +500,12 @@
                   "type": "null"
                 }
               ],
-              "default": null
+              "default": null,
+              "description": "Optional alignment."
             },
             "alt_text": {
               "default": null,
+              "description": "Optional alt text.",
               "type": [
                 "string",
                 "null"
@@ -466,6 +513,7 @@
             },
             "height_twips": {
               "default": null,
+              "description": "Height, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -475,6 +523,7 @@
             },
             "max_height_twips": {
               "default": null,
+              "description": "Maximum allowed height twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -484,6 +533,7 @@
             },
             "max_width_twips": {
               "default": null,
+              "description": "Maximum allowed width twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -493,6 +543,7 @@
             },
             "path": {
               "default": "",
+              "description": "Path.",
               "type": "string"
             },
             "type": {
@@ -501,6 +552,7 @@
             },
             "width_twips": {
               "default": null,
+              "description": "Width, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -515,7 +567,7 @@
           "type": "object"
         },
         {
-          "description": "A fully specified visual/image block.",
+          "description": "Selects the chart form.",
           "properties": {
             "alignment": {
               "anyOf": [
@@ -526,10 +578,12 @@
                   "type": "null"
                 }
               ],
-              "default": null
+              "default": null,
+              "description": "Optional alignment."
             },
             "alt_text": {
               "default": null,
+              "description": "Optional alt text.",
               "type": [
                 "string",
                 "null"
@@ -537,6 +591,7 @@
             },
             "height_twips": {
               "default": null,
+              "description": "Height, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -546,6 +601,7 @@
             },
             "max_height_twips": {
               "default": null,
+              "description": "Maximum allowed height twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -555,6 +611,7 @@
             },
             "max_width_twips": {
               "default": null,
+              "description": "Maximum allowed width twips.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -564,6 +621,7 @@
             },
             "path": {
               "default": "",
+              "description": "Path.",
               "type": "string"
             },
             "type": {
@@ -572,6 +630,7 @@
             },
             "width_twips": {
               "default": null,
+              "description": "Width, in twentieths of a point.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -586,6 +645,7 @@
           "type": "object"
         },
         {
+          "description": "Selects the spacer form.",
           "properties": {
             "type": {
               "const": "spacer",
@@ -781,12 +841,14 @@
       "description": "A table cell definition.",
       "oneOf": [
         {
+          "description": "Selects the text form.",
           "properties": {
             "kind": {
               "const": "text",
               "type": "string"
             },
             "text": {
+              "description": "Plain cell text.",
               "type": "string"
             }
           },
@@ -798,6 +860,7 @@
         },
         {
           "$ref": "#/$defs/StatusSpec",
+          "description": "Selects the status form.",
           "properties": {
             "kind": {
               "const": "status",
@@ -810,9 +873,11 @@
           "type": "object"
         },
         {
+          "description": "Selects the rich form.",
           "properties": {
             "background_color": {
               "default": null,
+              "description": "Optional cell background color as a six-digit RGB value.",
               "type": [
                 "string",
                 "null"
@@ -820,6 +885,7 @@
             },
             "grid_span": {
               "default": null,
+              "description": "Number of grid columns spanned by the cell.",
               "format": "uint32",
               "minimum": 0,
               "type": [
@@ -840,10 +906,12 @@
                   "type": "null"
                 }
               ],
-              "default": null
+              "default": null,
+              "description": "Optional nested table contained by the cell."
             },
             "paragraphs": {
               "default": [],
+              "description": "Ordered paragraphs contained by the cell.",
               "items": {
                 "$ref": "#/$defs/ParagraphSpec"
               },
@@ -861,9 +929,11 @@
       "description": "A table column definition.",
       "properties": {
         "label": {
+          "description": "Label.",
           "type": "string"
         },
         "width": {
+          "description": "Width.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -880,6 +950,7 @@
       "properties": {
         "author": {
           "default": null,
+          "description": "Optional author.",
           "type": [
             "string",
             "null"
@@ -890,10 +961,12 @@
             "type": "string"
           },
           "default": {},
+          "description": "Custom properties.",
           "type": "object"
         },
         "keywords": {
           "default": [],
+          "description": "Ordered keywords.",
           "items": {
             "type": "string"
           },
@@ -901,6 +974,7 @@
         },
         "subject": {
           "default": null,
+          "description": "Optional subject.",
           "type": [
             "string",
             "null"
@@ -908,6 +982,7 @@
         },
         "title": {
           "default": null,
+          "description": "Optional title.",
           "type": [
             "string",
             "null"
@@ -917,14 +992,16 @@
       "type": "object"
     },
     "HeaderFooter": {
-      "description": "A simple header or footer paragraph template.\n\nThe `text` field supports `{page}` and `{pages}` placeholders, which are\nemitted as Word field codes.",
+      "description": "A simple header or footer paragraph template.\n\nThe `text` field supports `{page}` and `{pages}` placeholders, which are\nEmitted as Word field codes.",
       "properties": {
         "alignment": {
           "$ref": "#/$defs/ParagraphAlignment",
-          "default": "left"
+          "default": "left",
+          "description": "Alignment."
         },
         "text": {
           "default": "",
+          "description": "Text.",
           "type": "string"
         }
       },
@@ -934,9 +1011,11 @@
       "description": "A simple label-value pair block item.",
       "properties": {
         "label": {
+          "description": "Label.",
           "type": "string"
         },
         "value": {
+          "description": "Value.",
           "type": "string"
         }
       },
@@ -950,12 +1029,15 @@
       "description": "A metric card item.",
       "properties": {
         "label": {
+          "description": "Label.",
           "type": "string"
         },
         "tone": {
-          "$ref": "#/$defs/Tone"
+          "$ref": "#/$defs/Tone",
+          "description": "Tone."
         },
         "value": {
+          "description": "Value.",
           "type": "string"
         }
       },
@@ -968,24 +1050,45 @@
     },
     "PageNumberFormat": {
       "description": "Word page number formats exposed through the public API and spec.",
-      "enum": [
-        "decimal",
-        "upper_roman",
-        "lower_roman",
-        "upper_letter",
-        "lower_letter"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "decimal",
+          "description": "Selects the decimal form.",
+          "type": "string"
+        },
+        {
+          "const": "upper_roman",
+          "description": "Selects the upper roman form.",
+          "type": "string"
+        },
+        {
+          "const": "lower_roman",
+          "description": "Selects the lower roman form.",
+          "type": "string"
+        },
+        {
+          "const": "upper_letter",
+          "description": "Selects the upper letter form.",
+          "type": "string"
+        },
+        {
+          "const": "lower_letter",
+          "description": "Selects the lower letter form.",
+          "type": "string"
+        }
+      ]
     },
     "PageNumbering": {
       "description": "Page numbering configuration emitted into section properties.",
       "properties": {
         "format": {
           "$ref": "#/$defs/PageNumberFormat",
-          "default": "decimal"
+          "default": "decimal",
+          "description": "Format."
         },
         "start_at": {
           "default": null,
+          "description": "Optional start at.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -998,69 +1101,86 @@
     },
     "PageOrientation": {
       "description": "Physical page orientation shared by DOCX and PDF output.",
-      "enum": [
-        "portrait",
-        "landscape"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "portrait",
+          "description": "Selects the portrait form.",
+          "type": "string"
+        },
+        {
+          "const": "landscape",
+          "description": "Selects the landscape form.",
+          "type": "string"
+        }
+      ]
     },
     "PageSetup": {
       "description": "Page setup values stored in OOXML twips.",
       "properties": {
         "footer_twips": {
           "default": 720,
+          "description": "Footer, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "gutter_twips": {
           "default": 0,
+          "description": "Gutter, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "header_twips": {
           "default": 720,
+          "description": "Header, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "height_twips": {
           "default": 15840,
+          "description": "Height, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "margin_bottom_twips": {
           "default": 1440,
+          "description": "Margin bottom, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "margin_left_twips": {
           "default": 1440,
+          "description": "Margin left, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "margin_right_twips": {
           "default": 1440,
+          "description": "Margin right, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "margin_top_twips": {
           "default": 1440,
+          "description": "Margin top, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "orientation": {
           "$ref": "#/$defs/PageOrientation",
-          "default": "portrait"
+          "default": "portrait",
+          "description": "Orientation."
         },
         "width_twips": {
           "default": 12240,
+          "description": "Width, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -1108,13 +1228,28 @@
     },
     "ParagraphAlignmentSpec": {
       "description": "A serializable paragraph alignment.",
-      "enum": [
-        "left",
-        "center",
-        "right",
-        "justified"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "left",
+          "description": "Selects the left form.",
+          "type": "string"
+        },
+        {
+          "const": "center",
+          "description": "Selects the center form.",
+          "type": "string"
+        },
+        {
+          "const": "right",
+          "description": "Selects the right form.",
+          "type": "string"
+        },
+        {
+          "const": "justified",
+          "description": "Selects the justified form.",
+          "type": "string"
+        }
+      ]
     },
     "ParagraphList": {
       "description": "Semantic DOCX numbering metadata for a paragraph.",
@@ -1168,14 +1303,17 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional alignment."
         },
         "page_break_before": {
           "default": false,
+          "description": "Whether the paragraph starts on a new page.",
           "type": "boolean"
         },
         "runs": {
           "default": [],
+          "description": "Ordered runs.",
           "items": {
             "$ref": "#/$defs/RunSpec"
           },
@@ -1183,10 +1321,12 @@
         },
         "section_break_before": {
           "default": false,
+          "description": "Whether the paragraph starts a new section.",
           "type": "boolean"
         },
         "spacing_after_twips": {
           "default": null,
+          "description": "Spacing after, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -1196,6 +1336,7 @@
         },
         "spacing_before_twips": {
           "default": null,
+          "description": "Spacing before, in twentieths of a point.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -1205,6 +1346,7 @@
         },
         "style_id": {
           "default": null,
+          "description": "Optional style identifier.",
           "type": [
             "string",
             "null"
@@ -1218,6 +1360,7 @@
       "properties": {
         "based_on": {
           "default": null,
+          "description": "Optional based on.",
           "type": [
             "string",
             "null"
@@ -1225,10 +1368,12 @@
         },
         "id": {
           "default": "",
+          "description": "Identifier.",
           "type": "string"
         },
         "name": {
           "default": null,
+          "description": "Optional name.",
           "type": [
             "string",
             "null"
@@ -1236,6 +1381,7 @@
         },
         "next": {
           "default": null,
+          "description": "Optional next.",
           "type": [
             "string",
             "null"
@@ -1250,7 +1396,8 @@
             "page_break_before": null,
             "spacing_after": null,
             "spacing_before": null
-          }
+          },
+          "description": "Paragraph."
         },
         "run": {
           "$ref": "#/$defs/RunStyleProperties",
@@ -1265,7 +1412,8 @@
             "strikethrough": null,
             "underline": null,
             "vertical_align": null
-          }
+          },
+          "description": "Run."
         }
       },
       "type": "object"
@@ -1282,10 +1430,12 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional alignment."
         },
         "keep_next": {
           "default": null,
+          "description": "Whether a paragraph should stay with the following paragraph.",
           "type": [
             "boolean",
             "null"
@@ -1300,10 +1450,12 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional list."
         },
         "page_break_before": {
           "default": null,
+          "description": "Whether a paragraph should start on a new page.",
           "type": [
             "boolean",
             "null"
@@ -1311,6 +1463,7 @@
         },
         "spacing_after": {
           "default": null,
+          "description": "Optional spacing after.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -1320,6 +1473,7 @@
         },
         "spacing_before": {
           "default": null,
+          "description": "Optional spacing before.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -1335,6 +1489,7 @@
       "properties": {
         "allow_split_across_pages": {
           "default": null,
+          "description": "Whether this row may split across pages.",
           "type": [
             "boolean",
             "null"
@@ -1342,6 +1497,7 @@
         },
         "cells": {
           "default": [],
+          "description": "Ordered cells.",
           "items": {
             "$ref": "#/$defs/CellSpec"
           },
@@ -1349,6 +1505,7 @@
         },
         "repeat_as_header": {
           "default": false,
+          "description": "Whether this row repeats as a header on later pages.",
           "type": "boolean"
         }
       },
@@ -1356,20 +1513,25 @@
     },
     "RunFieldSpec": {
       "description": "Serializable dynamic field kinds.",
-      "enum": [
-        "table_of_contents"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "table_of_contents",
+          "description": "Selects the table of contents form.",
+          "type": "string"
+        }
+      ]
     },
     "RunSpec": {
       "description": "A fully specified text run.",
       "properties": {
         "bold": {
           "default": false,
+          "description": "Whether the run is bold.",
           "type": "boolean"
         },
         "bookmark": {
           "default": null,
+          "description": "Optional bookmark.",
           "type": [
             "string",
             "null"
@@ -1377,6 +1539,7 @@
         },
         "color": {
           "default": null,
+          "description": "Optional color.",
           "type": [
             "string",
             "null"
@@ -1391,10 +1554,12 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional field."
         },
         "font_family": {
           "default": null,
+          "description": "Optional font family.",
           "type": [
             "string",
             "null"
@@ -1402,6 +1567,7 @@
         },
         "footnote": {
           "default": null,
+          "description": "Optional footnote.",
           "type": [
             "string",
             "null"
@@ -1409,6 +1575,7 @@
         },
         "hyperlink": {
           "default": null,
+          "description": "Optional hyperlink.",
           "type": [
             "string",
             "null"
@@ -1416,14 +1583,17 @@
         },
         "italic": {
           "default": false,
+          "description": "Whether the run is italic.",
           "type": "boolean"
         },
         "shadow": {
           "default": false,
+          "description": "Whether the run has a shadow effect.",
           "type": "boolean"
         },
         "size_pt": {
           "default": null,
+          "description": "Optional size points.",
           "format": "float",
           "type": [
             "number",
@@ -1432,14 +1602,17 @@
         },
         "small_caps": {
           "default": false,
+          "description": "Whether the run uses small capitals.",
           "type": "boolean"
         },
         "strikethrough": {
           "default": false,
+          "description": "Whether the run is struck through.",
           "type": "boolean"
         },
         "style_id": {
           "default": null,
+          "description": "Optional style identifier.",
           "type": [
             "string",
             "null"
@@ -1447,6 +1620,7 @@
         },
         "text": {
           "default": "",
+          "description": "Text.",
           "type": "string"
         },
         "underline": {
@@ -1458,7 +1632,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional underline."
         },
         "vertical_align": {
           "anyOf": [
@@ -1469,7 +1644,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional vertical align."
         }
       },
       "type": "object"
@@ -1479,6 +1655,7 @@
       "properties": {
         "based_on": {
           "default": null,
+          "description": "Optional based on.",
           "type": [
             "string",
             "null"
@@ -1486,10 +1663,12 @@
         },
         "id": {
           "default": "",
+          "description": "Identifier.",
           "type": "string"
         },
         "name": {
           "default": null,
+          "description": "Optional name.",
           "type": [
             "string",
             "null"
@@ -1508,7 +1687,8 @@
             "strikethrough": null,
             "underline": null,
             "vertical_align": null
-          }
+          },
+          "description": "Properties."
         }
       },
       "type": "object"
@@ -1518,6 +1698,7 @@
       "properties": {
         "bold": {
           "default": null,
+          "description": "Whether text is bold.",
           "type": [
             "boolean",
             "null"
@@ -1525,6 +1706,7 @@
         },
         "color": {
           "default": null,
+          "description": "Optional color.",
           "type": [
             "string",
             "null"
@@ -1532,6 +1714,7 @@
         },
         "font_family": {
           "default": null,
+          "description": "Optional font family.",
           "type": [
             "string",
             "null"
@@ -1539,6 +1722,7 @@
         },
         "font_size": {
           "default": null,
+          "description": "Optional font size.",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0,
@@ -1549,6 +1733,7 @@
         },
         "italic": {
           "default": null,
+          "description": "Whether text is italic.",
           "type": [
             "boolean",
             "null"
@@ -1556,6 +1741,7 @@
         },
         "shadow": {
           "default": null,
+          "description": "Whether text has a shadow effect.",
           "type": [
             "boolean",
             "null"
@@ -1563,6 +1749,7 @@
         },
         "small_caps": {
           "default": null,
+          "description": "Whether text uses small capitals.",
           "type": [
             "boolean",
             "null"
@@ -1570,6 +1757,7 @@
         },
         "strikethrough": {
           "default": null,
+          "description": "Whether text is struck through.",
           "type": [
             "boolean",
             "null"
@@ -1584,7 +1772,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional underline."
         },
         "vertical_align": {
           "anyOf": [
@@ -1595,7 +1784,8 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional vertical align."
         }
       },
       "type": "object"
@@ -1604,10 +1794,12 @@
       "description": "A status cell definition.",
       "properties": {
         "text": {
+          "description": "Text.",
           "type": "string"
         },
         "tone": {
-          "$ref": "#/$defs/Tone"
+          "$ref": "#/$defs/Tone",
+          "description": "Tone."
         }
       },
       "required": [
@@ -1621,6 +1813,7 @@
       "properties": {
         "paragraph": {
           "default": [],
+          "description": "Ordered paragraph.",
           "items": {
             "$ref": "#/$defs/ParagraphStyle"
           },
@@ -1628,6 +1821,7 @@
         },
         "run": {
           "default": [],
+          "description": "Ordered run.",
           "items": {
             "$ref": "#/$defs/RunStyle"
           },
@@ -1635,6 +1829,7 @@
         },
         "table": {
           "default": [],
+          "description": "Ordered table.",
           "items": {
             "$ref": "#/$defs/TableStyle"
           },
@@ -1725,18 +1920,21 @@
       "description": "A grid table specification.",
       "properties": {
         "columns": {
+          "description": "Ordered columns.",
           "items": {
             "$ref": "#/$defs/ColumnSpec"
           },
           "type": "array"
         },
         "rows": {
+          "description": "Ordered rows.",
           "items": {
             "$ref": "#/$defs/RowSpec"
           },
           "type": "array"
         },
         "style_id": {
+          "description": "Optional style identifier.",
           "type": [
             "string",
             "null"
@@ -1754,6 +1952,7 @@
       "properties": {
         "based_on": {
           "default": null,
+          "description": "Optional based on.",
           "type": [
             "string",
             "null"
@@ -1761,10 +1960,12 @@
         },
         "id": {
           "default": "",
+          "description": "Identifier.",
           "type": "string"
         },
         "name": {
           "default": null,
+          "description": "Optional name.",
           "type": [
             "string",
             "null"
@@ -1775,7 +1976,8 @@
           "default": {
             "borders": null,
             "width": null
-          }
+          },
+          "description": "Properties."
         }
       },
       "type": "object"
@@ -1792,10 +1994,12 @@
               "type": "null"
             }
           ],
-          "default": null
+          "default": null,
+          "description": "Optional borders."
         },
         "width": {
           "default": null,
+          "description": "Optional width.",
           "format": "uint32",
           "minimum": 0,
           "type": [
@@ -1808,13 +2012,28 @@
     },
     "Tone": {
       "description": "Shared semantic color tone.",
-      "enum": [
-        "positive",
-        "neutral",
-        "warning",
-        "risk"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "positive",
+          "description": "Selects the positive form.",
+          "type": "string"
+        },
+        {
+          "const": "neutral",
+          "description": "Selects the neutral form.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "Selects the warning form.",
+          "type": "string"
+        },
+        {
+          "const": "risk",
+          "description": "Selects the risk form.",
+          "type": "string"
+        }
+      ]
     },
     "UnderlineStyle": {
       "description": "Supported underline styles for a text run.",
@@ -1871,16 +2090,43 @@
     },
     "UnderlineStyleSpec": {
       "description": "A serializable underline style.",
-      "enum": [
-        "single",
-        "double",
-        "dotted",
-        "dash",
-        "wavy",
-        "words",
-        "none"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "single",
+          "description": "Selects the single form.",
+          "type": "string"
+        },
+        {
+          "const": "double",
+          "description": "Selects the double form.",
+          "type": "string"
+        },
+        {
+          "const": "dotted",
+          "description": "Selects the dotted form.",
+          "type": "string"
+        },
+        {
+          "const": "dash",
+          "description": "Selects the dash form.",
+          "type": "string"
+        },
+        {
+          "const": "wavy",
+          "description": "Selects the wavy form.",
+          "type": "string"
+        },
+        {
+          "const": "words",
+          "description": "Selects the words form.",
+          "type": "string"
+        },
+        {
+          "const": "none",
+          "description": "Selects the none form.",
+          "type": "string"
+        }
+      ]
     },
     "VerticalAlign": {
       "description": "Vertical alignment for a run.",
@@ -1904,12 +2150,23 @@
     },
     "VerticalAlignSpec": {
       "description": "A serializable run vertical alignment.",
-      "enum": [
-        "superscript",
-        "subscript",
-        "baseline"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "const": "superscript",
+          "description": "Selects the superscript form.",
+          "type": "string"
+        },
+        {
+          "const": "subscript",
+          "description": "Selects the subscript form.",
+          "type": "string"
+        },
+        {
+          "const": "baseline",
+          "description": "Selects the baseline form.",
+          "type": "string"
+        }
+      ]
     }
   },
   "$id": "https://othmaneblial.github.io/rusdox/schema/rusdox-spec-v1.schema.json",
@@ -1918,6 +2175,7 @@
   "properties": {
     "blocks": {
       "default": [],
+      "description": "Ordered blocks.",
       "items": {
         "$ref": "#/$defs/BlockSpec"
       },

@@ -15,6 +15,13 @@ Explain the user or project problem this PR solves.
 - [ ] CI/release
 - [ ] Refactor
 
+## Contract impact
+
+- [ ] No public contract change
+- [ ] Additive Rust API or CLI change
+- [ ] Spec/schema, template-syntax, renderer, or protocol change
+- [ ] Intentional breaking change with version/migration rationale
+
 ## Validation
 
 - [ ] `cargo fmt --all`

@@ -219,17 +219,29 @@ impl Default for OutputConfig {
 pub struct TypographyConfig {
     /// Default run font family used by helper methods.
     pub font_family: String,
+    /// Cover title size in points.
     pub cover_title_size_pt: f32,
+    /// Title size in points.
     pub title_size_pt: f32,
+    /// Subtitle size in points.
     pub subtitle_size_pt: f32,
+    /// Hero size in points.
     pub hero_size_pt: f32,
+    /// Page heading size in points.
     pub page_heading_size_pt: f32,
+    /// Section size in points.
     pub section_size_pt: f32,
+    /// Body size in points.
     pub body_size_pt: f32,
+    /// Tagline size in points.
     pub tagline_size_pt: f32,
+    /// Note size in points.
     pub note_size_pt: f32,
+    /// Table size in points.
     pub table_size_pt: f32,
+    /// Metric label size in points.
     pub metric_label_size_pt: f32,
+    /// Metric value size in points.
     pub metric_value_size_pt: f32,
 }
 
@@ -257,29 +269,53 @@ impl Default for TypographyConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct SpacingConfig {
+    /// Cover title before, in twentieths of a point.
     pub cover_title_before_twips: u32,
+    /// Cover title after, in twentieths of a point.
     pub cover_title_after_twips: u32,
+    /// Title before, in twentieths of a point.
     pub title_before_twips: u32,
+    /// Title after, in twentieths of a point.
     pub title_after_twips: u32,
+    /// Subtitle after, in twentieths of a point.
     pub subtitle_after_twips: u32,
+    /// Hero after, in twentieths of a point.
     pub hero_after_twips: u32,
+    /// Page heading after, in twentieths of a point.
     pub page_heading_after_twips: u32,
+    /// Section before, in twentieths of a point.
     pub section_before_twips: u32,
+    /// Section after, in twentieths of a point.
     pub section_after_twips: u32,
+    /// Body after, in twentieths of a point.
     pub body_after_twips: u32,
+    /// Bullet after, in twentieths of a point.
     pub bullet_after_twips: u32,
+    /// Label value after, in twentieths of a point.
     pub label_value_after_twips: u32,
+    /// Tagline after, in twentieths of a point.
     pub tagline_after_twips: u32,
+    /// Spacer after, in twentieths of a point.
     pub spacer_after_twips: u32,
+    /// Note after, in twentieths of a point.
     pub note_after_twips: u32,
+    /// Metric label before, in twentieths of a point.
     pub metric_label_before_twips: u32,
+    /// Metric label after, in twentieths of a point.
     pub metric_label_after_twips: u32,
+    /// Metric value after, in twentieths of a point.
     pub metric_value_after_twips: u32,
+    /// Table header before, in twentieths of a point.
     pub table_header_before_twips: u32,
+    /// Table header after, in twentieths of a point.
     pub table_header_after_twips: u32,
+    /// Table data before, in twentieths of a point.
     pub table_data_before_twips: u32,
+    /// Table data after, in twentieths of a point.
     pub table_data_after_twips: u32,
+    /// Table status before, in twentieths of a point.
     pub table_status_before_twips: u32,
+    /// Table status after, in twentieths of a point.
     pub table_status_after_twips: u32,
 }
 
@@ -318,18 +354,31 @@ impl Default for SpacingConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct ColorConfig {
+    /// Ink.
     pub ink: String,
+    /// Slate.
     pub slate: String,
+    /// Muted.
     pub muted: String,
+    /// Accent.
     pub accent: String,
+    /// Gold.
     pub gold: String,
+    /// Red.
     pub red: String,
+    /// Green.
     pub green: String,
+    /// Soft.
     pub soft: String,
+    /// Pale.
     pub pale: String,
+    /// Mint.
     pub mint: String,
+    /// Amber.
     pub amber: String,
+    /// Rose.
     pub rose: String,
+    /// Table border.
     pub table_border: String,
 }
 
@@ -357,13 +406,21 @@ impl Default for ColorConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TableConfig {
+    /// Default width, in twentieths of a point.
     pub default_width_twips: u32,
+    /// Metric cell width, in twentieths of a point.
     pub metric_cell_width_twips: u32,
+    /// Grid border size eighth points.
     pub grid_border_size_eighth_pt: u32,
+    /// Card border size eighth points.
     pub card_border_size_eighth_pt: u32,
+    /// PDF cell padding x points.
     pub pdf_cell_padding_x_pt: f32,
+    /// PDF cell padding y points.
     pub pdf_cell_padding_y_pt: f32,
+    /// PDF after spacing points.
     pub pdf_after_spacing_pt: f32,
+    /// PDF grid stroke width points.
     pub pdf_grid_stroke_width_pt: f32,
 }
 
@@ -386,16 +443,27 @@ impl Default for TableConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PdfConfig {
+    /// Page width points.
     pub page_width_pt: f32,
+    /// Page height points.
     pub page_height_pt: f32,
+    /// Margin x points.
     pub margin_x_pt: f32,
+    /// Margin top points.
     pub margin_top_pt: f32,
+    /// Margin bottom points.
     pub margin_bottom_pt: f32,
+    /// Default text size in points.
     pub default_text_size_pt: f32,
+    /// Default line height points.
     pub default_line_height_pt: f32,
+    /// Line height multiplier.
     pub line_height_multiplier: f32,
+    /// Baseline factor.
     pub baseline_factor: f32,
+    /// Text width bias regular.
     pub text_width_bias_regular: f32,
+    /// Text width bias bold.
     pub text_width_bias_bold: f32,
 }
 

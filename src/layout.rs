@@ -8,7 +8,9 @@ use crate::paragraph::ParagraphAlignment;
 #[serde(rename_all = "snake_case")]
 pub enum PageOrientation {
     #[default]
+    /// Selects the portrait form.
     Portrait,
+    /// Selects the landscape form.
     Landscape,
 }
 
@@ -16,15 +18,25 @@ pub enum PageOrientation {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct PageSetup {
+    /// Width, in twentieths of a point.
     pub width_twips: u32,
+    /// Height, in twentieths of a point.
     pub height_twips: u32,
+    /// Margin top, in twentieths of a point.
     pub margin_top_twips: u32,
+    /// Margin right, in twentieths of a point.
     pub margin_right_twips: u32,
+    /// Margin bottom, in twentieths of a point.
     pub margin_bottom_twips: u32,
+    /// Margin left, in twentieths of a point.
     pub margin_left_twips: u32,
+    /// Header, in twentieths of a point.
     pub header_twips: u32,
+    /// Footer, in twentieths of a point.
     pub footer_twips: u32,
+    /// Gutter, in twentieths of a point.
     pub gutter_twips: u32,
+    /// Orientation.
     pub orientation: PageOrientation,
 }
 
@@ -93,11 +105,13 @@ impl PageSetup {
 /// A simple header or footer paragraph template.
 ///
 /// The `text` field supports `{page}` and `{pages}` placeholders, which are
-/// emitted as Word field codes.
+/// Emitted as Word field codes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct HeaderFooter {
+    /// Text.
     pub text: String,
+    /// Alignment.
     pub alignment: ParagraphAlignment,
 }
 
@@ -130,7 +144,9 @@ impl HeaderFooter {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct PageNumbering {
+    /// Optional start at.
     pub start_at: Option<u32>,
+    /// Format.
     pub format: PageNumberFormat,
 }
 
@@ -163,10 +179,15 @@ impl PageNumbering {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PageNumberFormat {
+    /// Selects the decimal form.
     Decimal,
+    /// Selects the upper roman form.
     UpperRoman,
+    /// Selects the lower roman form.
     LowerRoman,
+    /// Selects the upper letter form.
     UpperLetter,
+    /// Selects the lower letter form.
     LowerLetter,
 }
 

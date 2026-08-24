@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stability and support | RusDox Documentation</title>
+    <meta name="description" content="Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases." />
+    <link rel="canonical" href="https://othmaneblial.github.io/rusdox/docs/stability.html" />
+    <meta property="og:title" content="Stability and support | RusDox" />
+    <meta property="og:description" content="Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases." />
+    <meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png" />
+    <meta property="og:url" content="https://othmaneblial.github.io/rusdox/docs/stability.html" />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#b85c30" />
+    <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Stability and support","description":"Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.","url":"https://othmaneblial.github.io/rusdox/docs/stability.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
+  </head>
+  <body data-page="docs-static">
+    <a class="skip-link" href="#documentation">Skip to documentation</a>
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="brand" href="../index.html" aria-label="RusDox home">
+          <span class="brand-mark">R</span>
+          <span class="brand-text"><strong>RusDox</strong><span>One spec. Two trustworthy documents.</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../index.html">Overview</a>
+          <a class="is-active" href="../docs.html">Docs</a>
+          <a href="../index.html#examples">Examples</a>
+          <a href="../playground/">Playground</a>
+          <a href="https://github.com/OthmaneBlial/rusdox">GitHub</a>
+        </nav>
+      </header>
+      <main class="docs-static-main" id="documentation">
+        <section class="docs-page-head docs-static-head">
+          <div>
+            <p class="eyebrow">Contract</p>
+            <h1>Stability and support</h1>
+            <p class="lede">Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.</p>
+          </div>
+          <a class="button button-secondary" href="https://github.com/OthmaneBlial/rusdox/blob/main/docs/stability.md">View Markdown source</a>
+        </section>
+        <div class="docs-static-layout">
+          <aside class="docs-static-nav" aria-label="Documentation navigation">
+    <p class="docs-nav-label">Field guide</p>
+    <section><h2>Overview</h2><ul><li><a href="../docs.html">Documentation</a></li><li><a href="project-overview.html">Project overview</a></li></ul></section><section><h2>Authoring</h2><ul><li><a href="getting-started.html">Getting started</a></li><li><a href="yaml-guide.html">YAML guide</a></li><li><a href="spec-versioning.html">Spec versioning</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="word-templates.html">Word-native templates</a></li></ul></section><section><h2>Trust &amp; operations</h2><ul><li><a class="is-active" aria-current="page" href="stability.html">Stability and support</a></li><li><a href="release-checklist.html">Release checklist</a></li><li><a href="wasm-feasibility.html">Browser rendering feasibility</a></li><li><a href="github-action.html">GitHub Action</a></li><li><a href="compatibility.html">Compatibility matrix</a></li><li><a href="compatibility-scorecard.html">Viewer compatibility scorecard</a></li><li><a href="input-safety.html">Input safety and limits</a></li><li><a href="parity.html">Parity verification</a></li><li><a href="performance.html">Reproducible performance</a></li><li><a href="troubleshooting.html">Troubleshooting</a></li></ul></section><section><h2>Examples</h2><ul><li><a href="template-registry.html">Curated template registry</a></li><li><a href="gallery.html">Template gallery</a></li><li><a href="examples.html">Examples guide</a></li></ul></section><section><h2>Reference</h2><ul><li><a href="integrations.html">Integration protocol</a></li><li><a href="cli.html">CLI reference</a></li><li><a href="rust-api.html">Rust API</a></li></ul></section><section><h2>Project</h2><ul><li><a href="roadmap.html">Roadmap</a></li><li><a href="changelog.html">Changelog</a></li></ul></section><section><h2>Community</h2><ul><li><a href="contributing.html">Contributing</a></li><li><a href="architecture.html">Architecture</a></li><li><a href="governance.html">Governance</a></li><li><a href="contributors.html">Contributors</a></li><li><a href="support.html">Support</a></li><li><a href="security.html">Security policy</a></li><li><a href="code-of-conduct.html">Code of conduct</a></li></ul></section>
+    <a class="docs-nav-home" href="../index.html">← Back to overview</a>
+  </aside>
+          <article class="docs-article docs-static-article">
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#contract-map">Contract map</a></li><li class="toc-level-2"><a href="#frozen-spec-version-1">Frozen spec version 1</a></li><li class="toc-level-2"><a href="#deprecation-window">Deprecation window</a></li><li class="toc-level-2"><a href="#supported-releases">Supported releases</a></li><li class="toc-level-2"><a href="#minimum-supported-rust-version">Minimum supported Rust version</a></li><li class="toc-level-2"><a href="#rust-api-documentation-and-semver-gate">Rust API documentation and SemVer gate</a></li><li class="toc-level-2"><a href="#release-decision">Release decision</a></li></ol></nav>
+            <div class="docs-content prose"><p>The RusDox v1 contract has five public surfaces. It takes effect with the <code>v1.0.0</code> release; until that tag exists, <code>main</code> is release-candidate work rather than a published support promise. Each surface is versioned deliberately, so a crate version bump never silently changes the meaning of a document specification or local protocol request.</p>
+<h2 id="contract-map">Contract map</h2>
+<div class="table-scroll"><table><thead><tr><th>Surface</th><th>Version</th><th>Compatible change</th><th>Breaking change</th></tr></thead><tbody><tr><td>Rust crate API</td><td>Cargo SemVer</td><td>New documented APIs; additions to explicitly non-exhaustive types</td><td>Removing/renaming a public item, narrowing accepted inputs, or changing observable semantics</td></tr><tr><td>CLI</td><td>crate SemVer</td><td>New commands or optional flags; clearer human text</td><td>Removing/renaming commands or flags, changing defaults, paths, exit codes, or versioned JSON fields</td></tr><tr><td>document spec/schema</td><td><code>version: 1</code></td><td>Optional fields, new blocks with explicit parity behavior, stricter rejection only for previously invalid input</td><td>Reinterpreting a valid field, default, enum, expression, escaping rule, or output semantic</td></tr><tr><td>Word template syntax</td><td>syntax <code>1</code></td><td>New opt-in filters or diagnostics</td><td>Changing placeholder, loop, condition, strictness, escaping, or preservation behavior</td></tr><tr><td>renderer/local protocol</td><td>API/protocol <code>1</code></td><td>New optional request fields and response fields that tolerant readers can ignore</td><td>Reusing a field with new meaning, removing fields, or changing validation/output confinement</td></tr></tbody></table></div>
+<p>DOCX and PDF bytes are deterministic for the same RusDox version, inputs, configuration, and font environment. Cross-version compatibility promises the document semantics listed in the compatibility matrix, not an identical ZIP or PDF byte stream. Any intentional layout change requires parity evidence and a changelog entry.</p>
+<h2 id="frozen-spec-version-1">Frozen spec version 1</h2>
+<p><code>SPEC_VERSION</code>, the generated schema identifier, every checked-in example, and the migration command agree on version 1. Unknown future versions fail before an output is replaced. Version 1 will not reinterpret existing valid input.</p>
+<p>An additive feature may stay in spec v1 only when all of these are true:</p>
+<ol><li>old valid documents keep the same meaning;</li><li>the new field is optional or has a behavior-preserving default;</li><li>YAML, JSON, TOML, the schema, editor tooling, validation, DOCX, PDF, and parity evidence move together;</li><li>unsupported readers fail clearly rather than guessing;</li><li>migration is unnecessary for existing input.</li></ol>
+<p>Anything else requires spec version 2 and an atomic migration path. The current pre-1.0 migration remains available as <code>rusdox migrate --check</code>, stdout, <code>--output</code>, or <code>--in-place</code>; future migrations follow the same recoverable transaction model.</p>
+<h2 id="deprecation-window">Deprecation window</h2>
+<p>A v1 API, CLI, or syntax deprecation is announced in rustdoc or <code>--help</code>, the changelog, and migration documentation. Deprecated behavior remains functional for at least two minor releases and six months, whichever is longer. Removal waits for the next major release. Security fixes may reject previously accepted malicious input immediately, with a security advisory and narrow migration note.</p>
+<p>Human-readable CLI prose may improve without notice. Scripts must consume the documented JSON forms and their version fields, not parse terminal sentences.</p>
+<h2 id="supported-releases">Supported releases</h2>
+<ul><li>The latest v1 minor receives bug, compatibility, and security fixes.</li><li>The previous v1 minor receives critical security fixes for six months after its successor, when a previous minor exists.</li><li>Older minors and pre-1.0 releases are unsupported; users receive a migration path but no promise of backports.</li><li>Release archives, checksums, SBOM, and GitHub build provenance are retained.</li><li>Viewer claims are tied to dated, hash-pinned evidence rather than support by brand name alone.</li></ul>
+<h2 id="minimum-supported-rust-version">Minimum supported Rust version</h2>
+<p>The MSRV is Rust 1.88.0 and is declared through Cargo&#39;s <code>rust-version</code> field. CI compiles all features on that exact toolchain. Raising the MSRV is a minor release change, announced at least 90 days in advance when a security dependency does not force an earlier move. Patch releases do not raise it.</p>
+<h2 id="rust-api-documentation-and-semver-gate">Rust API documentation and SemVer gate</h2>
+<p>The library denies missing public-item docs and broken intra-doc links. CI builds the full library rustdoc with those lints as errors, so the supported public API has 100% item coverage rather than an aspirational badge. Release tags also run <code>cargo-semver-checks</code> against the latest published crate before crates.io upload.</p>
+<p>The automated SemVer scan supplements review; it cannot judge every behavioral contract. A release PR must still classify changes across all five surfaces, include migrations where required, and link parity evidence for output changes.</p>
+<h2 id="release-decision">Release decision</h2>
+<p>The release checklist must record the crate/spec/template/protocol versions, MSRV result, rustdoc result, semantic scan, migrations, compatibility evidence, security review, benchmark budgets, and signed artifact verification. A green build without those receipts is not sufficient to publish v1.</p></div>
+            <nav class="docs-pager" aria-label="Documentation pagination">
+    <a href="spec-versioning.html"><span>Previous</span><strong>Spec versioning</strong></a>
+    <a class="docs-pager-next" href="release-checklist.html"><span>Next</span><strong>Release checklist</strong></a>
+  </nav>
+          </article>
+        </div>
+      </main>
+      <footer class="site-footer">
+        <p>RusDox documentation. Static, linkable, and usable without JavaScript.</p>
+        <div class="footer-links">
+          <a href="../docs/compatibility.html">Compatibility</a>
+          <a href="../docs/troubleshooting.html">Troubleshooting</a>
+          <a href="https://github.com/OthmaneBlial/rusdox/discussions">Discussions</a>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

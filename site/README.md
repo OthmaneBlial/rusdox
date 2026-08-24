@@ -108,6 +108,12 @@ There is deliberately no general-purpose expression runtime. Read the
 [spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
 [VS Code extension](editors/vscode/README.md).
 
+For production upgrades, read the [v1 stability contract](docs/stability.md): it
+defines SemVer behavior for the Rust API, CLI, spec, Word-template syntax, and
+rendered outputs; Rust 1.88.0 is the tested MSRV. The public library now denies
+missing rustdoc and broken documentation links, and tagged releases run an
+independent API compatibility scan before publication.
+
 For the local feedback loop, run `rusdox dev mydoc.yaml --open`. The loop keeps
 the last successful PDF visible while reporting the current validation issue,
 timings, output paths, and whether an input, config, include, or asset triggered

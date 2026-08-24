@@ -16,6 +16,8 @@ const pages = [
   ["docs/getting-started.md", "docs/getting-started.html", "Getting started", "Guide", "Install RusDox and generate the first editable DOCX and native PDF in minutes.", "Authoring"],
   ["docs/yaml-guide.md", "docs/yaml-guide.html", "YAML guide", "Guide", "Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.", "Authoring"],
   ["docs/spec-versioning.md", "docs/spec-versioning.html", "Spec versioning", "Guide", "Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.", "Authoring"],
+  ["docs/stability.md", "docs/stability.html", "Stability and support", "Contract", "Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.", "Trust & operations"],
+  ["docs/release-checklist.md", "docs/release-checklist.html", "Release checklist", "Operations", "Require contract, parity, compatibility, performance, supply-chain, and publication evidence for every release.", "Trust & operations"],
   ["docs/wasm-feasibility.md", "docs/wasm-feasibility.html", "Browser rendering feasibility", "Decision", "Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.", "Trust & operations"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
@@ -135,6 +137,7 @@ const sourceCopies = [
   "scripts/starter_issues.mjs",
   "scripts/contributor_lab.mjs",
   "scripts/check_contributors.mjs",
+  "scripts/check_stable_contracts.mjs",
   "scripts/test_contributor_lab.mjs",
   ".github/starter-issues.json",
   ...walkFiles(path.join(root, "contributor-fixtures"))

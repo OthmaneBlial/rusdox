@@ -17,6 +17,7 @@ Read these first:
 - [docs/yaml-guide.md](docs/yaml-guide.md)
 - [docs/rust-api.md](docs/rust-api.md)
 - [docs/architecture.md](docs/architecture.md)
+- [docs/stability.md](docs/stability.md)
 - [GOVERNANCE.md](GOVERNANCE.md)
 
 ## Best First Contributions

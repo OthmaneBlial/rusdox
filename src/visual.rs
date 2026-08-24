@@ -139,7 +139,9 @@ pub enum VisualSource {
     Path(PathBuf),
     /// Use bytes already stored in memory.
     Embedded {
+        /// Embedded visual format.
         format: VisualFormat,
+        /// Raw encoded visual bytes.
         bytes: Vec<u8>,
     },
 }

@@ -2,6 +2,7 @@
 name = "rusdox"
 version = "0.1.1"
 edition = "2021"
+rust-version = "1.88"
 default-run = "rusdox"
 autobins = false
 license = "MIT"

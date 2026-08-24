@@ -68,6 +68,13 @@ jobs:
           node scripts/starter_issues.mjs
           node scripts/test_contributor_lab.mjs
           node scripts/check_contributors.mjs
+          node scripts/check_stable_contracts.mjs
+
+      - name: Build complete public API documentation
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          RUSTDOCFLAGS: -D missing_docs -D rustdoc::broken_intra_doc_links
+        run: cargo doc --locked --no-deps --lib
 
       - name: Verify crate package
         if: matrix.os == 'ubuntu-latest'
@@ -113,3 +120,22 @@ jobs:
 
       - name: Compile fuzz targets
         run: cargo +nightly fuzz build
+
+  msrv:
+    name: MSRV 1.88
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install minimum supported Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+
+      - name: Cache Cargo for MSRV
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv-1.88
+
+      - name: Compile every feature on the MSRV
+        run: cargo +1.88.0 check --locked --all-features

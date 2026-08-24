@@ -19,6 +19,9 @@
 //! assert_eq!(document.paragraphs().count(), 1);
 //! ```
 
+#![deny(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+
 pub mod config;
 mod document;
 mod error;
@@ -34,12 +37,14 @@ pub mod renderer;
 mod run;
 pub mod schema;
 mod source;
+/// Versioned YAML, JSON, and TOML document specification types and builders.
 pub mod spec;
 mod spec_expand;
 pub mod studio;
 mod style;
 mod table;
 mod template;
+/// Semantic validation diagnostics for document specifications and configuration.
 pub mod validate;
 mod visual;
 mod xml_utils;

@@ -26,39 +26,55 @@ pub const TEMPLATE_SYNTAX_VERSION: &str = "1";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TemplateDiagnosticSeverity {
+    /// Selects the warning form.
     Warning,
+    /// Selects the error form.
     Error,
 }
 
 /// Actionable template diagnostic with an OOXML part and document location.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TemplateDiagnostic {
+    /// Severity.
     pub severity: TemplateDiagnosticSeverity,
+    /// Part.
     pub part: String,
+    /// Location.
     pub location: String,
+    /// Placeholder.
     pub placeholder: String,
+    /// Message.
     pub message: String,
+    /// Suggestion.
     pub suggestion: String,
 }
 
 /// One placeholder discovered in a Word-native template.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TemplatePlaceholder {
+    /// Part.
     pub part: String,
+    /// Location.
     pub location: String,
+    /// Expression.
     pub expression: String,
+    /// Kind.
     pub kind: String,
 }
 
 /// Machine-readable result of `template inspect`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TemplateInspection {
+    /// Syntax version.
     pub syntax_version: String,
+    /// Ordered placeholders.
     pub placeholders: Vec<TemplatePlaceholder>,
+    /// Ordered diagnostics.
     pub diagnostics: Vec<TemplateDiagnostic>,
 }
 
 impl TemplateInspection {
+    /// Returns whether the value has errors.
     pub fn has_errors(&self) -> bool {
         self.diagnostics
             .iter()
@@ -69,16 +85,24 @@ impl TemplateInspection {
 /// Machine-readable result of a Word-native template render.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TemplateRenderReport {
+    /// Syntax version.
     pub syntax_version: String,
+    /// Output.
     pub output: String,
+    /// Whether an output package was written.
     pub written: bool,
+    /// Whether strict missing-value validation was enabled.
     pub strict: bool,
+    /// Replacements.
     pub replacements: usize,
+    /// Expanded blocks.
     pub expanded_blocks: usize,
+    /// Ordered diagnostics.
     pub diagnostics: Vec<TemplateDiagnostic>,
 }
 
 impl TemplateRenderReport {
+    /// Returns whether the value has errors.
     pub fn has_errors(&self) -> bool {
         self.diagnostics
             .iter()

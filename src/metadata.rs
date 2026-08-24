@@ -20,38 +20,49 @@ pub(crate) const CUSTOM_PROPERTY_FMTID: &str = "{D5CDD505-2E9C-101B-9397-08002B2
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct DocumentMetadata {
+    /// Optional title.
     pub title: Option<String>,
+    /// Optional author.
     pub author: Option<String>,
+    /// Optional subject.
     pub subject: Option<String>,
+    /// Ordered keywords.
     pub keywords: Vec<String>,
+    /// Custom properties.
     pub custom_properties: BTreeMap<String, String>,
 }
 
 impl DocumentMetadata {
+    /// Creates a value with default settings.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Title.
     pub fn title(mut self, title: impl Into<String>) -> Self {
         self.title = Some(title.into());
         self
     }
 
+    /// Author.
     pub fn author(mut self, author: impl Into<String>) -> Self {
         self.author = Some(author.into());
         self
     }
 
+    /// Subject.
     pub fn subject(mut self, subject: impl Into<String>) -> Self {
         self.subject = Some(subject.into());
         self
     }
 
+    /// Keyword.
     pub fn keyword(mut self, keyword: impl Into<String>) -> Self {
         self.keywords.push(keyword.into());
         self
     }
 
+    /// Custom property.
     pub fn custom_property(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
         self.custom_properties.insert(name.into(), value.into());
         self

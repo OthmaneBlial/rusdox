@@ -17,7 +17,9 @@ If you are new, read these pages in order:
 11. [Reproducible Performance](performance.md)
 12. [Word-native Templates](word-templates.md)
 13. [Spec Versioning and Authoring Tools](spec-versioning.md)
-14. [Troubleshooting](troubleshooting.md)
+14. [Stability, Versioning, and Support](stability.md)
+15. [Release Checklist](release-checklist.md)
+16. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 
@@ -51,6 +53,7 @@ If you are a developer and want full power:
 - how to style documents with config and named styles
 - how to reuse specs with variables, includes, repeaters, conditions, and filters
 - how to generate the schema, migrate legacy specs, and get source-located editor diagnostics
+- which v1 contracts follow SemVer, the MSRV, deprecation window, and supported release policy
 - how to set document metadata and custom properties
 - how to render one file or a whole folder
 - how to validate, watch, and benchmark from the CLI

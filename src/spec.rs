@@ -39,6 +39,7 @@ pub struct DocumentSpec {
     pub page_numbering: Option<PageNumbering>,
     /// Reusable named styles available to blocks and runs in this document.
     pub styles: Stylesheet,
+    /// Ordered blocks.
     pub blocks: Vec<BlockSpec>,
     #[serde(skip)]
     #[schemars(skip)]
@@ -63,6 +64,7 @@ impl Default for DocumentSpec {
 }
 
 impl DocumentSpec {
+    /// Creates a value with default settings.
     pub fn new() -> Self {
         Self::default()
     }
@@ -289,34 +291,54 @@ fn read_utf8_with_limit(path: &Path, limit: u64, label: &str) -> Result<String> 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlockSpec {
+    /// Selects the cover title form.
     CoverTitle {
+        /// Cover-title text.
         text: String,
     },
+    /// Selects the title form.
     Title {
+        /// Title text.
         text: String,
     },
+    /// Selects the subtitle form.
     Subtitle {
+        /// Subtitle text.
         text: String,
     },
+    /// Selects the hero form.
     Hero {
+        /// Hero statement text.
         text: String,
     },
+    /// Selects the centered note form.
     CenteredNote {
+        /// Centered note text.
         text: String,
     },
+    /// Selects the page heading form.
     PageHeading {
+        /// Page-heading text.
         text: String,
     },
+    /// Selects the section form.
     Section {
+        /// Section-heading text.
         text: String,
     },
+    /// Selects the body form.
     Body {
+        /// Body text.
         text: String,
     },
+    /// Selects the tagline form.
     Tagline {
+        /// Tagline text.
         text: String,
     },
+    /// Selects the paragraph form.
     Paragraph {
+        /// Rich paragraph specification.
         spec: ParagraphSpec,
     },
     /// Starts the following content on a new page.
@@ -326,39 +348,59 @@ pub enum BlockSpec {
     /// Emits a Word-updatable TOC field and a deterministic PDF heading list.
     TableOfContents {
         #[serde(default)]
+        /// Optional heading shown above the generated table of contents.
         title: Option<String>,
     },
+    /// Selects the bullets form.
     Bullets {
+        /// Ordered bullet item text.
         items: Vec<String>,
     },
+    /// Selects the numbered form.
     Numbered {
+        /// Ordered numbered item text.
         items: Vec<String>,
     },
+    /// Selects the label values form.
     LabelValues {
+        /// Ordered label/value pairs.
         items: Vec<LabelValueSpec>,
     },
+    /// Selects the metrics form.
     Metrics {
+        /// Ordered metric cards.
         items: Vec<MetricSpec>,
     },
+    /// Selects the table form.
     Table {
+        /// Table specification.
         spec: TableSpec,
     },
+    /// Selects the image form.
     Image {
         #[serde(flatten)]
+        /// Image source, dimensions, alignment, and alternative text.
         spec: VisualSpec,
     },
+    /// Selects the logo form.
     Logo {
         #[serde(flatten)]
+        /// Logo source, dimensions, alignment, and alternative text.
         spec: VisualSpec,
     },
+    /// Selects the signature form.
     Signature {
         #[serde(flatten)]
+        /// Signature source, dimensions, alignment, and alternative text.
         spec: VisualSpec,
     },
+    /// Selects the chart form.
     Chart {
         #[serde(flatten)]
+        /// Chart source, dimensions, alignment, and alternative text.
         spec: VisualSpec,
     },
+    /// Selects the spacer form.
     Spacer,
 }
 
@@ -366,16 +408,24 @@ pub enum BlockSpec {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct ParagraphSpec {
+    /// Ordered runs.
     pub runs: Vec<RunSpec>,
+    /// Optional style identifier.
     pub style_id: Option<String>,
+    /// Optional alignment.
     pub alignment: Option<ParagraphAlignmentSpec>,
+    /// Spacing before, in twentieths of a point.
     pub spacing_before_twips: Option<u32>,
+    /// Spacing after, in twentieths of a point.
     pub spacing_after_twips: Option<u32>,
+    /// Whether the paragraph starts on a new page.
     pub page_break_before: bool,
+    /// Whether the paragraph starts a new section.
     pub section_break_before: bool,
 }
 
 impl ParagraphSpec {
+    /// Creates a value with default settings.
     pub fn new<I>(runs: I) -> Self
     where
         I: IntoIterator<Item = RunSpec>,
@@ -391,9 +441,13 @@ impl ParagraphSpec {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ParagraphAlignmentSpec {
+    /// Selects the left form.
     Left,
+    /// Selects the center form.
     Center,
+    /// Selects the right form.
     Right,
+    /// Selects the justified form.
     Justified,
 }
 
@@ -401,21 +455,37 @@ pub enum ParagraphAlignmentSpec {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RunSpec {
+    /// Text.
     pub text: String,
+    /// Optional style identifier.
     pub style_id: Option<String>,
+    /// Whether the run is bold.
     pub bold: bool,
+    /// Whether the run is italic.
     pub italic: bool,
+    /// Optional underline.
     pub underline: Option<UnderlineStyleSpec>,
+    /// Whether the run is struck through.
     pub strikethrough: bool,
+    /// Whether the run uses small capitals.
     pub small_caps: bool,
+    /// Whether the run has a shadow effect.
     pub shadow: bool,
+    /// Optional color.
     pub color: Option<String>,
+    /// Optional font family.
     pub font_family: Option<String>,
+    /// Optional size points.
     pub size_pt: Option<f32>,
+    /// Optional vertical align.
     pub vertical_align: Option<VerticalAlignSpec>,
+    /// Optional hyperlink.
     pub hyperlink: Option<String>,
+    /// Optional bookmark.
     pub bookmark: Option<String>,
+    /// Optional field.
     pub field: Option<RunFieldSpec>,
+    /// Optional footnote.
     pub footnote: Option<String>,
 }
 
@@ -423,6 +493,7 @@ pub struct RunSpec {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RunFieldSpec {
+    /// Selects the table of contents form.
     TableOfContents,
 }
 
@@ -430,16 +501,24 @@ pub enum RunFieldSpec {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct VisualSpec {
+    /// Path.
     pub path: String,
+    /// Optional alt text.
     pub alt_text: Option<String>,
+    /// Optional alignment.
     pub alignment: Option<ParagraphAlignmentSpec>,
+    /// Width, in twentieths of a point.
     pub width_twips: Option<u32>,
+    /// Height, in twentieths of a point.
     pub height_twips: Option<u32>,
+    /// Maximum allowed width twips.
     pub max_width_twips: Option<u32>,
+    /// Maximum allowed height twips.
     pub max_height_twips: Option<u32>,
 }
 
 impl VisualSpec {
+    /// Creates a value with default settings.
     pub fn new(path: impl Into<String>) -> Self {
         Self {
             path: path.into(),
@@ -449,6 +528,7 @@ impl VisualSpec {
 }
 
 impl RunSpec {
+    /// Creates a value with default settings.
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
@@ -461,12 +541,19 @@ impl RunSpec {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum UnderlineStyleSpec {
+    /// Selects the single form.
     Single,
+    /// Selects the double form.
     Double,
+    /// Selects the dotted form.
     Dotted,
+    /// Selects the dash form.
     Dash,
+    /// Selects the wavy form.
     Wavy,
+    /// Selects the words form.
     Words,
+    /// Selects the none form.
     None,
 }
 
@@ -474,23 +561,31 @@ pub enum UnderlineStyleSpec {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum VerticalAlignSpec {
+    /// Selects the superscript form.
     Superscript,
+    /// Selects the subscript form.
     Subscript,
+    /// Selects the baseline form.
     Baseline,
 }
 
 /// A simple label-value pair block item.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct LabelValueSpec {
+    /// Label.
     pub label: String,
+    /// Value.
     pub value: String,
 }
 
 /// A metric card item.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct MetricSpec {
+    /// Label.
     pub label: String,
+    /// Value.
     pub value: String,
+    /// Tone.
     pub tone: Tone,
 }
 
@@ -498,24 +593,33 @@ pub struct MetricSpec {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Tone {
+    /// Selects the positive form.
     Positive,
+    /// Selects the neutral form.
     Neutral,
+    /// Selects the warning form.
     Warning,
+    /// Selects the risk form.
     Risk,
 }
 
 /// A grid table specification.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct TableSpec {
+    /// Optional style identifier.
     pub style_id: Option<String>,
+    /// Ordered columns.
     pub columns: Vec<ColumnSpec>,
+    /// Ordered rows.
     pub rows: Vec<RowSpec>,
 }
 
 /// A table column definition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct ColumnSpec {
+    /// Label.
     pub label: String,
+    /// Width.
     pub width: u32,
 }
 
@@ -523,8 +627,11 @@ pub struct ColumnSpec {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct RowSpec {
+    /// Ordered cells.
     pub cells: Vec<CellSpec>,
+    /// Whether this row repeats as a header on later pages.
     pub repeat_as_header: bool,
+    /// Whether this row may split across pages.
     pub allow_split_across_pages: Option<bool>,
 }
 
@@ -532,18 +639,26 @@ pub struct RowSpec {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum CellSpec {
+    /// Selects the text form.
     Text {
+        /// Plain cell text.
         text: String,
     },
+    /// Selects the status form.
     Status(StatusSpec),
+    /// Selects the rich form.
     Rich {
         #[serde(default)]
+        /// Ordered paragraphs contained by the cell.
         paragraphs: Vec<ParagraphSpec>,
         #[serde(default)]
+        /// Number of grid columns spanned by the cell.
         grid_span: Option<u32>,
         #[serde(default)]
+        /// Optional cell background color as a six-digit RGB value.
         background_color: Option<String>,
         #[serde(default)]
+        /// Optional nested table contained by the cell.
         nested_table: Option<Box<TableSpec>>,
     },
 }
@@ -551,10 +666,13 @@ pub enum CellSpec {
 /// A status cell definition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct StatusSpec {
+    /// Text.
     pub text: String,
+    /// Tone.
     pub tone: Tone,
 }
 
+/// Document.
 pub fn document<I>(blocks: I) -> DocumentSpec
 where
     I: IntoIterator<Item = BlockSpec>,
@@ -573,46 +691,57 @@ where
     }
 }
 
+/// Cover title.
 pub fn cover_title(text: impl Into<String>) -> BlockSpec {
     BlockSpec::CoverTitle { text: text.into() }
 }
 
+/// Title.
 pub fn title(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Title { text: text.into() }
 }
 
+/// Subtitle.
 pub fn subtitle(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Subtitle { text: text.into() }
 }
 
+/// Hero.
 pub fn hero(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Hero { text: text.into() }
 }
 
+/// Centered note.
 pub fn centered_note(text: impl Into<String>) -> BlockSpec {
     BlockSpec::CenteredNote { text: text.into() }
 }
 
+/// Page heading.
 pub fn page_heading(text: impl Into<String>) -> BlockSpec {
     BlockSpec::PageHeading { text: text.into() }
 }
 
+/// Section.
 pub fn section(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Section { text: text.into() }
 }
 
+/// Body.
 pub fn body(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Body { text: text.into() }
 }
 
+/// Tagline.
 pub fn tagline(text: impl Into<String>) -> BlockSpec {
     BlockSpec::Tagline { text: text.into() }
 }
 
+/// Paragraph.
 pub fn paragraph(spec: ParagraphSpec) -> BlockSpec {
     BlockSpec::Paragraph { spec }
 }
 
+/// Bullets.
 pub fn bullets<I, S>(items: I) -> BlockSpec
 where
     I: IntoIterator<Item = S>,
@@ -623,6 +752,7 @@ where
     }
 }
 
+/// Numbered.
 pub fn numbered<I, S>(items: I) -> BlockSpec
 where
     I: IntoIterator<Item = S>,
@@ -633,6 +763,7 @@ where
     }
 }
 
+/// Label values.
 pub fn label_values<I, L, V>(items: I) -> BlockSpec
 where
     I: IntoIterator<Item = (L, V)>,
@@ -650,6 +781,7 @@ where
     }
 }
 
+/// Metric.
 pub fn metric(label: impl Into<String>, value: impl Into<String>, tone: Tone) -> MetricSpec {
     MetricSpec {
         label: label.into(),
@@ -658,6 +790,7 @@ pub fn metric(label: impl Into<String>, value: impl Into<String>, tone: Tone) ->
     }
 }
 
+/// Metrics.
 pub fn metrics<I>(items: I) -> BlockSpec
 where
     I: IntoIterator<Item = MetricSpec>,
@@ -667,6 +800,7 @@ where
     }
 }
 
+/// Col.
 pub fn col(label: impl Into<String>, width: u32) -> ColumnSpec {
     ColumnSpec {
         label: label.into(),
@@ -674,10 +808,12 @@ pub fn col(label: impl Into<String>, width: u32) -> ColumnSpec {
     }
 }
 
+/// Text.
 pub fn text(text: impl Into<String>) -> CellSpec {
     CellSpec::Text { text: text.into() }
 }
 
+/// Status.
 pub fn status(text: impl Into<String>, tone: Tone) -> StatusSpec {
     StatusSpec {
         text: text.into(),
@@ -685,6 +821,7 @@ pub fn status(text: impl Into<String>, tone: Tone) -> StatusSpec {
     }
 }
 
+/// Row.
 pub fn row<T>(value: T) -> RowSpec
 where
     T: IntoRowSpec,
@@ -692,6 +829,7 @@ where
     value.into_row_spec()
 }
 
+/// Table.
 pub fn table<C, R>(columns: C, rows: R) -> BlockSpec
 where
     C: IntoIterator<Item = ColumnSpec>,
@@ -706,35 +844,42 @@ where
     }
 }
 
+/// Image.
 pub fn image(path: impl Into<String>) -> BlockSpec {
     BlockSpec::Image {
         spec: VisualSpec::new(path),
     }
 }
 
+/// Logo.
 pub fn logo(path: impl Into<String>) -> BlockSpec {
     BlockSpec::Logo {
         spec: VisualSpec::new(path),
     }
 }
 
+/// Signature.
 pub fn signature(path: impl Into<String>) -> BlockSpec {
     BlockSpec::Signature {
         spec: VisualSpec::new(path),
     }
 }
 
+/// Chart.
 pub fn chart(path: impl Into<String>) -> BlockSpec {
     BlockSpec::Chart {
         spec: VisualSpec::new(path),
     }
 }
 
+/// Spacer.
 pub fn spacer() -> BlockSpec {
     BlockSpec::Spacer
 }
 
+/// Defines into row spec.
 pub trait IntoRowSpec {
+    /// Into row spec.
     fn into_row_spec(self) -> RowSpec;
 }
 

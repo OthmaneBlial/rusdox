@@ -77,10 +77,15 @@ pub struct ProtocolArtifact {
 /// Per-stage timings in milliseconds.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProtocolTimings {
+    /// Parse, in milliseconds.
     pub parse_ms: f64,
+    /// Validate, in milliseconds.
     pub validate_ms: f64,
+    /// Compose, in milliseconds.
     pub compose_ms: f64,
+    /// DOCX, in milliseconds.
     pub docx_ms: f64,
+    /// PDF, in milliseconds.
     pub pdf_ms: f64,
 }
 
@@ -96,14 +101,21 @@ pub struct ProtocolError {
 /// One response emitted for every request, including malformed or rejected work.
 #[derive(Debug, Clone, Serialize)]
 pub struct ProtocolResponse {
+    /// Protocol version.
     pub protocol_version: u32,
+    /// Request identifier.
     pub request_id: String,
+    /// Whether the request completed without an error.
     pub ok: bool,
+    /// Ordered diagnostics.
     pub diagnostics: Vec<ValidationIssue>,
+    /// Ordered artifacts.
     pub artifacts: Vec<ProtocolArtifact>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// Optional timings.
     pub timings: Option<ProtocolTimings>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// Optional error.
     pub error: Option<ProtocolError>,
 }
 

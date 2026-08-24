@@ -22,6 +22,9 @@ and editor tooling report the omission and recommend migration.
 - The Rust API and CLI still follow crate SemVer independently of the spec
   version.
 
+This is the frozen v1 contract. Read [Stability, versioning, and support](stability.md)
+for the cross-surface SemVer rules, deprecation window, MSRV, and release policy.
+
 Generate the canonical schema directly from the installed binary:
 
     rusdox schema

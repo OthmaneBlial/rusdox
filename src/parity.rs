@@ -22,22 +22,39 @@ pub const PARITY_REPORT_VERSION: &str = "1";
 /// A normalized, serializable view of document semantics.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DocumentProjection {
+    /// Normalized text.
     pub normalized_text: String,
+    /// Ordered block order.
     pub block_order: Vec<String>,
+    /// Ordered headings.
     pub headings: Vec<String>,
+    /// Ordered tables.
     pub tables: Vec<Vec<Vec<String>>>,
+    /// Ordered images.
     pub images: Vec<ParityImage>,
+    /// Ordered page breaks.
     pub page_breaks: Vec<usize>,
+    /// Ordered section breaks.
     pub section_breaks: Vec<usize>,
+    /// Ordered hyperlinks.
     pub hyperlinks: Vec<ParityHyperlink>,
+    /// Ordered bookmarks.
     pub bookmarks: Vec<String>,
+    /// Ordered fields.
     pub fields: Vec<String>,
+    /// Ordered footnotes.
     pub footnotes: Vec<String>,
+    /// Ordered table layout.
     pub table_layout: Vec<ParityTableLayout>,
+    /// Metadata.
     pub metadata: DocumentMetadata,
+    /// Page setup.
     pub page_setup: PageSetup,
+    /// Optional header.
     pub header: Option<HeaderFooter>,
+    /// Optional footer.
     pub footer: Option<HeaderFooter>,
+    /// Optional page numbering.
     pub page_numbering: Option<PageNumbering>,
 }
 
@@ -216,44 +233,62 @@ fn collect_table_semantics(
 /// Hyperlink semantics independent of container formatting.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParityHyperlink {
+    /// Text.
     pub text: String,
+    /// Target.
     pub target: String,
 }
 
 /// Row and cell layout controls compared after DOCX round-trips.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParityTableLayout {
+    /// Ordered rows.
     pub rows: Vec<ParityTableRowLayout>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Describes parity table row layout.
 pub struct ParityTableRowLayout {
+    /// Whether the row repeats as a header on later pages.
     pub repeat_as_header: bool,
+    /// Whether the row may split across pages.
     pub allow_split_across_pages: bool,
+    /// Ordered cells.
     pub cells: Vec<ParityTableCellLayout>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Describes parity table cell layout.
 pub struct ParityTableCellLayout {
+    /// Grid span.
     pub grid_span: u32,
+    /// Number of paragraph values.
     pub paragraph_count: usize,
+    /// Number of nested table values.
     pub nested_table_count: usize,
 }
 
 /// Image semantics that can be compared across output paths.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParityImage {
+    /// Kind.
     pub kind: String,
+    /// Optional alt text.
     pub alt_text: Option<String>,
 }
 
 /// Evidence returned by the native PDF renderer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PdfRenderEvidence {
+    /// Projection.
     pub projection: DocumentProjection,
+    /// Number of page values.
     pub page_count: usize,
+    /// Draw operations.
     pub draw_operations: usize,
+    /// Text lines.
     pub text_lines: usize,
+    /// Image operations.
     pub image_operations: usize,
 }
 
@@ -261,25 +296,35 @@ pub struct PdfRenderEvidence {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CheckStatus {
+    /// Selects the passed form.
     Passed,
+    /// Selects the failed form.
     Failed,
+    /// Selects the skipped form.
     Skipped,
 }
 
 /// One independently named assertion in a parity report.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ParityCheck {
+    /// Identifier.
     pub id: String,
+    /// Label.
     pub label: String,
+    /// Status.
     pub status: CheckStatus,
+    /// Detail.
     pub detail: String,
 }
 
 /// Hash and size evidence for one generated artifact.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArtifactEvidence {
+    /// Path.
     pub path: String,
+    /// Bytes.
     pub bytes: u64,
+    /// SHA-256.
     pub sha256: String,
 }
 
@@ -299,24 +344,35 @@ impl ArtifactEvidence {
 /// Per-page result from an optional deterministic visual-layout comparison.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VisualPageDiff {
+    /// Page.
     pub page: usize,
+    /// Current.
     pub current: String,
+    /// Optional baseline.
     pub baseline: Option<String>,
+    /// Optional different pixel ratio.
     pub different_pixel_ratio: Option<f64>,
+    /// Whether this page stayed within the configured threshold.
     pub passed: bool,
+    /// Detail.
     pub detail: String,
 }
 
 /// Summary of optional visual-layout comparisons.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VisualDiffSummary {
+    /// Whether rendered-page comparison was enabled.
     pub enabled: bool,
+    /// Threshold.
     pub threshold: f64,
+    /// Whether every compared page stayed within the threshold.
     pub passed: bool,
+    /// Ordered pages.
     pub pages: Vec<VisualPageDiff>,
 }
 
 impl VisualDiffSummary {
+    /// Skipped.
     pub fn skipped(threshold: f64) -> Self {
         Self {
             enabled: false,
@@ -330,15 +386,25 @@ impl VisualDiffSummary {
 /// Complete JSON/HTML parity report.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ParityReport {
+    /// Report version.
     pub report_version: String,
+    /// Generator version.
     pub generator_version: String,
+    /// Source.
     pub source: String,
+    /// Whether every required parity check passed.
     pub passed: bool,
+    /// Ordered checks.
     pub checks: Vec<ParityCheck>,
+    /// Expected.
     pub expected: DocumentProjection,
+    /// DOCX.
     pub docx: DocumentProjection,
+    /// PDF.
     pub pdf: PdfRenderEvidence,
+    /// Visual diff.
     pub visual_diff: VisualDiffSummary,
+    /// Ordered artifacts.
     pub artifacts: Vec<ArtifactEvidence>,
 }
 

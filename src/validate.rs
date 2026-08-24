@@ -18,15 +18,20 @@ const BUILTIN_TABLE_STYLE_ID: &str = "TableNormal";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ValidationSeverity {
+    /// Selects the error form.
     Error,
+    /// Selects the warning form.
     Warning,
 }
 
 /// A semantic validation issue discovered in a spec or config.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ValidationIssue {
+    /// Severity.
     pub severity: ValidationSeverity,
+    /// Path.
     pub path: String,
+    /// Message.
     pub message: String,
     /// Best-effort source coordinates for file-backed specifications.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -36,15 +41,20 @@ pub struct ValidationIssue {
 /// One-based source coordinates suitable for terminals and editor diagnostics.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct SourceSpan {
+    /// Line.
     pub line: usize,
+    /// Column.
     pub column: usize,
+    /// End line.
     pub end_line: usize,
+    /// End column.
     pub end_column: usize,
 }
 
 /// A collection of semantic validation issues.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 pub struct ValidationReport {
+    /// Ordered issues.
     pub issues: Vec<ValidationIssue>,
 }
 

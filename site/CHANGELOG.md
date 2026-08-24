@@ -25,6 +25,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - A reusable source-built GitHub Action that validates and renders specs, annotates exact pull-request lines, uploads parity-only evidence, and upserts a metadata-only visual-diff summary, plus release-note, invoice, compliance, and scheduled-report recipes.
 - An object-safe, in-memory Rust renderer boundary and stable local JSON protocol v1 over newline-delimited stdin/stdout or opt-in loopback HTTP, with atomic hash-described outputs and executable Node, Python, Go, and CI examples.
 - A contributor field guide with an end-to-end architecture map, ten fixture-backed starter tasks, isolated fixture preparation, visual-diff commands, contributor credit checks, and a published governance policy.
+- Frozen v1 spec, template, renderer, and local-protocol contracts; cross-surface SemVer, deprecation, support, and release policies; an exact Rust 1.88.0 MSRV gate; complete public-item rustdoc; and release-time API compatibility scanning.
 
 ### Contributors
 
@@ -36,7 +37,7 @@ contributors will be added here when a meaningful pull request is merged.
 
 ### Changed
 
-- `PageSetup`, `Run`, `RowSpec`, and related low-level constructors now carry the expanded dual-output contract; this is a breaking Rust API change planned for `v0.2.0`.
+- `PageSetup`, `Run`, `RowSpec`, and related low-level constructors now carry the expanded dual-output contract; this pre-1.0 Rust API change is incorporated into the v1 contract.
 - PDF page geometry now comes from the document's `PageSetup`; PDF config geometry remains a compatibility fallback when no document-level value is supplied.
 - PDF nested tables use a bounded flattened-row representation and do not claim exact nested-grid geometry.
 - Benchmark summaries now report true extrema plus medians; the previous multi-iteration maximum accidentally reported the sum of samples.

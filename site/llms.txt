@@ -9,6 +9,8 @@
 - [Getting started](https://othmaneblial.github.io/rusdox/docs/getting-started.html): Install RusDox and generate the first editable DOCX and native PDF in minutes.
 - [YAML guide](https://othmaneblial.github.io/rusdox/docs/yaml-guide.html): Learn document blocks, styles, composition, tables, visuals, and reusable authoring patterns.
 - [Spec versioning](https://othmaneblial.github.io/rusdox/docs/spec-versioning.html): Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.
+- [Stability and support](https://othmaneblial.github.io/rusdox/docs/stability.html): Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.
+- [Release checklist](https://othmaneblial.github.io/rusdox/docs/release-checklist.html): Require contract, parity, compatibility, performance, supply-chain, and publication evidence for every release.
 - [Browser rendering feasibility](https://othmaneblial.github.io/rusdox/docs/wasm-feasibility.html): Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.
 - [Configuration](https://othmaneblial.github.io/rusdox/docs/configuration.html): Control typography, spacing, color, tables, output paths, and PDF rendering.
 - [Word-native templates](https://othmaneblial.github.io/rusdox/docs/word-templates.html): Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.
