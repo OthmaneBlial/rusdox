@@ -14,7 +14,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: rusdox
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bin: rusdox
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: rusdox.exe
 
     steps:
       - uses: actions/checkout@v7
@@ -88,8 +97,19 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: cargo package --locked --no-verify
 
-      - name: Build release binary for installer fixture
-        run: cargo build --release --locked --bin rusdox
+      - name: Build release binary twice at a stable clean path
+        run: >-
+          python scripts/verify_reproducible_build.py
+          --target ${{ matrix.target }}
+          --binary ${{ matrix.bin }}
+          --report rusdox-${{ matrix.target }}.reproducibility.json
+
+      - name: Upload branch reproducibility receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: reproducibility-${{ matrix.target }}-${{ github.sha }}
+          path: rusdox-${{ matrix.target }}.reproducibility.json
+          retention-days: 14
 
       - name: Smoke reusable RusDox action
         if: matrix.os == 'ubuntu-latest'
@@ -97,18 +117,18 @@ jobs:
         with:
           input: examples/hello_world.yaml
           output-root: target/github-action-smoke
-          binary: target/release/rusdox
+          binary: target/${{ matrix.target }}/release/${{ matrix.bin }}
           upload-reports: "false"
           comment: "false"
 
       - name: Test Unix installer with checksums
         if: matrix.os != 'windows-latest'
-        run: sh scripts/test_install.sh target/release/rusdox
+        run: sh scripts/test_install.sh target/${{ matrix.target }}/release/${{ matrix.bin }}
 
       - name: Test Windows installer with checksums
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        run: ./scripts/test_install.ps1 -BinaryPath target/release/rusdox.exe
+        run: ./scripts/test_install.ps1 -BinaryPath target/${{ matrix.target }}/release/${{ matrix.bin }}
 
   fuzz-build:
     runs-on: ubuntu-latest

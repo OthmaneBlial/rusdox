@@ -51,7 +51,7 @@ jobs:
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
 
-      - name: Build twice and verify reproducible binary bytes
+      - name: Build twice from a clean stable path and verify identical bytes
         run: >-
           python scripts/verify_reproducible_build.py
           --target ${{ matrix.target }}

@@ -1522,8 +1522,11 @@ release pull request; a checked box without evidence is not a release receipt.
 
 - [ ] The publishable crate contains only the intended files.
 - [ ] Release archives are produced on all supported targets.
-- [ ] Every release binary builds twice to identical bytes and each target has
-      a reproducibility receipt; deterministic archives reproduce from one binary.
+- [ ] Every release binary builds twice from a clean, stable target path to
+      identical bytes and each target has a reproducibility receipt;
+      deterministic archives reproduce from one binary. This proves clean-build
+      reproducibility for the pinned runner environment, not path-independent
+      output on toolchains whose linker embeds host paths.
 - [ ] SHA-256 checksums verify after download.
 - [ ] SPDX SBOM and GitHub build provenance attestations cover every archive.
 - [ ] Installers consume the release archive and verify its checksum.
@@ -1597,7 +1600,8 @@ in memory and discarded after signing.
 ## Publication gate
 
 The release is complete only when the `v1.0.0` tag workflow passes its SemVer
-scan, four reproducible builds, deterministic archives, checksums, SPDX SBOM,
+scan, four clean same-path reproducible builds, deterministic archives,
+checksums, SPDX SBOM,
 GitHub provenance and SBOM attestations, crates.io OIDC publish, public GitHub
 Release, and three installer smoke jobs. Those live URLs are recorded after the
 workflow completes; no local check substitutes for them.
@@ -4635,8 +4639,10 @@ v1 security review is backed by a source contract, DTD rejection, SVG external
 resource denial, three fuzz targets, CodeQL, and the official weekly RustSec
 audit; two unsound dependency advisories were removed and two upstream
 maintenance notices remain explicit residual risks. Release targets build twice
-to identical bytes, use deterministic archives, publish checksums/SPDX SBOM and
-GitHub attestations, and verify provenance before install. The accessible
+from a clean, stable target path to identical bytes, use deterministic archives,
+publish checksums/SPDX SBOM and GitHub attestations, and verify provenance before
+install; the receipt is scoped to the pinned runner environment instead of
+claiming path independence from linkers that may embed host paths. The accessible
 dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
 Ubuntu scenarios in addition to the existing relative regression policy.
 

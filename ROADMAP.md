@@ -415,8 +415,10 @@ v1 security review is backed by a source contract, DTD rejection, SVG external
 resource denial, three fuzz targets, CodeQL, and the official weekly RustSec
 audit; two unsound dependency advisories were removed and two upstream
 maintenance notices remain explicit residual risks. Release targets build twice
-to identical bytes, use deterministic archives, publish checksums/SPDX SBOM and
-GitHub attestations, and verify provenance before install. The accessible
+from a clean, stable target path to identical bytes, use deterministic archives,
+publish checksums/SPDX SBOM and GitHub attestations, and verify provenance before
+install; the receipt is scoped to the pinned runner environment instead of
+claiming path independence from linkers that may embed host paths. The accessible
 dashboard applies absolute runtime and peak-memory budgets to all 13 reproducible
 Ubuntu scenarios in addition to the existing relative regression policy.
 

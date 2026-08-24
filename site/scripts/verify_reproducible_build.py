@@ -8,7 +8,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 
 
 def main() -> int:
@@ -26,17 +25,16 @@ def main() -> int:
         "cargo", "build", "--release", "--locked", "--bin", "rusdox",
         "--target", args.target,
     ]
-    target_parent = root / "target"
-    target_parent.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="repro-a-", dir=target_parent) as first_dir:
-        first_binary = build(command, root, epoch, Path(first_dir), args.target, args.binary)
-        first = digest(first_binary)
-    with tempfile.TemporaryDirectory(prefix="repro-b-", dir=target_parent) as second_dir:
-        second_binary = build(command, root, epoch, Path(second_dir), args.target, args.binary)
-        second = digest(second_binary)
-        canonical = root / "target" / args.target / "release" / args.binary
-        canonical.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(second_binary, canonical)
+    target_dir = root / "target" / "reproducible-build" / args.target
+    clean(target_dir)
+    first_binary = build(command, root, epoch, target_dir, args.target, args.binary)
+    first = digest(first_binary)
+    clean(target_dir)
+    second_binary = build(command, root, epoch, target_dir, args.target, args.binary)
+    second = digest(second_binary)
+    canonical = root / "target" / args.target / "release" / args.binary
+    canonical.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(second_binary, canonical)
     if first != second:
         print(f"release binary is not reproducible: {first} != {second}", file=sys.stderr)
         return 1
@@ -48,7 +46,8 @@ def main() -> int:
         "source_date_epoch": int(epoch),
         "cargo_locked": True,
         "incremental": False,
-        "isolated_target_directories": True,
+        "build_path_strategy": "fixed-clean-target-directory",
+        "clean_target_directory_between_builds": True,
         "builds_compared": 2,
         "sha256": first,
         "reproducible": True,
@@ -65,6 +64,11 @@ def digest(path: Path) -> str:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
             value.update(chunk)
     return value.hexdigest()
+
+
+def clean(target_dir: Path) -> None:
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
 
 
 def build(command, root: Path, epoch: str, target_dir: Path, target: str, binary: str) -> Path:
