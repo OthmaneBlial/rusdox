@@ -149,14 +149,17 @@ mod tests {
 
     #[test]
     fn checked_in_and_editor_schemas_match_the_generator() {
-        let generated = document_spec_schema_pretty().expect("generated schema");
+        let generated = document_spec_schema_pretty()
+            .expect("generated schema")
+            .replace("\r\n", "\n");
         assert_eq!(
             generated,
-            include_str!("../schema/rusdox-spec-v1.schema.json")
+            include_str!("../schema/rusdox-spec-v1.schema.json").replace("\r\n", "\n")
         );
         assert_eq!(
             generated,
             include_str!("../editors/vscode/schema/rusdox-spec-v1.schema.json")
+                .replace("\r\n", "\n")
         );
     }
 }
