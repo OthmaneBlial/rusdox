@@ -50,11 +50,11 @@ let document = Document::open_with_limits("large-but-trusted.docx", limits)?;
 16 MiB, total expanded DOCX data at 64 MiB, one spec at 2 MiB, one image at 8
 MiB, one SVG at 2 MiB, a decoded visual at 16 million pixels, template work at
 10,000 expansions, rendered template XML at 8 MiB, and include/partial depth at
-12. The complete checked-in profile is [`examples/hosted-limits.toml`](../examples/hosted-limits.toml).
+12. The complete checked-in profile is [`examples/config/hosted-limits.toml`](../examples/config/hosted-limits.toml).
 
 ```bash
 rusdox serve stdio --limits-profile hosted --output-root target/jobs
-rusdox serve http --limits-file examples/hosted-limits.toml \
+rusdox serve http --limits-file examples/config/hosted-limits.toml \
   --port 4175 --output-root target/jobs
 ```
 

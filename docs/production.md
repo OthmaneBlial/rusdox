@@ -57,7 +57,7 @@ The local protocol defaults to the stricter hosted profile:
 
 ```bash
 rusdox serve stdio --limits-profile hosted --output-root target/jobs
-rusdox serve http --limits-file examples/hosted-limits.toml \
+rusdox serve http --limits-file examples/config/hosted-limits.toml \
   --port 4175 --output-root target/jobs
 ```
 

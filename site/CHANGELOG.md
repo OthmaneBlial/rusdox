@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-24
+
 ### Added
 
 - Shared DOCX/PDF page setup, visible headers and footers, configurable page fields, explicit page and section breaks, hyperlinks, bookmarks, TOC fields, and footnotes.
@@ -34,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - An accessible long-term benchmark dashboard backed by absolute runtime and peak-memory budgets for all 13 protocol scenarios.
 - Required visual alt text, BCP 47-style document language metadata in DOCX and PDF, explicit accessibility parity checks, font embedding/licensing evidence, and machine-gated RTL/CJK graduation.
 - A sourced tagged PDF, PDF/UA, and PDF/A implementation decision that keeps every conformance claim false until exact validator and human review gates pass.
+- An immutable, separately keyed v1 template-registry channel with 1.x compatibility bounds and 21-check template evidence, while retaining the legacy channel for 0.1.1 clients.
 
 ### Contributors
 
@@ -87,6 +90,7 @@ contributors will be added here when a meaningful pull request is merged.
 - Repository, documentation, CI, and security references now consistently target the `main` branch.
 - CI verifies the exact locked dependency graph and the publishable crate package.
 
-[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/OthmaneBlial/rusdox/releases/tag/v0.1.0

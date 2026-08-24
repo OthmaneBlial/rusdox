@@ -30,6 +30,8 @@ release pull request; a checked box without evidence is not a release receipt.
       informational maintenance warning has an explicit owner/rationale.
 - [ ] The compatibility contract covers the exact supported feature set and
       every spec block variant.
+- [ ] The release's versioned template registry verifies with its pinned key,
+      and every older immutable default channel remains unchanged.
 
 ## Supply chain and publication
 

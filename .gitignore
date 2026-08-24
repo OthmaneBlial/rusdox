@@ -3,3 +3,4 @@ base/
 /generated/
 /rendered/
 /template-evidence/*-summary.json
+/registry/v1/evidence/*-summary.json

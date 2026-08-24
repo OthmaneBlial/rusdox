@@ -1,0 +1,367 @@
+{
+  "report_version": "1",
+  "generator_version": "1.0.0",
+  "source": "templates/invoice/template.docx",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "skipped",
+      "detail": "source contains no images"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "skipped",
+      "detail": "source does not declare metadata.language"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "RUSDOX STUDIO\nINVOICE\nInvoice INV-2026-1042\nIssued: 24 August 2026\nDue: 23 September 2026\nBill to\nAtlas Research Group\n18 Rue du Sentier, 75002 Paris\nLine items\n1. Document automation discovery - 1 x EUR 2,400\n2. Word-native template implementation - 3 x EUR 3,750\n3. Viewer acceptance and handoff - 1 x EUR 1,200\nTotal: EUR 14,850\nNotes: Thank you for the precise feedback during implementation.\nPayment terms: net 30 days. Please include the invoice number with the transfer.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 900,
+      "margin_right_twips": 1080,
+      "margin_bottom_twips": 900,
+      "margin_left_twips": 1080,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "RUSDOX STUDIO\nINVOICE\nInvoice INV-2026-1042\nIssued: 24 August 2026\nDue: 23 September 2026\nBill to\nAtlas Research Group\n18 Rue du Sentier, 75002 Paris\nLine items\n1. Document automation discovery - 1 x EUR 2,400\n2. Word-native template implementation - 3 x EUR 3,750\n3. Viewer acceptance and handoff - 1 x EUR 1,200\nTotal: EUR 14,850\nNotes: Thank you for the precise feedback during implementation.\nPayment terms: net 30 days. Please include the invoice number with the transfer.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 900,
+      "margin_right_twips": 1080,
+      "margin_bottom_twips": 900,
+      "margin_left_twips": 1080,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "RUSDOX STUDIO\nINVOICE\nInvoice INV-2026-1042\nIssued: 24 August 2026\nDue: 23 September 2026\nBill to\nAtlas Research Group\n18 Rue du Sentier, 75002 Paris\nLine items\n1. Document automation discovery - 1 x EUR 2,400\n2. Word-native template implementation - 3 x EUR 3,750\n3. Viewer acceptance and handoff - 1 x EUR 1,200\nTotal: EUR 14,850\nNotes: Thank you for the precise feedback during implementation.\nPayment terms: net 30 days. Please include the invoice number with the transfer.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [],
+      "images": [],
+      "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "language": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 900,
+        "margin_right_twips": 1080,
+        "margin_bottom_twips": 900,
+        "margin_left_twips": 1080,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0,
+        "orientation": "portrait"
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 1,
+    "draw_operations": 15,
+    "text_lines": 15,
+    "image_operations": 0,
+    "document_language": null,
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 52,
+        "missing_characters": []
+      },
+      {
+        "family": "Georgia",
+        "post_script_name": "Georgia-Bold",
+        "embedding_permission": "editable",
+        "glyph_count": 6,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 24,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/invoice-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/invoice.docx",
+      "bytes": 4046,
+      "sha256": "fa4d27740eacbde35fe950a28fcaed20dfb6259f0df4947cf5eb529a372f0e64"
+    },
+    {
+      "path": "rendered/invoice.pdf",
+      "bytes": 1903152,
+      "sha256": "da5be0c4a4e46fe822de99cc105c16288e7cb732b6f1880b83e5e166e83ff157"
+    }
+  ]
+}

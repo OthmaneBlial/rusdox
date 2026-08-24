@@ -4,11 +4,11 @@
 ![Tests](https://img.shields.io/github/actions/workflow/status/OthmaneBlial/rusdox/rust.yml?branch=main&style=flat-square&label=tests)
 ![License](https://img.shields.io/github/license/OthmaneBlial/rusdox?style=flat-square)
 ![OOXML](https://img.shields.io/badge/OOXML-.docx-2563eb?style=flat-square)
-![Version](https://img.shields.io/badge/version-0.1.1-b85c30?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.0.0-b85c30?style=flat-square)
 
 **One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
 
-[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Template registry](https://othmaneblial.github.io/rusdox/registry/preview.html) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Template registry](https://othmaneblial.github.io/rusdox/registry/v1/preview.html) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
 
 ![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
 
@@ -49,7 +49,7 @@ the repository:
 The CLI verifies the Ed25519-signed manifest and every downloaded SHA-256 before
 an atomic install. Each entry exposes its license, contributor, documented
 inputs, preview, supported RusDox versions, accessibility notes, and verified
-DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/preview.html)
+DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/v1/preview.html)
 or read its [trust and contribution contract](docs/template-registry.md).
 
 ## Put document parity in every pull request
@@ -112,7 +112,9 @@ For production upgrades, read the [v1 stability contract](docs/stability.md): it
 defines SemVer behavior for the Rust API, CLI, spec, Word-template syntax, and
 rendered outputs; Rust 1.88.0 is the tested MSRV. The public library now denies
 missing rustdoc and broken documentation links, and tagged releases run an
-independent API compatibility scan before publication.
+independent API compatibility scan before publication. The
+[v1.0.0 release receipt](docs/releases/v1.0.0.md) records the local and tag-time
+evidence required before publication is considered complete.
 
 For the local feedback loop, run `rusdox dev mydoc.yaml --open`. The loop keeps
 the last successful PDF visible while reporting the current validation issue,

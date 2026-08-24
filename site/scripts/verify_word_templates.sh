@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "$BASH_SOURCE")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 cd "$repo_root"
-output_root="template-evidence"
+output_root="${RUSDOX_TEMPLATE_EVIDENCE_ROOT:-template-evidence}"
 
 mkdir -p "$output_root"
 

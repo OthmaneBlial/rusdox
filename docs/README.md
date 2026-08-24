@@ -21,7 +21,8 @@ If you are new, read these pages in order:
 15. [Spec Versioning and Authoring Tools](spec-versioning.md)
 16. [Stability, Versioning, and Support](stability.md)
 17. [Release Checklist](release-checklist.md)
-18. [Troubleshooting](troubleshooting.md)
+18. [v1.0.0 Release Evidence](releases/v1.0.0.md)
+19. [Troubleshooting](troubleshooting.md)
 
 ## Pick Your Path
 

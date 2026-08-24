@@ -18,6 +18,7 @@ const pages = [
   ["docs/spec-versioning.md", "docs/spec-versioning.html", "Spec versioning", "Guide", "Generate schemas, migrate legacy specs, use deterministic expressions, and configure editor feedback.", "Authoring"],
   ["docs/stability.md", "docs/stability.html", "Stability and support", "Contract", "Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.", "Trust & operations"],
   ["docs/release-checklist.md", "docs/release-checklist.html", "Release checklist", "Operations", "Require contract, parity, compatibility, performance, supply-chain, and publication evidence for every release.", "Trust & operations"],
+  ["docs/releases/v1.0.0.md", "docs/releases/v1.0.0.html", "v1.0.0 release evidence", "Release", "Inspect the exact contract, test, parity, security, reproducibility, registry, and publication gates for RusDox v1.0.0.", "Trust & operations"],
   ["docs/wasm-feasibility.md", "docs/wasm-feasibility.html", "Browser rendering feasibility", "Decision", "Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.", "Trust & operations"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],
@@ -119,7 +120,9 @@ const sourceCopies = [
   "SUPPORT.md",
   "SECURITY.md",
   "CODE_OF_CONDUCT.md",
-  ...fs.readdirSync(path.join(root, "docs")).filter((name) => name.endsWith(".md")).map((name) => `docs/${name}`),
+  ...walkFiles(path.join(root, "docs"))
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => normalize(path.relative(root, file))),
   ...walkFiles(path.join(root, "examples"))
     .filter((file) => file.endsWith(".md") || file.endsWith(".yaml") || file.endsWith(".toml"))
     .map((file) => normalize(path.relative(root, file))),
@@ -134,6 +137,8 @@ const sourceCopies = [
   "scripts/run_benchmark_protocol.mjs",
   "scripts/check_compatibility_contract.mjs",
   "scripts/check_accessibility_contract.mjs",
+  "scripts/build_v1_registry_manifest.mjs",
+  "scripts/create_immutable_registry_signature.mjs",
   "scripts/check_security_review.mjs",
   "scripts/test_reproducible_release.mjs",
   "scripts/package_release.py",

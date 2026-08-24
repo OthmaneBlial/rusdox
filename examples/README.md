@@ -73,6 +73,10 @@ Example files:
 - `visual_assets_showcase.yaml`
 - `yaml_composition_showcase.yaml`
 
+Operator configuration is intentionally separated from document inputs:
+`config/hosted-limits.toml` is a complete service-owned resource profile and is
+not included when `rusdox verify examples` discovers top-level documents.
+
 Showcase examples:
 
 - `executive_dashboard.yaml`: multi-section KPI summary with shaded metric cards and status tables

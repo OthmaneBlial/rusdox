@@ -173,7 +173,7 @@ Theme: parity, compatibility, and quality.
 - [x] Make parity failures machine-readable through JSON and meaningful exit codes.
 - [x] Upload parity reports and rendered diffs as CI artifacts.
 
-Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs (17 authored document examples plus the hosted-limit TOML fixture). Each report now evaluates 21 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Nine representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
+Section evidence: `rusdox verify examples` passes all 17 authored document examples. The operator-only hosted-limit profile lives under `examples/config/` and cannot be mistaken for a document spec. Each report evaluates 21 semantic and structural checks, and every verification emits HTML/JSON evidence plus deterministic page snapshots. Nine representative reports are bundled into the static site; CI uploads the complete generated evidence set. Exit codes `0`, `1`, and `2` distinguish success, execution failure, and completed parity failure.
 
 ### Close current dual-output gaps
 
@@ -189,7 +189,7 @@ This section unified the two renderers around one documented model. Remaining li
 - [x] Add footnotes before comments or tracked changes; they are more common in generated reports and compliance documents.
 - [x] Test Latin, Arabic/RTL, CJK, emoji fallback, and mixed-script shaping; publish what is and is not supported.
 
-Section evidence: `rusdox verify examples` passes all 18 supported top-level inputs with 21 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
+Section evidence: `rusdox verify examples` passes all 17 authored document specifications with 21 checks and zero failures per report; the optional baseline diff is explicitly skipped when no baseline is supplied. `dual_output_contract.yaml` proves shared landscape geometry, visible page fields, breaks, PDF URI/GoTo annotations and outlines, TOC fields, DOCX footnotes, rich/merged/nested cells, and row pagination controls. `international_scripts.yaml` preserves representative Unicode text and records the exact shaping/fallback boundaries. The regression suite passes 189 tests and strict Clippy; unsplittable-row overflow has a measured diagnostic test. PDF nested-table layout remains deliberately bounded and complex bidirectional shaping remains intentionally unsupported rather than overstated.
 
 ### Compatibility and regression lab
 
@@ -223,7 +223,7 @@ Section evidence: protocol `2026-08-24` runs 13 isolated release processes: four
 - benchmark results are independently reproducible;
 - untrusted input has documented resource limits and fuzz coverage.
 
-Exit evidence: all 18 supported top-level inputs pass 21 parity checks, while the 17 authored document examples own 26 exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
+Exit evidence: all 17 authored document examples pass 21 parity checks and own 26 exact Ubuntu page snapshots; shared page controls are covered by the dual-output contract; viewer claims link to the 2026-08-24 hash-pinned scorecard; two clean benchmark hosts implement the documented protocol; and the input-safety contract is backed by limits, atomic-write recovery tests, and three buildable fuzz targets.
 
 ---
 
@@ -313,7 +313,7 @@ Theme: templates, integrations, and contribution loops.
 - [x] Feature a “template of the month” and credit contributors prominently.
 - [x] Keep third-party templates outside the core crate so the engine remains lean.
 
-Section evidence: `registry/index.json` is an Ed25519-signed v1 contract for three hash-pinned Word templates and seven curated discovery categories. The CLI pins the default public key, accepts explicit keys for private registries, rejects non-loopback HTTP, bounds registry and asset reads, enforces RusDox version ranges, verifies source hashes before atomic installation, and supports text or JSON list/search/add/update output. Integration tests prove a signed local registry installs verified bytes and a one-byte manifest change fails before installation. The Node registry builder independently verifies the signature, 21 source/evidence hashes, preview alt text, licenses, documented inputs, reading order, language, and non-color-only semantics; it generates an accessible public gallery and a pull-request review artifact. Registry content and verified outputs remain outside the published crate.
+Section evidence: the immutable legacy `registry/index.json` remains available to 0.1.1 clients, while `registry/v1/index.json` uses a separately generated Ed25519 key, 1.x compatibility bounds, and 21-check v1 evidence for three hash-pinned Word templates across seven curated categories. RusDox 1.x pins the versioned URL and public key; explicit private registries remain supported. Both channels reject non-loopback HTTP, bound reads, enforce version ranges, verify every source hash before atomic installation, and are checked independently in CI. Integration tests prove installation from a signed local registry and rejection after a one-byte manifest change. Registry content and verified outputs remain outside the published crate.
 
 ### GitHub-native automation
 

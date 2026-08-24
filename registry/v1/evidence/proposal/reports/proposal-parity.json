@@ -1,0 +1,361 @@
+{
+  "report_version": "1",
+  "generator_version": "1.0.0",
+  "source": "templates/proposal/template.docx",
+  "passed": true,
+  "checks": [
+    {
+      "id": "normalized_text",
+      "label": "Normalized text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "block_order",
+      "label": "Block order",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headings",
+      "label": "Heading sequence",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_content",
+      "label": "Table rows and cells",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "images",
+      "label": "Image count and alt text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_breaks",
+      "label": "Explicit page breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "section_breaks",
+      "label": "Explicit section breaks",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "hyperlinks",
+      "label": "Hyperlink text and targets",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "bookmarks",
+      "label": "Bookmark anchors",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "fields",
+      "label": "Dynamic fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "footnotes",
+      "label": "Footnote text",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "table_layout",
+      "label": "Table row and rich-cell controls",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "metadata",
+      "label": "Document metadata",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_setup",
+      "label": "Page setup",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "headers_footers",
+      "label": "Headers and footers",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "page_numbering",
+      "label": "Page-number fields",
+      "status": "passed",
+      "detail": "source = DOCX = PDF projection"
+    },
+    {
+      "id": "image_alt_text",
+      "label": "Non-empty image alternative text",
+      "status": "skipped",
+      "detail": "source contains no images"
+    },
+    {
+      "id": "document_language",
+      "label": "Document language metadata",
+      "status": "skipped",
+      "detail": "source does not declare metadata.language"
+    },
+    {
+      "id": "docx_package",
+      "label": "DOCX package integrity",
+      "status": "passed",
+      "detail": "required OOXML parts and relationships are present"
+    },
+    {
+      "id": "pdf_file",
+      "label": "PDF file integrity",
+      "status": "passed",
+      "detail": "PDF header, trailer, pages, and renderer evidence are present"
+    },
+    {
+      "id": "visual_diff",
+      "label": "Rendered-page visual threshold",
+      "status": "skipped",
+      "detail": "no baseline supplied; deterministic page snapshots were still generated"
+    }
+  ],
+  "expected": {
+    "normalized_text": "NORTHSTAR / PROPOSAL\nVerified document delivery system\nPrepared for Northstar Operations\nValid until 30 September 2026\nOutcome\nA repeatable document workflow that creates editable Word files, native PDFs, and machine-readable parity evidence.\nScope\n- Map existing Word documents into reusable templates\n- Implement JSON-driven rendering and strict validation\n- Deliver viewer evidence, training, and rollout documentation\nManaged support included\nThe delivery includes a 30-day supported rollout and weekly office hours.\nInvestment: EUR 28,000\nConfidential. Prepared exclusively for Northstar Operations.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 900,
+      "margin_right_twips": 1080,
+      "margin_bottom_twips": 900,
+      "margin_left_twips": 1080,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "docx": {
+    "normalized_text": "NORTHSTAR / PROPOSAL\nVerified document delivery system\nPrepared for Northstar Operations\nValid until 30 September 2026\nOutcome\nA repeatable document workflow that creates editable Word files, native PDFs, and machine-readable parity evidence.\nScope\n- Map existing Word documents into reusable templates\n- Implement JSON-driven rendering and strict validation\n- Deliver viewer evidence, training, and rollout documentation\nManaged support included\nThe delivery includes a 30-day supported rollout and weekly office hours.\nInvestment: EUR 28,000\nConfidential. Prepared exclusively for Northstar Operations.",
+    "block_order": [
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph",
+      "paragraph"
+    ],
+    "headings": [],
+    "tables": [],
+    "images": [],
+    "page_breaks": [],
+    "section_breaks": [],
+    "hyperlinks": [],
+    "bookmarks": [],
+    "fields": [],
+    "footnotes": [],
+    "table_layout": [],
+    "metadata": {
+      "title": "RusDox Document",
+      "author": "RusDox",
+      "subject": null,
+      "language": null,
+      "keywords": [],
+      "custom_properties": {}
+    },
+    "page_setup": {
+      "width_twips": 12240,
+      "height_twips": 15840,
+      "margin_top_twips": 900,
+      "margin_right_twips": 1080,
+      "margin_bottom_twips": 900,
+      "margin_left_twips": 1080,
+      "header_twips": 720,
+      "footer_twips": 720,
+      "gutter_twips": 0,
+      "orientation": "portrait"
+    },
+    "header": null,
+    "footer": null,
+    "page_numbering": null
+  },
+  "pdf": {
+    "projection": {
+      "normalized_text": "NORTHSTAR / PROPOSAL\nVerified document delivery system\nPrepared for Northstar Operations\nValid until 30 September 2026\nOutcome\nA repeatable document workflow that creates editable Word files, native PDFs, and machine-readable parity evidence.\nScope\n- Map existing Word documents into reusable templates\n- Implement JSON-driven rendering and strict validation\n- Deliver viewer evidence, training, and rollout documentation\nManaged support included\nThe delivery includes a 30-day supported rollout and weekly office hours.\nInvestment: EUR 28,000\nConfidential. Prepared exclusively for Northstar Operations.",
+      "block_order": [
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph",
+        "paragraph"
+      ],
+      "headings": [],
+      "tables": [],
+      "images": [],
+      "page_breaks": [],
+      "section_breaks": [],
+      "hyperlinks": [],
+      "bookmarks": [],
+      "fields": [],
+      "footnotes": [],
+      "table_layout": [],
+      "metadata": {
+        "title": "RusDox Document",
+        "author": "RusDox",
+        "subject": null,
+        "language": null,
+        "keywords": [],
+        "custom_properties": {}
+      },
+      "page_setup": {
+        "width_twips": 12240,
+        "height_twips": 15840,
+        "margin_top_twips": 900,
+        "margin_right_twips": 1080,
+        "margin_bottom_twips": 900,
+        "margin_left_twips": 1080,
+        "header_twips": 720,
+        "footer_twips": 720,
+        "gutter_twips": 0,
+        "orientation": "portrait"
+      },
+      "header": null,
+      "footer": null,
+      "page_numbering": null
+    },
+    "page_count": 1,
+    "draw_operations": 15,
+    "text_lines": 15,
+    "image_operations": 0,
+    "document_language": null,
+    "fonts": [
+      {
+        "family": "Arial",
+        "post_script_name": "ArialMT",
+        "embedding_permission": "editable",
+        "glyph_count": 49,
+        "missing_characters": []
+      },
+      {
+        "family": "Georgia",
+        "post_script_name": "Georgia-Bold",
+        "embedding_permission": "editable",
+        "glyph_count": 17,
+        "missing_characters": []
+      },
+      {
+        "family": "Arial",
+        "post_script_name": "Arial-BoldMT",
+        "embedding_permission": "editable",
+        "glyph_count": 29,
+        "missing_characters": []
+      }
+    ],
+    "tagged_pdf": false,
+    "pdf_a": false
+  },
+  "visual_diff": {
+    "enabled": false,
+    "threshold": 0.0,
+    "passed": true,
+    "pages": [
+      {
+        "page": 1,
+        "current": "reports/proposal-pages/page-001.png",
+        "baseline": null,
+        "different_pixel_ratio": null,
+        "passed": true,
+        "detail": "snapshot generated; no visual baseline supplied"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "generated/proposal.docx",
+      "bytes": 4079,
+      "sha256": "9628d59bd6083bc7b2f3aba9e3b81ece9bf94db220fbe6d5c3058d6fb8f1b3db"
+    },
+    {
+      "path": "rendered/proposal.pdf",
+      "bytes": 1904040,
+      "sha256": "c5d3eaaddc456974a1dee0fe3b1aa335cb37f314a9fa5d752d99a21e98bab168"
+    }
+  ]
+}

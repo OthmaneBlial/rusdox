@@ -1,6 +1,6 @@
 {
   "report_version": "1",
-  "generator_version": "0.1.1",
+  "generator_version": "1.0.0",
   "source": "examples/invoice.yaml",
   "passed": true,
   "checks": [

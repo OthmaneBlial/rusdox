@@ -59,6 +59,8 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo test
 node scripts/check_compatibility_contract.mjs
 node scripts/check_accessibility_contract.mjs
+node scripts/build_v1_registry_manifest.mjs --check
+node scripts/build_template_registry.mjs --registry-dir registry/v1 --check
 node scripts/test_benchmark_contract.mjs
 node scripts/test_reproducible_release.mjs
 node scripts/check_security_review.mjs

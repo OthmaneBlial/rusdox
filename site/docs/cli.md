@@ -232,7 +232,9 @@ detached Ed25519 signature, supported RusDox version, and the SHA-256 of the Wor
 template and sample JSON before atomically installing them. Use `--install-root`
 for an explicit destination. Private registries can pass `--registry` with an
 HTTPS URL or local index and `--public-key` with the matching 32-byte key in
-hexadecimal. See [Curated template registry](template-registry.md) for the
+hexadecimal. RusDox 1.x defaults to the immutable `/registry/v1/index.json`
+channel; the pre-1.0 channel remains online for old clients. See
+[Curated template registry](template-registry.md) for the
 manifest, trust, privacy, and contribution contract.
 
 ## Output Control

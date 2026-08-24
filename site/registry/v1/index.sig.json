@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "algorithm": "ed25519",
+  "key_id": "rusdox-registry-v1-2026-08",
+  "manifest_sha256": "aeae211e7e46ac3bc18818c36740299070fc476e1f7aa1cdfdcfbe55ea8afe27",
+  "signature": "b8b01d3d779f736db0cd88c76816bc24755bbb5ce440737f6370e467760a5ab16f03873140eb6aebfe21ea49e5da0248ecf23e616aa4dd0158970e15d09f1e00"
+}

@@ -58,9 +58,10 @@ blocks:
 
 fn create_signed_local_registry(directory: &Path) -> (std::path::PathBuf, String) {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut registry: serde_json::Value =
-        serde_json::from_slice(&fs::read(repo.join("registry/index.json")).expect("read registry"))
-            .expect("registry JSON");
+    let mut registry: serde_json::Value = serde_json::from_slice(
+        &fs::read(repo.join("registry/v1/index.json")).expect("read registry"),
+    )
+    .expect("registry JSON");
     let base_url = registry["base_url"].as_str().expect("base URL").to_string();
     for entry in registry["templates"]
         .as_array_mut()
@@ -1151,7 +1152,7 @@ fn stdio_protocol_applies_the_operator_limits_file() {
     let output_root = temp.path().join("service-output");
     let profile_path = temp.path().join("limits.toml");
     let profile = fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/hosted-limits.toml"),
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/config/hosted-limits.toml"),
     )
     .expect("hosted profile")
     .replace("max_spec_bytes = 2097152", "max_spec_bytes = 64");

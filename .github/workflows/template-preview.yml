@@ -7,6 +7,7 @@ on:
       - "templates/**"
       - "template-evidence/**"
       - "scripts/build_template_registry.mjs"
+      - "scripts/build_v1_registry_manifest.mjs"
       - ".github/workflows/template-preview.yml"
   workflow_dispatch:
 
@@ -22,13 +23,18 @@ jobs:
         with:
           node-version: 24
       - name: Verify signed manifest, hashes, evidence, and accessibility contract
-        run: node scripts/build_template_registry.mjs
+        run: |
+          node scripts/build_template_registry.mjs
+          node scripts/build_v1_registry_manifest.mjs --check
+          node scripts/build_template_registry.mjs --registry-dir registry/v1
       - name: Publish reviewable template preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: template-registry-preview-${{ github.event.pull_request.number || github.run_number }}
           path: |
             registry/preview.html
+            registry/v1/preview.html
+            registry/v1/evidence/*/reports/*-parity.html
             templates/*/preview.png
             templates/*/template.docx
             templates/*/data.json

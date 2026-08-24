@@ -192,8 +192,8 @@ mod tests {
 
     #[test]
     fn checked_in_hosted_profile_matches_the_builtin() {
-        let path =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/hosted-limits.toml");
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("examples/config/hosted-limits.toml");
         assert_eq!(
             InputLimits::load_from_path(path).expect("hosted limits fixture"),
             InputLimits::hosted()

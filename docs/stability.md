@@ -1,10 +1,9 @@
 # Stability, versioning, and support
 
-The RusDox v1 contract has five public surfaces. It takes effect with the
-`v1.0.0` release; until that tag exists, `main` is release-candidate work rather
-than a published support promise. Each surface is versioned deliberately, so a
-crate version bump never silently changes the meaning of a document
-specification or local protocol request.
+The RusDox v1 contract has five public surfaces and takes effect with the
+`v1.0.0` release. Each surface is versioned deliberately, so a crate version
+bump never silently changes the meaning of a document specification or local
+protocol request.
 
 ## Contract map
 

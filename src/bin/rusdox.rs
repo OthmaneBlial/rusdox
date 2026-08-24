@@ -30,9 +30,10 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tempfile::tempdir;
 
-const DEFAULT_TEMPLATE_REGISTRY: &str = "https://othmaneblial.github.io/rusdox/registry/index.json";
+const DEFAULT_TEMPLATE_REGISTRY: &str =
+    "https://othmaneblial.github.io/rusdox/registry/v1/index.json";
 const DEFAULT_TEMPLATE_REGISTRY_PUBLIC_KEY: &str =
-    "6a765396357492a6aa4239c8fc042e0471259528f5b25ab742b964b735662353";
+    "37bcb0f607f243df3029e6d7c8b541a8eec540ef79a0e7b8aa232f191af4d828";
 const MAX_REGISTRY_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_TEMPLATE_DOWNLOAD_BYTES: u64 = 64 * 1024 * 1024;
 
