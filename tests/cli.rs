@@ -1259,6 +1259,55 @@ fn loopback_http_protocol_reuses_the_v1_request_contract() {
 }
 
 #[test]
+fn loopback_http_protocol_rejects_non_json_content_type() {
+    let temp = tempdir().expect("temp dir");
+    let output_root = temp.path().join("service-output");
+    let probe = TcpListener::bind("127.0.0.1:0").expect("reserve port");
+    let port = probe.local_addr().expect("address").port();
+    let port_string = port.to_string();
+    drop(probe);
+    let mut child = spawn_cli(
+        &[
+            "serve",
+            "http",
+            "--port",
+            &port_string,
+            "--output-root",
+            output_root.to_string_lossy().as_ref(),
+            "--max-requests",
+            "1",
+        ],
+        temp.path(),
+    );
+    let mut readiness = String::new();
+    BufReader::new(child.stderr.take().expect("stderr"))
+        .read_line(&mut readiness)
+        .expect("ready line");
+    assert!(readiness.contains("protocol v1 listening"));
+
+    let fixture = fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("contributor-fixtures/http/wrong-content-type.http"),
+    )
+    .expect("read HTTP fixture");
+    let request = fixture.replace('\n', "\r\n");
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect");
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .expect("read timeout");
+    stream.write_all(request.as_bytes()).expect("request");
+    let mut response = String::new();
+    stream.read_to_string(&mut response).expect("response");
+
+    assert!(response.starts_with("HTTP/1.1 415 Unsupported Media Type"));
+    let json = response.split("\r\n\r\n").nth(1).expect("response body");
+    let parsed: serde_json::Value = serde_json::from_str(json).expect("response JSON");
+    assert_eq!(parsed["ok"], false);
+    assert_eq!(parsed["error"]["code"], "unsupported_media_type");
+    assert!(child.wait().expect("server exit").success());
+}
+
+#[test]
 fn verify_writes_docx_pdf_html_json_and_page_evidence() {
     let temp = tempdir().expect("temp dir");
     let spec_path = temp.path().join("mydoc.yaml");
