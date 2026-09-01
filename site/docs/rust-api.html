@@ -68,7 +68,7 @@
 <pre><code class="language-bash">rusdox config path
 rusdox config wizard --level basic
 rusdox config wizard --level advanced</code></pre>
-<p>The installer creates <code>~/rusdox/config.toml</code> if it does not exist yet.</p>
+<p>The installer writes only the binary. RusDox uses built-in defaults until you explicitly run <code>rusdox config init --template</code> or a config wizard.</p>
 <p>For per-project overrides:</p>
 <pre><code class="language-bash">rusdox config wizard --path ./rusdox.toml --level basic</code></pre>
 <p>Config load order is:</p>

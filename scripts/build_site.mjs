@@ -120,6 +120,7 @@ const sourceCopies = [
   "SUPPORT.md",
   "SECURITY.md",
   "CODE_OF_CONDUCT.md",
+  "LICENSE",
   ...walkFiles(path.join(root, "docs"))
     .filter((file) => file.endsWith(".md"))
     .map((file) => normalize(path.relative(root, file))),

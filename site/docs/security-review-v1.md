@@ -1,6 +1,6 @@
 # v1 Security Review
 
-Review date: **2026-08-24**
+Review date: **2026-09-01**
 Scope: RusDox v1 document/spec ingestion, Word templates, visual decoding,
 local integration transports, batch execution, and release supply chain.
 
@@ -82,11 +82,14 @@ model.
   denial, template expansion ceilings, service-owned limits, batch load,
   concurrency, memory preflight, cancellation, and interrupted writes. Three
   libFuzzer targets compile in CI, and CodeQL scans the repository.
-- The official RustSec audit runs on dependency changes and weekly. On the
-  review date there are no known vulnerabilities or unsound dependencies in
-  `Cargo.lock`. RustSec separately marks the current upstream `rustybuzz` and
-  `ttf-parser` releases as unmaintained; both remain transitive/direct rendering
-  dependencies until the upstream `resvg`/font stack has a supported migration.
+- `cargo audit --deny unsound` passes on the review date: there are no known
+  vulnerabilities or unsound dependencies in `Cargo.lock`. RustSec separately
+  marks `rustybuzz 0.20.1` (`RUSTSEC-2026-0206`) and `ttf-parser 0.25.1`
+  (`RUSTSEC-2026-0192`) as unmaintained. They remain in the rendering stack
+  while supported upstream replacements are assessed. The maintainer exception
+  must be resolved or renewed with evidence before v1.2.0 or 2026-12-01,
+  whichever comes first; any vulnerability or unsoundness advisory blocks a
+  release immediately.
 - Tagged binaries are built twice from the lockfile and compared byte-for-byte.
   Deterministic archives, SHA-256 checksums, SPDX SBOM, GitHub build-provenance
   attestations, and SBOM attestations are attached to every release. Installer

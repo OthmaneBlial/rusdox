@@ -16,22 +16,22 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   documents:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: OthmaneBlial/rusdox@main
+      - uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
         with:
           input: documents
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          upload-reports: "false"
+          comment: "false"
 ```
 
-`main` exposes the action before the planned `v0.4.0` tag exists. Pin a full
-commit SHA for a production workflow today, then move to a reviewed release tag
-when the automation surface is released.
+The example is read-only and pins the reviewed v1.0.0 commit rather than mutable
+`main`. Opt in to report retention with `upload-reports: "true"`. PR comments
+also require `pull-requests: write`, `comment: "true"`, and a `github-token`.
 
 ## What it does
 
@@ -72,7 +72,7 @@ Page snapshots are renderer- and platform-specific. Check in a baseline from
 the same runner image and pass its directory explicitly:
 
 ```yaml
-      - uses: OthmaneBlial/rusdox@main
+      - uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
         with:
           input: documents/monthly.yaml
           visual-baseline: tests/rusdox-pages/linux-x86_64

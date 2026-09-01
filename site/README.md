@@ -1,255 +1,112 @@
 # RusDox
 
-![Rust](https://img.shields.io/badge/Rust-2021-f0742e?style=flat-square)
-![Tests](https://img.shields.io/github/actions/workflow/status/OthmaneBlial/rusdox/rust.yml?branch=main&style=flat-square&label=tests)
-![License](https://img.shields.io/github/license/OthmaneBlial/rusdox?style=flat-square)
-![OOXML](https://img.shields.io/badge/OOXML-.docx-2563eb?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.0.0-b85c30?style=flat-square)
+**Turn structured data or an approved Word template into an editable DOCX, a
+directly rendered PDF, and reviewable parity evidence from one local binary.**
 
-**One readable spec → editable DOCX + native PDF, at Rust speed, without Word or LibreOffice.**
+No Microsoft Word, LibreOffice, LaTeX, cloud account, or document upload is
+required.
 
-[Website](https://othmaneblial.github.io/rusdox/) · [Playground](https://othmaneblial.github.io/rusdox/playground/) · [Template registry](https://othmaneblial.github.io/rusdox/registry/v1/preview.html) · [Documentation](https://othmaneblial.github.io/rusdox/docs.html) · [Gallery](https://othmaneblial.github.io/rusdox/#examples) · [Releases](https://github.com/OthmaneBlial/rusdox/releases) · [crates.io](https://crates.io/crates/rusdox) · [Roadmap](ROADMAP.md) · [Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
+[Website](https://othmaneblial.github.io/rusdox/) ·
+[Explore an example](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief) ·
+[Template registry](https://othmaneblial.github.io/rusdox/registry/v1/preview.html) ·
+[Documentation](https://othmaneblial.github.io/rusdox/docs.html) ·
+[Compatibility](https://othmaneblial.github.io/rusdox/docs/compatibility.html) ·
+[Releases](https://github.com/OthmaneBlial/rusdox/releases) ·
+[crates.io](https://crates.io/crates/rusdox)
 
-![RusDox turns YAML into real DOCX and PDF output](assets/social-preview-rusdox.png)
+![RusDox turns one structured source into editable DOCX and native PDF output](assets/social-preview-rusdox.png)
 
-## See the full workflow in 24 seconds
+## Why RusDox
 
-![Animated RusDox workflow from checksum-verified install to YAML editing and real DOCX/PDF output](assets/quick-demo.svg)
+Business-document automation usually forces a compromise: keep Word files
+editable, generate a dependable PDF, avoid an Office runtime, or make the
+pipeline testable. RusDox targets the intersection.
 
-The final frame keeps the YAML input beside both outputs. Inspect the real files: [YAML source](examples/product_launch_brief.yaml), [editable DOCX](site/generated/product-launch-brief.docx), and [native PDF](site/rendered/product-launch-brief.pdf).
+- Recipients get a real `.docx` they can continue editing.
+- Automation gets PDF bytes emitted directly from the same typed document
+  model, not a DOCX-to-PDF conversion.
+- Authors can use schema-backed YAML/JSON/TOML or retain a designer-authored
+  Word template and populate it from JSON.
+- CI can inspect source-located validation, package structure, semantic parity,
+  artifact hashes, page snapshots, and optional visual diffs.
+- Documents stay local unless the caller explicitly uploads its own artifacts.
 
-RusDox is not just another YAML-to-document helper. It is a pure Rust document engine built for generating `.docx` and `.pdf` files programmatically, fast enough for serious automation.
+RusDox is not a universal converter or a full Word implementation. If you need
+arbitrary format conversion, start with [Pandoc](https://pandoc.org/). If you
+only need publication-grade PDF typesetting, start with
+[Typst](https://typst.app/). RusDox is for workflows that need the editable Word
+handoff and the directly rendered PDF together.
 
-If you have ever tried to create Word or PDF files in code, you already know the usual failure modes:
+## See the complete workflow
 
-- slow office runtimes
-- brittle conversions
-- poor control over layout
-- painful scaling when documents get large
+![Animated RusDox workflow from verified install to YAML editing and real DOCX/PDF output](assets/quick-demo.svg)
 
-RusDox keeps authoring simple with YAML and keeps the rendering path in Rust. Performance evidence now comes from a versioned small/medium/1,000-page protocol that records the exact host, toolchain, inputs, output sizes, timings, and peak memory. See [Benchmark proof](#benchmark-proof) before comparing it with another system.
+The demo ends with inspectable artifacts from the same source:
 
-## Bring your own Word design
+- [YAML input](examples/product_launch_brief.yaml)
+- [editable DOCX](site/generated/product-launch-brief.docx)
+- [native PDF](site/rendered/product-launch-brief.pdf)
+- [parity report](site/parity/product-launch-brief-parity.html)
 
-Keep the layout your team already designed in Word, add readable placeholders, then drive it from JSON:
+The browser [example explorer](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
+is a local structural preview, not a fake PDF renderer. Edited YAML remains in
+the tab; the page shows the exact CLI command needed to produce verified files.
 
-    rusdox template inspect proposal.docx
-    rusdox template verify proposal.docx data.json --strict
+## Get a verified result
 
-One command writes an editable DOCX, native PDF, deterministic page snapshots, and HTML/JSON parity evidence. Syntax v1 supports nested values, loops over complete paragraphs or table rows, conditions, filters, and reusable partials while preserving untouched package parts byte-for-byte. Start with the bundled [invoice](templates/invoice/), [proposal](templates/proposal/), or [board report](templates/board-report/), then read the [Word-native template guide](docs/word-templates.md).
+### Install
 
-Discover those templates through the signed, curated registry without cloning
-the repository:
-
-    rusdox template list
-    rusdox template search compliance
-    rusdox template add board-report
-    rusdox template update --all
-
-The CLI verifies the Ed25519-signed manifest and every downloaded SHA-256 before
-an atomic install. Each entry exposes its license, contributor, documented
-inputs, preview, supported RusDox versions, accessibility notes, and verified
-DOCX/PDF parity evidence. Browse the [public registry](https://othmaneblial.github.io/rusdox/registry/v1/preview.html)
-or read its [trust and contribution contract](docs/template-registry.md).
-
-## Put document parity in every pull request
-
-Use the repository as a reusable GitHub Action to annotate validation errors on
-their exact source lines, render DOCX/PDF output, and retain parity evidence in
-the calling repository's Actions run:
-
-```yaml
-- uses: actions/checkout@v5
-- uses: OthmaneBlial/rusdox@main
-  with:
-    input: documents
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-The optional PR comment contains check metadata, not document contents. Raw
-DOCX/PDF files stay on the ephemeral runner and report upload can be disabled
-for confidential workloads. Read the [GitHub Action contract](docs/github-action.md)
-and copy the [workflow recipes](examples/github-actions/).
-
-For application integrations, use the object-safe Rust `Renderer` boundary or
-the same versioned JSON request over `rusdox serve stdio`. Official executable
-examples cover [Node, Python, Go, and CI](examples/integrations/) without four
-premature SDKs. A tiny opt-in HTTP adapter binds loopback only and reuses the
-identical request contract; see the [integration protocol](docs/integrations.md).
-
-## Make a first contribution without learning OOXML
-
-Ten maintained starter tasks each have one checked-in fixture, a narrow scope,
-and three acceptance criteria. Prepare an isolated work area with:
+macOS or Linux native archive (x86_64 Linux, Intel Mac, or Apple Silicon):
 
 ```bash
-node scripts/contributor_lab.mjs list
-node scripts/contributor_lab.mjs prepare protocol-inline-toml
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh \
+  | RUSDOX_VERSION=v1.0.0 sh
 ```
 
-Start from the [`good first issue` queue](https://github.com/OthmaneBlial/rusdox/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),
-read the [architecture map](docs/architecture.md) and [contribution guide](CONTRIBUTING.md),
-then use the contributor lab for parity and visual diffs. Merged work is credited
-in [CONTRIBUTORS.md](CONTRIBUTORS.md) and the relevant release notes. Real,
-non-confidential examples and viewer priorities belong in [Discussions](https://github.com/OthmaneBlial/rusdox/discussions).
-
-## Schema-first authoring
-
-Every current spec declares version 1. Generate the same JSON Schema used by
-the bundled VS Code tooling, or migrate a legacy file atomically:
-
-    rusdox schema --output rusdox-spec-v1.schema.json
-    rusdox migrate legacy.yaml --in-place
-    rusdox validate current.yaml --format json
-
-YAML, JSON, and TOML share nested paths, bounded when branches, five
-deterministic filters, literal-brace escaping, and source-located validation.
-There is deliberately no general-purpose expression runtime. Read the
-[spec-versioning policy](docs/spec-versioning.md) or use the zero-dependency
-[VS Code extension](editors/vscode/README.md).
-
-For production upgrades, read the [v1 stability contract](docs/stability.md): it
-defines SemVer behavior for the Rust API, CLI, spec, Word-template syntax, and
-rendered outputs; Rust 1.88.0 is the tested MSRV. The public library now denies
-missing rustdoc and broken documentation links, and tagged releases run an
-independent API compatibility scan before publication. The
-[v1.0.0 release receipt](docs/releases/v1.0.0.md) records the local and tag-time
-evidence required before publication is considered complete.
-
-For the local feedback loop, run `rusdox dev mydoc.yaml --open`. The loop keeps
-the last successful PDF visible while reporting the current validation issue,
-timings, output paths, and whether an input, config, include, or asset triggered
-the rebuild. Use `--json` for JSON Lines automation or `--quiet --port 0
---max-builds 1` for a bounded CI smoke check.
-
-## Try it without installing
-
-The [local-first playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
-loads verified examples, lets you edit YAML, previews the document structure, and
-downloads your edited spec. It has no upload endpoint, analytics, or persistence.
-The browser preview is deliberately not presented as PDF layout: verified DOCX/PDF
-downloads stay available only while the checked-in source is unchanged, and edited
-files are reproduced with the exact CLI command shown beside the preview. Read the
-[WASM feasibility decision](docs/wasm-feasibility.md) for the full boundary.
-
-## Install in 10 seconds
-
-macOS or Linux:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh
-```
-
-Windows PowerShell:
+Windows x64 PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.ps1 -OutFile install-rusdox.ps1
+.\install-rusdox.ps1 -Version v1.0.0
 ```
 
-Rust users can also install from crates.io:
+Both installers verify the selected release archive against its published
+`SHA256SUMS`. They install only the binary; configuration is created only when
+you explicitly run `rusdox config init` or the wizard.
+
+Rust users can install from crates.io:
 
 ```bash
 cargo install rusdox --locked
-# or, when cargo-binstall is available
-cargo binstall rusdox
+# or: cargo binstall rusdox
 ```
 
-Release installers verify the archive against the published `SHA256SUMS` file before installing it.
-
-Create and render the first document:
+### Run the non-destructive demo
 
 ```bash
-mkdir my-rusdox-docs && cd my-rusdox-docs
-rusdox init-doc mydoc.yaml
-rusdox mydoc.yaml
+rusdox demo
 ```
 
-Outputs:
+RusDox refuses an existing destination and creates this self-contained result:
 
-- `generated/mydoc.docx` — editable Word document
-- `rendered/mydoc.pdf` — native PDF preview
-
-See [Getting started](docs/getting-started.md) for the complete two-minute walkthrough.
-
-## Why It Lands
-
-- Exercise a checked-in 1,000-page DOCX/PDF stress tier with independently reproducible evidence.
-- Create large files without Word, LibreOffice, or an external office runtime.
-- Keep authoring readable with YAML while the heavy lifting stays in Rust.
-- Validate specs before render so semantic issues fail early in CI and local workflows.
-- Rebuild documents automatically while editing specs or config files.
-- Benchmark real parse, validation, compose, DOCX, and PDF timings from the CLI.
-- Turn designer-authored Word files into strict JSON-driven DOCX/PDF/parity bundles.
-- Keep simple authoring in YAML longer with variables, includes, and repeaters.
-- Set document metadata such as title, author, subject, keywords, and custom properties directly from specs or Rust.
-- Use one tool for recurring reports, invoices, proposals, dashboards, and batch document jobs.
-
-## Real-World Use Cases
-
-- Executive and board reporting: recurring operating packs, KPI dashboards, and leadership reviews
-- Client-facing automation: proposals, invoices, onboarding packs, and launch briefs
-- Internal document infrastructure: batch exports, meeting notes, project briefs, and template-driven pipelines
-
-## Why RusDox instead of another pipeline?
-
-| Capability | RusDox | Office conversion pipeline | DOCX-only library | PDF typesetter |
-|---|:---:|:---:|:---:|:---:|
-| Editable DOCX output | Yes | Yes | Yes | Usually no |
-| Native PDF output | Yes | No | No | Yes |
-| Word/LibreOffice runtime required | No | Yes | No | No |
-| Human-readable document spec | Yes | Varies | Code-first | Varies |
-| Same typed model for both outputs | Yes | No | No | No |
-| Automated DOCX/PDF parity report | Yes | No | No | No |
-
-RusDox does not claim complete OOXML coverage. Check the [compatibility matrix](docs/compatibility.md) for supported, partial, and intentionally unsupported behavior.
-
-Accessibility metadata is a tested contract: visual alt text is required and a
-declared document language reaches both DOCX and the PDF catalog. RTL/CJK
-typography remains experimental, and the current PDF is not claimed as tagged
-PDF, PDF/UA, or PDF/A. Read the [international and accessibility boundary](docs/international-accessibility.md)
-and the [PDF conformance research](docs/pdf-conformance-research.md).
-
-## Benchmark Proof
-
-![RusDox reproducible benchmark history](assets/benchmark-history.svg)
-
-The benchmark lab runs small (1 page), medium (4 rendered pages), and 1,000-page fixtures through validation-only, DOCX-only, PDF-only, and dual-output pipelines. Existing-DOCX open/save is measured separately. Each raw JSON report records CPU, OS, architecture, Rust version, input SHA-256, exact flags, output sizes, median timings, and peak resident memory.
-
-Reproduce the full release-mode protocol:
-
-```bash
-cargo build --release --locked --bin rusdox
-node scripts/run_benchmark_protocol.mjs --output target/benchmarks/local.json
+```text
+rusdox-demo/
+├── product-launch-brief.yaml
+├── rusdox.toml
+├── generated/product-launch-brief.docx
+├── rendered/product-launch-brief.pdf
+└── reports/
+    ├── product-launch-brief-parity.html
+    ├── product-launch-brief-parity.json
+    └── product-launch-brief-pages/
 ```
 
-Read the [methodology, regression thresholds, and limitations](docs/performance.md), inspect the derived [history data](benchmarks/history.json), or open the unrounded [raw reports](benchmarks/results/). Results from different machines are not presented as directly comparable scores.
+Edit the YAML and rerun the exact `rusdox verify` command printed by the demo.
+Use `rusdox demo my-first-report` to choose another new directory.
 
-## Production boundaries
+## Two authoring paths
 
-The public Rust API includes a bounded `BatchRenderer`, fixed worker
-concurrency, ordered per-job results, and cooperative cancellation. `rusdox
-serve` defaults to a conservative hosted resource profile; operators can supply
-a complete TOML/JSON profile, while request payloads cannot raise their own
-limits. ZIP/XML/image/template ceilings are enforced before expensive work.
-
-Read the [production runner guide](docs/production.md), [input-safety contract](docs/input-safety.md),
-and dated [v1 security review](docs/security-review-v1.md). Tagged release jobs
-build binaries twice, compare their bytes, create deterministic archives,
-publish checksums and an SPDX SBOM, and attach GitHub provenance/SBOM
-attestations. The live [performance budget dashboard](https://othmaneblial.github.io/rusdox/benchmarks/)
-shows all 13 scenarios against explicit runtime and peak-memory ceilings.
-
-## First document
-
-Create a starter doc:
-
-```bash
-mkdir my-rusdox-docs
-cd my-rusdox-docs
-rusdox init-doc mydoc.yaml
-```
-
-Edit `mydoc.yaml`:
+### 1. Structured specs for developer-owned documents
 
 ```yaml
 version: 1
@@ -257,203 +114,225 @@ output_name: client-brief
 blocks:
   - type: title
     text: Client Brief
-  - type: subtitle
-    text: Q2 rollout
   - type: section
-    text: Summary
+    text: Decision
   - type: body
-    text: Launch is approved pending final security FAQ wording.
+    text: Launch is approved pending the final security review.
   - type: bullets
     items:
-      - Pricing is approved.
-      - Support macros are in review.
-      - Commercial release is planned for April 7.
+      - Pricing approved
+      - Support playbook ready
+      - Security wording pending
 ```
-
-Generate the files:
 
 ```bash
-rusdox mydoc.yaml
+rusdox verify client-brief.yaml
 ```
 
-You get:
+YAML is the recommended hand-authored format. JSON and TOML use the same
+versioned document model; the generated JSON Schema and bundled VS Code tooling
+provide completion and diagnostics.
 
-- `generated/client-brief.docx`
-- `rendered/client-brief.pdf`
+### 2. Word-native templates for approved designs
 
-Render a whole folder of YAML docs:
+Keep the layout your team already designed in Word, add bounded placeholders,
+then populate it from JSON:
 
 ```bash
-rusdox examples
+rusdox template inspect proposal.docx
+rusdox template verify proposal.docx data.json --strict
 ```
 
-Validate before rendering:
+Template syntax v1 supports nested values, complete paragraph or table-row
+loops, conditions, five deterministic filters, and reusable partials. Untouched
+package parts stay byte-for-byte intact. The PDF covers the documented body
+subset, so arbitrary Word layout fidelity is not implied.
+
+Three first-party examples are available through the signed registry:
 
 ```bash
-rusdox validate mydoc.yaml
-rusdox validate examples --format json
+rusdox template list
+rusdox template search compliance
+rusdox template add board-report
 ```
 
-Watch a spec while editing:
+The CLI verifies the Ed25519-signed manifest and every downloaded SHA-256 before
+an atomic install.
+
+## What verification proves
+
+`rusdox verify` reopens the generated DOCX and compares it with the source model
+and PDF evidence. Each current report contains 21 checks covering supported
+text, block order, tables, images and alt text, metadata, package structure,
+PDF structure, and optional rendered-page differences.
 
 ```bash
-rusdox watch mydoc.yaml
+rusdox verify documents \
+  --output-root build/rusdox \
+  --format json
 ```
 
-Benchmark a render path:
+Exit code `0` means parity passed, `1` means verification could not complete,
+and `2` means one or more completed parity checks failed. A green report proves
+the published RusDox contract; it does not prove pixel-identical rendering in
+every Word or PDF viewer.
+
+## Capabilities
+
+| Area | Current v1 support |
+|---|---|
+| Outputs | Editable DOCX and directly emitted PDF |
+| Inputs | YAML, JSON, TOML, Rust API, and Word templates + JSON |
+| Document model | Paragraphs, runs, lists, styles, metadata, images, SVG, tables, headers/footers, links, bookmarks, TOC fields, footnotes, and shared page controls |
+| Authoring | Schema, migration, includes, repeaters, bounded conditions and filters, source-located validation |
+| Feedback | `demo`, `validate`, `dev`, `watch`, `verify`, and reproducible `bench` workflows |
+| Integration | Rust `Renderer`, JSON protocol over stdio, loopback-only HTTP adapter, and composite GitHub Action |
+| Production | Resource ceilings, bounded batch concurrency, atomic output replacement, security review, SBOM, checksums, and build attestations |
+
+The executable [compatibility matrix](docs/compatibility.md) is the source of
+truth when a feature boundary matters.
+
+## Architecture
+
+```text
+YAML / JSON / TOML / Word template / Rust caller
+                         │
+              parse + bounded expansion
+                         │
+          validation + source locations
+                         │
+                typed Document model
+                  ┌──────┴──────┐
+                  ▼             ▼
+             OOXML writer   PDF layout
+                  └──────┬──────┘
+                         ▼
+          semantic + structural + visual evidence
+```
+
+Every entry point converges on the same validation, document, rendering, and
+parity layers. Read the [architecture guide](docs/architecture.md) for module
+ownership and contribution evidence.
+
+## Integrate it
+
+Use the local JSON protocol from Node, Python, Go, or another process without
+adopting a language-specific SDK:
 
 ```bash
-rusdox bench examples/stress/stress_1000_pages.yaml --iterations 5 --warmup 1
+rusdox serve stdio < request.json
 ```
 
-## What Makes It Different
+Or add document verification to a repository. The example pins the reviewed
+v1.0.0 commit rather than mutable `main`:
 
-- Pure Rust `.docx` generation
-- Pure Rust PDF rendering
-- No Word dependency
-- No LibreOffice dependency
-- Human-readable YAML examples
-- Config-driven styling through `rusdox.toml`
-- Reusable named paragraph, run, and table styles with inheritance
-- YAML composition features for variables, includes, and repeaters
-- First-class document metadata in specs and the Rust API
-- First-class `validate`, `dev`, `watch`, and `bench` CLI workflows
+```yaml
+- uses: actions/checkout@v5
+- uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
+  with:
+    input: documents
+    upload-reports: "false"
+    comment: "false"
+```
 
-## Examples
+Enable report upload or PR comments only when the calling repository's document
+privacy policy permits it. See the [Action guide](docs/github-action.md) and
+[integration protocol](docs/integrations.md).
 
-`examples/` is now a folder of YAML document specs.
+## Performance evidence
 
-Highlights:
+RusDox publishes a versioned 13-scenario protocol rather than a competitor
+benchmark. The same 1,000-page dual-output fixture recorded these medians on two
+different hosts on 2026-08-24:
 
-- `examples/board_report.yaml`
-- `examples/executive_dashboard.yaml`
-- `examples/product_launch_brief.yaml`
-- `examples/talent_profile.yaml`
-- `examples/formatting_showcase.yaml`
-- `examples/named_styles_showcase.yaml`
-- `examples/visual_assets_showcase.yaml`
-- `examples/yaml_composition_showcase.yaml`
-- `examples/stress/stress_1000_pages.yaml`
+| Host | DOCX + PDF median | Peak memory |
+|---|---:|---:|
+| GitHub Actions, AMD EPYC / Linux x64 | 1.40 s | 152.4 MiB |
+| Apple M2 / macOS arm64 | 1.57 s | 334.1 MiB |
 
-More detail is in [examples/README.md](examples/README.md).
-
-## Template Gallery
-
-![RusDox template gallery](assets/template-gallery.png)
-
-Browse the gallery:
-
-- [Open Board Report in the playground](https://othmaneblial.github.io/rusdox/playground/?example=board-report)
-- [Open Executive Dashboard in the playground](https://othmaneblial.github.io/rusdox/playground/?example=executive-dashboard)
-- [Open Product Launch Brief in the playground](https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief)
-- [Open Talent Profile in the playground](https://othmaneblial.github.io/rusdox/playground/?example=talent-profile)
-- [Open Invoice in the playground](https://othmaneblial.github.io/rusdox/playground/?example=invoice)
-- [Open Meeting Notes in the playground](https://othmaneblial.github.io/rusdox/playground/?example=meeting-notes)
-- [docs/gallery.md](docs/gallery.md)
-- [examples/board_report.yaml](examples/board_report.yaml)
-- [examples/executive_dashboard.yaml](examples/executive_dashboard.yaml)
-- [examples/product_launch_brief.yaml](examples/product_launch_brief.yaml)
-- [examples/talent_profile.yaml](examples/talent_profile.yaml)
-
-## Docs
-
-The full documentation lives in [`docs/`](docs/README.md).
-
-Start here:
-
-- [docs/README.md](docs/README.md)
-- [docs/getting-started.md](docs/getting-started.md)
-- [docs/yaml-guide.md](docs/yaml-guide.md)
-- [docs/configuration.md](docs/configuration.md)
-- [docs/cli.md](docs/cli.md)
-- [docs/gallery.md](docs/gallery.md)
-- [docs/rust-api.md](docs/rust-api.md)
-- [docs/compatibility.md](docs/compatibility.md)
-- [docs/troubleshooting.md](docs/troubleshooting.md)
-
-## Configuration
-
-The easiest way to tweak styling is the CLI wizard, not manual TOML editing:
+The input hash, toolchain, flags, stage timings, output sizes, and raw reports
+are checked in. Different hosts are observations, not directly comparable
+scores. Reproduce the protocol with:
 
 ```bash
-rusdox config path
-rusdox config wizard --level basic
-rusdox config wizard --level advanced
+cargo build --release --locked --bin rusdox
+node scripts/run_benchmark_protocol.mjs --output target/benchmarks/local.json
 ```
 
-The install script creates a user config at `~/rusdox/config.toml` when it does not exist yet.
+Read the [methodology](docs/performance.md), [raw history](benchmarks/history.json),
+and [performance budgets](https://othmaneblial.github.io/rusdox/benchmarks/).
 
-Use it to control:
+## Known limits
 
-- fonts
-- spacing
-- colors
-- table defaults
-- output folders
-- PDF preview behavior
+- RusDox does not implement all of OOXML. Comments, tracked changes, vertical
+  cell merging, and arbitrary per-section geometry are outside the v1 contract.
+- Word-template PDF rendering covers a supported semantic subset; preserved
+  DOCX package parts can contain layout RusDox does not reproduce in PDF.
+- PDF output is not currently claimed as tagged PDF, PDF/UA, or PDF/A.
+- PDF pagination and line wrapping depend on available/configured fonts. Pin a
+  licensed font set when reproducible layout across hosts matters.
+- RTL and CJK text preservation are exercised, but advanced bidirectional
+  shaping and CJK line-breaking remain experimental.
+- The current viewer scorecard does not claim full Microsoft Word, LibreOffice,
+  or Acrobat fidelity. Test the exact viewer versions used by recipients.
+- The browser playground previews structure only; rendering remains local CLI
+  or library work.
+- Native release archives currently cover Linux x86_64 GNU, macOS x86_64/arm64,
+  and Windows x64. Other targets can build from source but are not release-smoked.
 
-If you want settings only for one project, create a local override:
+See [compatibility](docs/compatibility.md), the dated
+[viewer scorecard](docs/compatibility-scorecard.md), and
+[troubleshooting](docs/troubleshooting.md) before production rollout.
+
+## Documentation and examples
+
+- [Getting started](docs/getting-started.md)
+- [Word templates](docs/word-templates.md)
+- [YAML guide](docs/yaml-guide.md)
+- [CLI reference](docs/cli.md)
+- [Rust API](docs/rust-api.md)
+- [Production and batch rendering](docs/production.md)
+- [Security review](docs/security-review-v1.md)
+- [Gallery](docs/gallery.md) and [real example specs](examples/README.md)
+- [v1.0.0 release evidence](docs/releases/v1.0.0.md)
+
+## Roadmap
+
+The engine and v1 contracts are shipped. The next work is evidence-led:
+
+1. expand dated visual checks in Word, LibreOffice, and Acrobat;
+2. validate three external pilot workflows and publish sanitized outcomes;
+3. grow the signed template registry through real contributor demand;
+4. reassess the unmaintained font-stack dependencies before v1.2.0;
+5. add release targets such as Linux arm64 only when downstream demand justifies
+   the support and security surface;
+6. keep PDF conformance claims gated on validators and human accessibility
+   review.
+
+The complete rationale and historical gates are in [ROADMAP.md](ROADMAP.md).
+
+## Contributing
+
+Start with a fixture-backed
+[`good first issue`](https://github.com/OthmaneBlial/rusdox/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),
+then read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[architecture map](docs/architecture.md). The contributor lab prepares an
+isolated fixture and its acceptance checks:
 
 ```bash
-rusdox config wizard --path ./rusdox.toml --level basic
+node scripts/contributor_lab.mjs list
+node scripts/contributor_lab.mjs prepare protocol-inline-toml
 ```
 
-Load order is:
+Meaningful merged work is credited in [CONTRIBUTORS.md](CONTRIBUTORS.md) and the
+relevant release notes.
 
-- `./rusdox.toml`
-- `~/rusdox/config.toml`
-- built-in defaults
+## Security and privacy
 
-The goal is simple:
+Report vulnerabilities through the private process in [SECURITY.md](SECURITY.md).
+Do not attach confidential business documents to public issues. The threat
+model, resource limits, residual font-stack maintenance warnings, and release
+supply-chain controls are documented in the dated
+[v1 security review](docs/security-review-v1.md).
 
-- content lives in YAML
-- styling lives in config
-- speed lives in Rust
-
-## Advanced
-
-If you need full control, dynamic generation, or lower-level document work, RusDox still exposes the Rust API.
-
-See [docs/rust-api.md](docs/rust-api.md). The full docs index is in [docs/README.md](docs/README.md).
-
-That doc covers:
-
-- `cargo add rusdox`
-- direct Rust document construction
-- config-driven `Studio` usage
-- legacy `.rs` script execution
-- low-level API notes
-
-## Community
-
-If you want to contribute or report something:
-
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [SECURITY.md](SECURITY.md)
-- [SUPPORT.md](SUPPORT.md)
-- [GitHub Discussions](https://github.com/OthmaneBlial/rusdox/discussions)
-- [ROADMAP.md](ROADMAP.md)
-
-## Status
-
-The current foundation focuses on fast, typed support for:
-
-- paragraphs
-- runs and common text formatting
-- tables, rows, and cells
-- named paragraph, run, and table styles with inheritance
-- image, logo, signature, and SVG/chart blocks
-- plain-text extraction
-- config-driven composition
-- YAML/JSON/TOML document specs
-
-Current limitations are documented rather than hidden. High-level specs now expose shared page controls, visible headers/footers, page fields, links, bookmarks, TOC fields, footnotes, merged/rich cells, row pagination controls, and bounded nested tables. Comments, tracked changes, arbitrary per-section geometry, complex bidirectional shaping, and Word-native placeholder templates remain outside the current contract. Follow the [compatibility matrix](docs/compatibility.md) and [roadmap](ROADMAP.md) for exact boundaries and parity evidence.
-
-## Development
-
-```bash
-cargo fmt
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test
-```
+RusDox is licensed under the [MIT License](LICENSE).

@@ -19,16 +19,19 @@ different directory.
 macOS and Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh \
+  | RUSDOX_VERSION=v1.0.0 sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.ps1 -OutFile install-rusdox.ps1
+.\install-rusdox.ps1 -Version v1.0.0
 ```
 
-The installer adds the `rusdox` binary and creates `~/rusdox/config.toml` if it does not exist yet.
+The installer adds only the `rusdox` binary. Built-in defaults work immediately;
+run `rusdox config init --template` only when you want a user config.
 
 It does not clone the full GitHub repository.
 

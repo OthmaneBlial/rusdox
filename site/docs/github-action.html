@@ -63,18 +63,18 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   documents:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: OthmaneBlial/rusdox@main
+      - uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
         with:
           input: documents
-          github-token: ${{ secrets.GITHUB_TOKEN }}</code></pre>
-<p><code>main</code> exposes the action before the planned <code>v0.4.0</code> tag exists. Pin a full commit SHA for a production workflow today, then move to a reviewed release tag when the automation surface is released.</p>
+          upload-reports: &quot;false&quot;
+          comment: &quot;false&quot;</code></pre>
+<p>The example is read-only and pins the reviewed v1.0.0 commit rather than mutable <code>main</code>. Opt in to report retention with <code>upload-reports: &quot;true&quot;</code>. PR comments also require <code>pull-requests: write</code>, <code>comment: &quot;true&quot;</code>, and a <code>github-token</code>.</p>
 <h2 id="what-it-does">What it does</h2>
 <p>The action builds the native binary from the exact RusDox ref selected in <code>uses</code>, unless <code>binary</code> points to an already-built executable. It runs <code>rusdox validate --format json</code> first, converts source locations into native GitHub error and warning annotations, and only renders valid specs. It then runs <code>rusdox verify</code>, writes the same HTML/JSON/page evidence used locally, adds a Job Summary, and optionally upserts one concise pull-request comment.</p>
 <p>By default, only <code>reports/</code> is uploaded as an immutable GitHub Actions artifact for 14 days. Editable DOCX and rendered PDF files stay on the ephemeral runner. The PR comment contains filenames and check counts—not document contents—and no external diff service receives the files. Page snapshots and HTML reports can still reveal document content, so set <code>upload-reports: false</code> for confidential workloads that must not be retained even in the repository&#39;s Actions storage.</p>
@@ -84,7 +84,7 @@ jobs:
 <p>Outputs are <code>passed</code>, <code>reports-path</code>, and <code>artifact-url</code>. A validation or parity failure fails the workflow even though the evidence upload and PR summary still run.</p>
 <h2 id="visual-baselines">Visual baselines</h2>
 <p>Page snapshots are renderer- and platform-specific. Check in a baseline from the same runner image and pass its directory explicitly:</p>
-<pre><code class="language-yaml">      - uses: OthmaneBlial/rusdox@main
+<pre><code class="language-yaml">      - uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
         with:
           input: documents/monthly.yaml
           visual-baseline: tests/rusdox-pages/linux-x86_64

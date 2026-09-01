@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: OthmaneBlial/rusdox@main
+      - uses: OthmaneBlial/rusdox@c74a0f44bf03065fe5ca4d4d215bd78cac59f8b5 # v1.0.0
         with:
           input: documents/release-notes.yaml
           output-root: artifacts/release-notes
