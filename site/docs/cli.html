@@ -52,9 +52,11 @@
     <a class="docs-nav-home" href="../index.html">← Back to overview</a>
   </aside>
           <article class="docs-article docs-static-article">
-            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#parity-verification">Parity Verification</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#schema-and-migration">Schema and migration</a></li><li class="toc-level-2"><a href="#development-feedback-loop">Development feedback loop</a></li><li class="toc-level-2"><a href="#local-integration-protocol">Local integration protocol</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#word-native-templates">Word-native templates</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
+            <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#most-common-commands">Most Common Commands</a></li><li class="toc-level-2"><a href="#verified-demo">Verified demo</a></li><li class="toc-level-2"><a href="#parity-verification">Parity Verification</a></li><li class="toc-level-2"><a href="#validation">Validation</a></li><li class="toc-level-2"><a href="#schema-and-migration">Schema and migration</a></li><li class="toc-level-2"><a href="#development-feedback-loop">Development feedback loop</a></li><li class="toc-level-2"><a href="#local-integration-protocol">Local integration protocol</a></li><li class="toc-level-2"><a href="#benchmarking">Benchmarking</a></li><li class="toc-level-2"><a href="#word-native-templates">Word-native templates</a></li><li class="toc-level-2"><a href="#output-control">Output Control</a></li><li class="toc-level-2"><a href="#config-commands">Config Commands</a></li><li class="toc-level-2"><a href="#local-project-config">Local Project Config</a></li><li class="toc-level-2"><a href="#other-supported-spec-formats">Other Supported Spec Formats</a></li><li class="toc-level-2"><a href="#advanced-script-mode">Advanced Script Mode</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox renders document specs into <code>.docx</code> and <code>.pdf</code>, validates them before render, can rebuild while you edit, and can benchmark the full pipeline.</p>
 <h2 id="most-common-commands">Most Common Commands</h2>
+<p>Create a self-contained first result with DOCX, PDF, and parity evidence:</p>
+<pre><code class="language-bash">rusdox demo</code></pre>
 <p>Render one document:</p>
 <pre><code class="language-bash">rusdox mydoc.yaml</code></pre>
 <p>Render every spec in a folder:</p>
@@ -71,6 +73,18 @@
 <pre><code class="language-bash">rusdox verify mydoc.yaml</code></pre>
 <p>Generate the authoring schema or migrate a legacy spec:</p>
 <p>rusdox schema --output rusdox-spec-v1.schema.json rusdox migrate legacy.yaml --in-place rusdox migrate current.yaml --check</p>
+<h2 id="verified-demo">Verified demo</h2>
+<p><code>rusdox demo</code> writes one polished product-launch brief and its verification evidence beneath a new <code>rusdox-demo/</code> directory:</p>
+<pre><code class="language-text">rusdox-demo/
+├── product-launch-brief.yaml
+├── rusdox.toml
+├── generated/product-launch-brief.docx
+├── rendered/product-launch-brief.pdf
+└── reports/
+    ├── product-launch-brief-parity.html
+    ├── product-launch-brief-parity.json
+    └── product-launch-brief-pages/</code></pre>
+<p>Choose another destination with <code>rusdox demo my-first-report</code>. The command refuses any path that already exists; there is no force flag and no overwrite path. The final terminal output prints the exact <code>rusdox verify</code> command to run after editing the generated YAML.</p>
 <h2 id="parity-verification">Parity Verification</h2>
 <p>Verify one file:</p>
 <pre><code class="language-bash">rusdox verify mydoc.yaml</code></pre>

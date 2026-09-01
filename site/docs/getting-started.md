@@ -2,6 +2,18 @@
 
 This is the fastest way to go from nothing to a generated `.docx` and `.pdf`.
 
+Already installed? Create a complete, self-contained result first:
+
+```bash
+rusdox demo
+```
+
+This creates a new `rusdox-demo/` directory containing an editable YAML spec,
+a DOCX, a native PDF, deterministic page snapshots, and HTML/JSON parity
+reports. It refuses to use an existing destination, so it cannot overwrite a
+previous demo or your own files. Use `rusdox demo my-first-report` to choose a
+different directory.
+
 ## 1. Install RusDox
 
 macOS and Linux:

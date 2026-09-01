@@ -147,6 +147,46 @@ fn init_doc_creates_template_file() {
 }
 
 #[test]
+fn demo_creates_verified_artifacts_and_refuses_an_existing_destination() {
+    let temp = tempdir().expect("temp dir");
+    let demo_root = temp.path().join("first-result");
+    let demo_root_arg = demo_root.to_string_lossy();
+    let output = run_cli(&["demo", demo_root_arg.as_ref()], temp.path());
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    for relative in [
+        "product-launch-brief.yaml",
+        "rusdox.toml",
+        "generated/product-launch-brief.docx",
+        "rendered/product-launch-brief.pdf",
+        "reports/product-launch-brief-parity.html",
+        "reports/product-launch-brief-parity.json",
+        "reports/product-launch-brief-pages/page-001.png",
+    ] {
+        let path = demo_root.join(relative);
+        assert!(path.is_file(), "expected {}", path.display());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("parity verification passed"));
+    assert!(stdout.contains("Demo ready"));
+    assert!(stdout.contains("rusdox verify"));
+
+    let spec_before = fs::read(demo_root.join("product-launch-brief.yaml")).expect("demo spec");
+    let repeated = run_cli(&["demo", demo_root_arg.as_ref()], temp.path());
+    assert!(!repeated.status.success());
+    assert!(String::from_utf8_lossy(&repeated.stderr).contains("already exists"));
+    assert_eq!(
+        fs::read(demo_root.join("product-launch-brief.yaml")).expect("preserved demo spec"),
+        spec_before
+    );
+}
+
+#[test]
 fn init_script_creates_template_file() {
     let temp = tempdir().expect("temp dir");
     let script_path = temp.path().join("mydoc.rs");

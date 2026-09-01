@@ -550,6 +550,18 @@ Source: https://othmaneblial.github.io/rusdox/docs/getting-started.html
 
 This is the fastest way to go from nothing to a generated `.docx` and `.pdf`.
 
+Already installed? Create a complete, self-contained result first:
+
+```bash
+rusdox demo
+```
+
+This creates a new `rusdox-demo/` directory containing an editable YAML spec,
+a DOCX, a native PDF, deterministic page snapshots, and HTML/JSON parity
+reports. It refuses to use an existing destination, so it cannot overwrite a
+previous demo or your own files. Use `rusdox demo my-first-report` to choose a
+different directory.
+
 ## 1. Install RusDox
 
 macOS and Linux:
@@ -2313,6 +2325,12 @@ RusDox renders document specs into `.docx` and `.pdf`, validates them before ren
 
 ## Most Common Commands
 
+Create a self-contained first result with DOCX, PDF, and parity evidence:
+
+```bash
+rusdox demo
+```
+
 Render one document:
 
 ```bash
@@ -2360,6 +2378,28 @@ Generate the authoring schema or migrate a legacy spec:
     rusdox schema --output rusdox-spec-v1.schema.json
     rusdox migrate legacy.yaml --in-place
     rusdox migrate current.yaml --check
+
+## Verified demo
+
+`rusdox demo` writes one polished product-launch brief and its verification
+evidence beneath a new `rusdox-demo/` directory:
+
+```text
+rusdox-demo/
+├── product-launch-brief.yaml
+├── rusdox.toml
+├── generated/product-launch-brief.docx
+├── rendered/product-launch-brief.pdf
+└── reports/
+    ├── product-launch-brief-parity.html
+    ├── product-launch-brief-parity.json
+    └── product-launch-brief-pages/
+```
+
+Choose another destination with `rusdox demo my-first-report`. The command
+refuses any path that already exists; there is no force flag and no overwrite
+path. The final terminal output prints the exact `rusdox verify` command to run
+after editing the generated YAML.
 
 ## Parity Verification
 
@@ -4840,6 +4880,12 @@ All notable user-facing changes to RusDox are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+
+- A non-destructive `rusdox demo [directory]` first-run path that writes a
+  polished spec, editable DOCX, native PDF, deterministic page snapshots, and
+  HTML/JSON parity evidence, then prints the exact command for the next edit.
 
 ## [1.0.0] - 2026-08-24
 

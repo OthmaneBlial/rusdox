@@ -4,6 +4,12 @@ RusDox renders document specs into `.docx` and `.pdf`, validates them before ren
 
 ## Most Common Commands
 
+Create a self-contained first result with DOCX, PDF, and parity evidence:
+
+```bash
+rusdox demo
+```
+
 Render one document:
 
 ```bash
@@ -51,6 +57,28 @@ Generate the authoring schema or migrate a legacy spec:
     rusdox schema --output rusdox-spec-v1.schema.json
     rusdox migrate legacy.yaml --in-place
     rusdox migrate current.yaml --check
+
+## Verified demo
+
+`rusdox demo` writes one polished product-launch brief and its verification
+evidence beneath a new `rusdox-demo/` directory:
+
+```text
+rusdox-demo/
+├── product-launch-brief.yaml
+├── rusdox.toml
+├── generated/product-launch-brief.docx
+├── rendered/product-launch-brief.pdf
+└── reports/
+    ├── product-launch-brief-parity.html
+    ├── product-launch-brief-parity.json
+    └── product-launch-brief-pages/
+```
+
+Choose another destination with `rusdox demo my-first-report`. The command
+refuses any path that already exists; there is no force flag and no overwrite
+path. The final terminal output prints the exact `rusdox verify` command to run
+after editing the generated YAML.
 
 ## Parity Verification
 

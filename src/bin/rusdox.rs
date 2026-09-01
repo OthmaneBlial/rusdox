@@ -36,6 +36,7 @@ const DEFAULT_TEMPLATE_REGISTRY_PUBLIC_KEY: &str =
     "37bcb0f607f243df3029e6d7c8b541a8eec540ef79a0e7b8aa232f191af4d828";
 const MAX_REGISTRY_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_TEMPLATE_DOWNLOAD_BYTES: u64 = 64 * 1024 * 1024;
+const DEMO_SPEC_YAML: &str = include_str!("../../examples/product_launch_brief.yaml");
 
 #[derive(Debug, Parser)]
 #[command(
@@ -73,6 +74,8 @@ enum Commands {
         #[command(subcommand)]
         command: ConfigCommand,
     },
+    /// Create a self-contained DOCX, PDF, and parity-proof demo.
+    Demo(DemoArgs),
     /// Create a starter document spec compatible with `rusdox mydoc.yaml`.
     InitDoc(InitDocArgs),
     /// Create a starter script compatible with `rusdox mydoc.rs`.
@@ -325,6 +328,13 @@ struct InitDocArgs {
     /// Overwrite if the spec already exists.
     #[arg(long)]
     force: bool,
+}
+
+#[derive(Debug, Args)]
+struct DemoArgs {
+    /// New directory that will receive the spec, config, outputs, and reports.
+    #[arg(default_value = "rusdox-demo", value_name = "DIRECTORY")]
+    directory: PathBuf,
 }
 
 #[derive(Debug, Args)]
@@ -862,6 +872,7 @@ fn run() -> Result<()> {
     if let Some(command) = cli.command {
         return match command {
             Commands::Config { command } => run_config_command(command),
+            Commands::Demo(args) => run_demo(args),
             Commands::InitDoc(args) => init_doc(args),
             Commands::InitScript(args) => init_script(args),
             Commands::Schema(args) => run_schema(args),
@@ -889,6 +900,64 @@ fn run() -> Result<()> {
         cli.with_pdf,
         cli.release,
     )
+}
+
+fn run_demo(args: DemoArgs) -> Result<()> {
+    let output_root = to_absolute_path(&args.directory)?;
+    if output_root.exists() {
+        return Err(DocxError::Parse(format!(
+            "demo destination already exists at {}; choose a new directory so RusDox never overwrites your files",
+            output_root.display()
+        )));
+    }
+
+    fs::create_dir_all(&output_root)?;
+    let spec_path = output_root.join("product-launch-brief.yaml");
+    let config_path = output_root.join("rusdox.toml");
+    atomic_write_file(&spec_path, DEMO_SPEC_YAML.as_bytes())?;
+    RusdoxConfig::default().save_to_path(&config_path)?;
+
+    println!(
+        "Creating a verified RusDox demo in {}",
+        output_root.display()
+    );
+    run_verify(VerifyArgs {
+        input: spec_path.clone(),
+        config: Some(config_path.clone()),
+        output_root: output_root.clone(),
+        visual_baseline: None,
+        visual_threshold: 0.0,
+        format: ReportFormat::Text,
+    })?;
+
+    println!("\nDemo ready. Start with:");
+    println!("  {}", spec_path.display());
+    println!(
+        "  {}",
+        output_root
+            .join("generated/product-launch-brief.docx")
+            .display()
+    );
+    println!(
+        "  {}",
+        output_root
+            .join("rendered/product-launch-brief.pdf")
+            .display()
+    );
+    println!(
+        "  {}",
+        output_root
+            .join("reports/product-launch-brief-parity.html")
+            .display()
+    );
+    println!("\nEdit the YAML, then rerun:");
+    println!(
+        "  rusdox verify {} --config {} --output-root {}",
+        spec_path.display(),
+        config_path.display(),
+        output_root.display()
+    );
+    Ok(())
 }
 
 fn init_doc(args: InitDocArgs) -> Result<()> {

@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- A non-destructive `rusdox demo [directory]` first-run path that writes a
+  polished spec, editable DOCX, native PDF, deterministic page snapshots, and
+  HTML/JSON parity evidence, then prints the exact command for the next edit.
+
 ## [1.0.0] - 2026-08-24
 
 ### Added
