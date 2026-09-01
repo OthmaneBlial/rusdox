@@ -11,6 +11,7 @@ const files = walk(siteRoot);
 const htmlFiles = files.filter((file) => file.endsWith(".html"));
 const problems = [];
 const sitemap = fs.readFileSync(path.join(siteRoot, "sitemap.xml"), "utf8");
+const styles = fs.readFileSync(path.join(siteRoot, "styles.css"), "utf8");
 const sitemapUrls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
 const sitemapHtml = new Set(sitemapUrls.map(publicUrlToFile).filter((file) => file?.endsWith(".html")));
 
@@ -80,6 +81,10 @@ for (const match of llmsFull.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
 
 if (/data-(?:doc-preview|example-grid)/.test(fs.readFileSync(path.join(siteRoot, "index.html"), "utf8"))) {
   problems.push("index.html: critical homepage content must be present without JavaScript");
+}
+
+if (!styles.includes("grid-template-columns: repeat(3, minmax(0, 1fr));")) {
+  problems.push("styles.css: mobile primary navigation must wrap into a visible three-column grid");
 }
 
 if (problems.length) {

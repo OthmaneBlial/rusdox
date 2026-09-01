@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- The public site's primary navigation now wraps into a complete two-row grid
+  on narrow screens instead of clipping the Templates and GitHub links.
+
 ## [1.1.0] - 2026-09-01
 
 ### Added

@@ -1654,10 +1654,11 @@ existing destination rather than merging into or overwriting user files.
   before this final receipt update; a final publication follows this commit.
 - GitHub metadata now describes the editable DOCX, directly rendered PDF, and
   parity-evidence wedge and uses focused Rust/document/template/privacy topics.
-- Fresh rendered Chrome screenshots could not be collected because browser
-  control repeatedly timed out after the local page loaded. The release does
-  not convert static overflow checks into a visual-browser claim; live desktop
-  and 390 px signoff remains explicit publication evidence to complete.
+- Fresh Chrome rendering passed on desktop and at an exact 390 × 844 CSS-pixel
+  viewport with no console errors and `scrollWidth === innerWidth`. The first
+  narrow-screen inspection exposed clipped primary-navigation links; the
+  post-release main-branch fix now presents all six destinations in a visible
+  two-row grid and the repeated 390 px screenshot passed.
 
 ## Release intent
 
@@ -4895,6 +4896,11 @@ All notable user-facing changes to RusDox are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- The public site's primary navigation now wraps into a complete two-row grid
+  on narrow screens instead of clipping the Templates and GitHub links.
 
 ## [1.1.0] - 2026-09-01
 

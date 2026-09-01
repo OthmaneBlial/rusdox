@@ -1222,15 +1222,19 @@ main {
   }
 
   .site-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .site-nav a {
-    flex: 0 0 auto;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 8px;
+    text-align: center;
   }
 
   .docs-page-head {
