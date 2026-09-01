@@ -7,3 +7,4 @@ registry/*.json text eol=lf
 templates/**/*.json text eol=lf
 template-evidence/**/*.json text eol=lf
 template-evidence/**/*.html text eol=lf
+contributor-fixtures/**/*.http text eol=lf

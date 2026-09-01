@@ -31,6 +31,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   loopback HTTP regression coverage for unsupported media types in
   [#40](https://github.com/OthmaneBlial/rusdox/pull/40).
 
+### Fixed
+
+- The raw HTTP fixture test now normalizes both LF and CRLF checkouts before
+  constructing wire-format CRLF, so the contributor regression passes on
+  Windows as well as Linux and macOS.
+
 ## [1.0.0] - 2026-08-24
 
 ### Added

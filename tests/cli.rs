@@ -34,6 +34,13 @@ fn spawn_cli(args: &[&str], cwd: &Path) -> std::process::Child {
         .expect("failed to spawn rusdox binary")
 }
 
+fn normalize_http_fixture(input: &str) -> String {
+    input
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .replace('\n', "\r\n")
+}
+
 fn script_source() -> &'static str {
     r#"use rusdox::{Document, Paragraph, Run};
 use rusdox::studio::Studio;
@@ -1330,7 +1337,7 @@ fn loopback_http_protocol_rejects_non_json_content_type() {
             .join("contributor-fixtures/http/wrong-content-type.http"),
     )
     .expect("read HTTP fixture");
-    let request = fixture.replace('\n', "\r\n");
+    let request = normalize_http_fixture(&fixture);
     let mut stream = TcpStream::connect(("127.0.0.1", port)).expect("connect");
     stream
         .set_read_timeout(Some(Duration::from_secs(5)))
@@ -1345,6 +1352,14 @@ fn loopback_http_protocol_rejects_non_json_content_type() {
     assert_eq!(parsed["ok"], false);
     assert_eq!(parsed["error"]["code"], "unsupported_media_type");
     assert!(child.wait().expect("server exit").success());
+}
+
+#[test]
+fn raw_http_fixture_normalization_is_checkout_independent() {
+    let lf = "POST / HTTP/1.1\nContent-Length: 2\n\n{}\n";
+    let expected = "POST / HTTP/1.1\r\nContent-Length: 2\r\n\r\n{}\r\n";
+    assert_eq!(normalize_http_fixture(lf), expected);
+    assert_eq!(normalize_http_fixture(&lf.replace('\n', "\r\n")), expected);
 }
 
 #[test]
