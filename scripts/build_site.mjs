@@ -27,6 +27,7 @@ const pages = [
   ["docs/stability.md", "docs/stability.html", "Stability and support", "Contract", "Understand v1 SemVer guarantees, deprecation windows, MSRV, output stability, and supported releases.", "Trust & operations"],
   ["docs/release-checklist.md", "docs/release-checklist.html", "Release checklist", "Operations", "Require contract, parity, compatibility, performance, supply-chain, and publication evidence for every release.", "Trust & operations"],
   ["docs/releases/v1.0.0.md", "docs/releases/v1.0.0.html", "v1.0.0 release evidence", "Release", "Inspect the exact contract, test, parity, security, reproducibility, registry, and publication gates for RusDox v1.0.0.", "Trust & operations"],
+  ["docs/releases/v1.1.0.md", "docs/releases/v1.1.0.html", "v1.1.0 release evidence", "Release", "Inspect the demo, adoption, installation, site, SEO, test, and publication gates for RusDox v1.1.0.", "Trust & operations"],
   ["docs/wasm-feasibility.md", "docs/wasm-feasibility.html", "Browser rendering feasibility", "Decision", "Understand what the browser playground proves, why edited files still use the CLI, and the gates for a full WASM renderer.", "Trust & operations"],
   ["docs/configuration.md", "docs/configuration.html", "Configuration", "Guide", "Control typography, spacing, color, tables, output paths, and PDF rendering.", "Authoring"],
   ["docs/word-templates.md", "docs/word-templates.html", "Word-native templates", "Guide", "Turn designer-authored DOCX files and JSON data into editable Word, native PDF, and parity evidence.", "Authoring"],

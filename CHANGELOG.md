@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-01
+
 ### Added
 
 - A non-destructive `rusdox demo [directory]` first-run path that writes a
@@ -19,6 +21,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   action.
 - GitHub Action documentation and recipes now pin the immutable v1.0.0 commit,
   and the minimal workflow starts without write permissions or artifact upload.
+- The README and public site now lead with RusDox's dual-output and parity
+  wedge, keep critical examples available without JavaScript, publish canonical
+  template evidence, and expose a link-complete AI-readable documentation corpus.
 
 ### Contributors
 
@@ -102,7 +107,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Repository, documentation, CI, and security references now consistently target the `main` branch.
 - CI verifies the exact locked dependency graph and the publishable crate package.
 
-[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/OthmaneBlial/rusdox/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/OthmaneBlial/rusdox/releases/tag/v0.1.0

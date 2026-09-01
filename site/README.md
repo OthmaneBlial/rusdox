@@ -59,15 +59,14 @@ the tab; the page shows the exact CLI command needed to produce verified files.
 macOS or Linux native archive (x86_64 Linux, Intel Mac, or Apple Silicon):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh \
-  | RUSDOX_VERSION=v1.0.0 sh
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh | sh
 ```
 
 Windows x64 PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.ps1 -OutFile install-rusdox.ps1
-.\install-rusdox.ps1 -Version v1.0.0
+.\install-rusdox.ps1
 ```
 
 Both installers verify the selected release archive against its published

@@ -143,15 +143,14 @@ the tab; the page shows the exact CLI command needed to produce verified files.
 macOS or Linux native archive (x86_64 Linux, Intel Mac, or Apple Silicon):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh \
-  | RUSDOX_VERSION=v1.0.0 sh
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh | sh
 ```
 
 Windows x64 PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.ps1 -OutFile install-rusdox.ps1
-.\install-rusdox.ps1 -Version v1.0.0
+.\install-rusdox.ps1
 ```
 
 Both installers verify the selected release archive against its published
@@ -446,15 +445,14 @@ different directory.
 macOS and Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh \
-  | RUSDOX_VERSION=v1.0.0 sh
+curl -fsSL https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.sh | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/2b3ca4eda4ab8389dc0e54198811bbaa3c368e44/scripts/install.ps1 -OutFile install-rusdox.ps1
-.\install-rusdox.ps1 -Version v1.0.0
+.\install-rusdox.ps1
 ```
 
 The installer adds only the `rusdox` binary. Built-in defaults work immediately;
@@ -1545,6 +1543,105 @@ commit passed the three-OS branch proof.
 The Windows target explicitly enables the MSVC linker's reproducible mode. A
 byte mismatch fails the job and retains both executables for seven days as a
 diagnostic artifact; the workflow never converts a mismatch into a warning.
+
+---
+
+# v1.1.0 release evidence
+
+Source: https://othmaneblial.github.io/rusdox/docs/releases/v1.1.0.html
+
+Prepared on 2026-09-01 for the source commit tagged `v1.1.0`. This release adds
+the verified first-run demo and tightens the public adoption, installation,
+documentation, and discoverability surfaces without changing the frozen v1
+document, template, renderer, or protocol contracts.
+
+## Contract identity
+
+| Surface | Release value |
+|---|---:|
+| Rust crate and CLI | `1.1.0` |
+| Document spec | `1` |
+| Word template syntax | `1` |
+| Renderer API | `1` |
+| Local protocol | `1` |
+| MSRV | Rust `1.88.0` |
+
+The release is additive. `rusdox demo [directory]` composes existing authoring,
+rendering, and 21-check parity APIs into a safe first success; it refuses any
+existing destination rather than merging into or overwriting user files.
+
+## Local release-candidate evidence
+
+- 239 Rust tests passed: 160 library, 10 binary, 38 CLI, 25 integration, and 6
+  rustdoc tests. The CLI count includes artifact creation and overwrite refusal
+  for `rusdox demo`.
+- `cargo fmt --check` and strict all-target/all-feature Clippy passed for
+  `rusdox 1.1.0`.
+- `cargo package` and `cargo publish --dry-run` packaged and verified 122 files
+  at 1.7 MiB without uploading.
+- A manual isolated `rusdox demo` run produced a non-empty editable DOCX,
+  native PDF, HTML/JSON parity evidence, and deterministic page snapshot with
+  all 21 checks passing; its temporary directory was then removed.
+- The checksum-verifying Unix installer fixture installed and executed
+  `rusdox 1.1.0` while proving that no user configuration file was created.
+  Windows installer execution remains an owned tag-workflow gate.
+- `cargo audit --deny unsound` passed with no vulnerability or unsoundness
+  rejection. The two allowed unmaintained warnings for `rustybuzz 0.20.1` and
+  `ttf-parser 0.25.1` retain their dated v1.2.0/2026-12-01 review deadline.
+- The complete generated-site gate passed with 61 HTML pages and 314 bundled
+  files. It checks every internal file reference, all public canonical targets,
+  every sitemap target, the JavaScript-independent homepage evidence, and all
+  Markdown targets in `llms-full.txt`.
+- Playground, signed registries, GitHub Action, Node/Python/Go integration,
+  stable-contract, 31-capability compatibility, accessibility, benchmark,
+  reproducible-packaging, contributor, and security source gates passed.
+
+## Adoption and discoverability changes
+
+- `rusdox demo` is now the first README and getting-started success path.
+- Release installers no longer create or modify user configuration; explicit
+  config initialization remains available after install.
+- GitHub Action examples pin the reviewed v1.0.0 commit and default to no write
+  permission, report retention, or PR comment.
+- The README names the exact dual-output/parity wedge, links real artifacts,
+  presents versioned benchmark evidence, and keeps incomplete viewer and PDF
+  conformance work explicit.
+- Homepage documentation and six real example cards are present in HTML before
+  JavaScript runs. External font requests were removed, real output is visible
+  above the fold, and the obsolete sub-second claim was replaced by the
+  checked-in host-separated protocol.
+- The sitemap now includes the playground, signed v1 registry, performance
+  budgets, and three canonical template parity reports. Duplicate legacy and
+  evidence copies are `noindex,follow`, and their canonical destinations are
+  shipped in the bundle.
+- The AI-readable documentation corpus uses absolute public or repository URLs
+  and has no unresolved relative Markdown links.
+
+## Publication gates
+
+- Source milestones were pushed progressively to `main` while GitHub Actions
+  remained intentionally paused in `.github/workflows-disabled/`.
+- The refreshed site bundle was pushed to the Pages repository at
+  [`e856f43cacce76cffd3cf8a920c0d417d6712bad`](https://github.com/OthmaneBlial/OthmaneBlial.github.io/commit/e856f43cacce76cffd3cf8a920c0d417d6712bad).
+- GitHub metadata now describes the editable DOCX, directly rendered PDF, and
+  parity-evidence wedge and uses focused Rust/document/template/privacy topics.
+- Fresh rendered Chrome screenshots could not be collected because browser
+  control repeatedly timed out after the local page loaded. The release does
+  not convert static overflow checks into a visual-browser claim; live desktop
+  and 390 px signoff remains explicit publication evidence to complete.
+- Branch CI, CodeQL, cross-platform reproducibility, SemVer, crates.io,
+  GitHub Release assets, provenance attestations, Windows installer, and live
+  CDN propagation are tag-time or post-tag gates. They must be linked here only
+  after they complete.
+
+## Release intent
+
+This release does not claim full OOXML coverage, universal Word/PDF viewer
+fidelity, PDF/A, PDF/UA, tagged PDF, or complete product parity with Pandoc,
+Typst, Docxtemplater, or lower-level DOCX libraries. Its claim is narrower and
+testable: supported structured specs or Word templates can produce an editable
+DOCX, directly rendered PDF, and inspectable parity evidence in one local
+pipeline.
 
 ---
 
@@ -4774,6 +4871,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-01
+
 ### Added
 
 - A non-destructive `rusdox demo [directory]` first-run path that writes a
@@ -4787,6 +4886,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   action.
 - GitHub Action documentation and recipes now pin the immutable v1.0.0 commit,
   and the minimal workflow starts without write permissions or artifact upload.
+- The README and public site now lead with RusDox's dual-output and parity
+  wedge, keep critical examples available without JavaScript, publish canonical
+  template evidence, and expose a link-complete AI-readable documentation corpus.
 
 ### Contributors
 
@@ -4870,7 +4972,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Repository, documentation, CI, and security references now consistently target the `main` branch.
 - CI verifies the exact locked dependency graph and the publishable crate package.
 
-[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/OthmaneBlial/rusdox/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/OthmaneBlial/rusdox/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/OthmaneBlial/rusdox/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/OthmaneBlial/rusdox/releases/tag/v0.1.0
