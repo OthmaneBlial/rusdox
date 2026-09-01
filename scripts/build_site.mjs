@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteRoot = path.join(root, "site");
 const baseUrl = "https://othmaneblial.github.io/rusdox/";
+const siteAssetVersion = "1.1.0-r2";
 const checkOnly = process.argv.includes("--check");
 const publicExtras = [
   "playground/",
@@ -279,7 +280,7 @@ function renderPage(page, rendered) {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#b85c30" />
     <link rel="icon" href="${prefix}assets/rusdox-mark.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="${prefix}styles.css?v=1.1.0" />
+    <link rel="stylesheet" href="${prefix}styles.css?v=${siteAssetVersion}" />
     <script type="application/ld+json">${structuredData}</script>
   </head>
   <body data-page="docs-static">
