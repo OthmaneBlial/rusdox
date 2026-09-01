@@ -6,12 +6,12 @@ rust-version = "1.88"
 default-run = "rusdox"
 autobins = false
 license = "MIT"
-description = "Generate DOCX and PDF from YAML at Rust speed."
+description = "Generate editable DOCX, native PDF, and parity evidence from structured data or Word templates."
 repository = "https://github.com/OthmaneBlial/rusdox"
 homepage = "https://othmaneblial.github.io/rusdox/"
 documentation = "https://docs.rs/rusdox"
 readme = "README.md"
-keywords = ["docx", "pdf", "yaml", "ooxml", "documents"]
+keywords = ["docx", "pdf", "document-generation", "templates", "ooxml"]
 categories = ["command-line-utilities", "parser-implementations", "encoding"]
 include = [
   "/src/**",

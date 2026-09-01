@@ -509,20 +509,27 @@ These ideas would dilute the wedge before it is proven:
 - a giant uncurated template marketplace;
 - benchmark marketing without reproducible data and visual-quality evidence.
 
-## Next 10 issues to open
+## Current evidence priorities
 
-These are the best first concrete issues, in order:
+The original ten implementation issues are complete. The next milestones are
+deliberately driven by adoption and independent evidence rather than feature
+count:
 
-1. **Release v0.1.0 and smoke-test every advertised installer.**
-2. **Publish a lean crates.io package and verify docs.rs.**
-3. **Replace every `master` link with `main` and repair the CI badge.**
-4. **Generate static, linkable documentation pages.**
-5. **Define the DOCX/PDF parity matrix and report format.**
-6. **Make PDF honor document page setup, headers, footers, and numbering.**
-7. **Add hyperlinks, bookmarks, explicit breaks, and viewer fixtures.**
-8. **Generate JSON Schema and line/column validation diagnostics.**
-9. **Prototype `rusdox template inspect/render` on an existing DOCX.**
-10. **Prototype the local/WASM playground and document feasibility findings.**
+1. **Expand dated viewer checks.** Exercise current Microsoft Word,
+   LibreOffice, Preview, and Acrobat versions on representative artifacts and
+   publish the exact host/viewer matrix.
+2. **Complete three external pilots.** Validate recurring reports, commercial
+   documents, and designer-owned Word templates; publish sanitized outcomes and
+   the gaps those users actually encountered.
+3. **Grow the registry through contributors.** Add templates only when a real
+   maintainer and license are known, with checked parity evidence for every
+   entry.
+4. **Reassess the font stack.** Resolve or renew the dated maintenance exception
+   for `rustybuzz` and `ttf-parser` before v1.2.0 or 2026-12-01.
+5. **Add release targets from demand.** Linux arm64 or another target graduates
+   only with a downstream user, repeatable smoke host, and provenance path.
+6. **Keep conformance gated.** PDF/A, PDF/UA, and tagged-PDF claims remain false
+   until exact automated validators and human accessibility review pass.
 
 ## Definition of success
 

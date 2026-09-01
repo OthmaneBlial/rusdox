@@ -41,7 +41,8 @@ rusdox config wizard --level basic
 rusdox config wizard --level advanced
 ```
 
-The installer creates `~/rusdox/config.toml` if it does not exist yet.
+The installer writes only the binary. RusDox uses built-in defaults until you
+explicitly run `rusdox config init --template` or a config wizard.
 
 For per-project overrides:
 

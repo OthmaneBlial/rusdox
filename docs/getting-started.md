@@ -28,7 +28,8 @@ Windows PowerShell:
 irm https://raw.githubusercontent.com/OthmaneBlial/rusdox/main/scripts/install.ps1 | iex
 ```
 
-The installer adds the `rusdox` binary and creates `~/rusdox/config.toml` if it does not exist yet.
+The installer adds only the `rusdox` binary. Built-in defaults work immediately;
+run `rusdox config init --template` only when you want a user config.
 
 It does not clone the full GitHub repository.
 

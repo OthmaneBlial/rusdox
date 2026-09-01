@@ -12,6 +12,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   polished spec, editable DOCX, native PDF, deterministic page snapshots, and
   HTML/JSON parity evidence, then prints the exact command for the next edit.
 
+### Changed
+
+- Release installers now install only the binary and leave user configuration
+  untouched; configuration remains an explicit `rusdox config init` or wizard
+  action.
+- GitHub Action documentation and recipes now pin the immutable v1.0.0 commit,
+  and the minimal workflow starts without write permissions or artifact upload.
+
+### Contributors
+
+- [k4its1t](https://github.com/k4its1t) — first external contribution, adding
+  loopback HTTP regression coverage for unsupported media types in
+  [#40](https://github.com/OthmaneBlial/rusdox/pull/40).
+
 ## [1.0.0] - 2026-08-24
 
 ### Added
@@ -43,14 +57,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Required visual alt text, BCP 47-style document language metadata in DOCX and PDF, explicit accessibility parity checks, font embedding/licensing evidence, and machine-gated RTL/CJK graduation.
 - A sourced tagged PDF, PDF/UA, and PDF/A implementation decision that keeps every conformance claim false until exact validator and human review gates pass.
 - An immutable, separately keyed v1 template-registry channel with 1.x compatibility bounds and 21-check template evidence, while retaining the legacy channel for 0.1.1 clients.
-
-### Contributors
-
-- Othmane Blial — maintainer and author of the current unreleased document engine, parity, distribution, integration, and contributor-experience work.
-- Dependabot — automated dependency update pull requests.
-
-No external human contribution has landed in this unreleased cycle yet. New
-contributors will be added here when a meaningful pull request is merged.
 
 ### Changed
 

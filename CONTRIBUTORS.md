@@ -6,6 +6,7 @@ requests. No contributor names are invented for marketing.
 ## People
 
 - [Othmane Blial](https://github.com/OthmaneBlial) — creator and current maintainer; document engine, CLI, parity lab, templates, documentation, distribution, and release infrastructure.
+- [k4its1t](https://github.com/k4its1t) — loopback HTTP regression coverage for unsupported media types in [#40](https://github.com/OthmaneBlial/rusdox/pull/40), RusDox's first merged external contribution.
 
 ## Automation
 

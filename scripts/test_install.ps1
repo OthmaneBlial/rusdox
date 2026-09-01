@@ -53,6 +53,10 @@ try {
     if ($output -notmatch [regex]::Escape($packageVersion)) {
         throw "Installed binary reported unexpected version: $output"
     }
+    $configPath = & (Join-Path $installDir "rusdox.exe") config path
+    if (Test-Path $configPath) {
+        throw "Installer created an unexpected config at $configPath"
+    }
     Write-Host "Windows installer fixture passed for $target."
 } finally {
     if ($server -and -not $server.HasExited) {

@@ -110,18 +110,10 @@ mkdir -p "$INSTALL_DIR"
 RUSDOX_BIN="$INSTALL_DIR/rusdox"
 install -m 755 "$TMP_DIR/rusdox" "$RUSDOX_BIN"
 
-CONFIG_PATH="$("$RUSDOX_BIN" config path)"
-CONFIG_CREATED="false"
-if [ ! -f "$CONFIG_PATH" ]; then
-  "$RUSDOX_BIN" config init --template >/dev/null
-  CONFIG_CREATED="true"
-fi
-
 echo "Installed rusdox to $RUSDOX_BIN"
-echo "User config: $CONFIG_PATH"
-if [ "$CONFIG_CREATED" = "true" ]; then
-  echo "Created default config at $CONFIG_PATH"
-fi
+echo "RusDox uses built-in defaults until you create a config."
+echo "Create an explicit user config with:"
+echo "  rusdox config init --template"
 echo "Customize styling with:"
 echo "  rusdox config wizard --level basic"
 echo "  rusdox config wizard --level advanced"

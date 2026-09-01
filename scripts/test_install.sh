@@ -74,5 +74,10 @@ RUSDOX_DOWNLOAD_BASE="http://127.0.0.1:$PORT" \
 RUSDOX_INSTALL_DIR="$TEST_ROOT/bin" \
   sh scripts/install.sh
 
-"$TEST_ROOT/bin/rusdox" --version | grep "$PACKAGE_VERSION"
+HOME="$TEST_ROOT/home" "$TEST_ROOT/bin/rusdox" --version | grep "$PACKAGE_VERSION"
+CONFIG_PATH="$(HOME="$TEST_ROOT/home" "$TEST_ROOT/bin/rusdox" config path)"
+if [ -e "$CONFIG_PATH" ]; then
+  echo "Installer created an unexpected config at $CONFIG_PATH"
+  exit 1
+fi
 echo "Unix installer fixture passed for $TARGET."

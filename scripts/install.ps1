@@ -54,13 +54,6 @@ try {
     $rusdoxExe = Join-Path $InstallDir "rusdox.exe"
     Copy-Item (Join-Path $tempDir "rusdox.exe") $rusdoxExe -Force
 
-    $configPath = & $rusdoxExe config path
-    $configCreated = $false
-    if (-not (Test-Path $configPath)) {
-        & $rusdoxExe config init --template | Out-Null
-        $configCreated = $true
-    }
-
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ([string]::IsNullOrWhiteSpace($userPath)) {
         [Environment]::SetEnvironmentVariable("Path", $InstallDir, "User")
@@ -74,10 +67,9 @@ try {
     }
 
     Write-Host "Installed rusdox.exe to $rusdoxExe"
-    Write-Host "User config: $configPath"
-    if ($configCreated) {
-        Write-Host "Created default config at $configPath"
-    }
+    Write-Host "RusDox uses built-in defaults until you create a config."
+    Write-Host "Create an explicit user config with:"
+    Write-Host "  rusdox config init --template"
     Write-Host "Customize styling with:"
     Write-Host "  rusdox config wizard --level basic"
     Write-Host "  rusdox config wizard --level advanced"
