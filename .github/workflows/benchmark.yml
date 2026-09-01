@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload protocol data
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rusdox-benchmark-${{ github.run_id }}
           path: target/benchmarks/

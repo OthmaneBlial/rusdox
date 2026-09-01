@@ -28,7 +28,7 @@ jobs:
           node scripts/build_v1_registry_manifest.mjs --check
           node scripts/build_template_registry.mjs --registry-dir registry/v1
       - name: Publish reviewable template preview artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: template-registry-preview-${{ github.event.pull_request.number || github.run_number }}
           path: |

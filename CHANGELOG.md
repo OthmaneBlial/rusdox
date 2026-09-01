@@ -24,6 +24,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The README and public site now lead with RusDox's dual-output and parity
   wedge, keep critical examples available without JavaScript, publish canonical
   template evidence, and expose a link-complete AI-readable documentation corpus.
+- CI artifact uploads now use the Node 24 generation of GitHub's official
+  upload action.
 
 ### Contributors
 

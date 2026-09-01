@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload gallery parity reports and rendered diffs
         if: matrix.os == 'ubuntu-latest' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gallery-parity-${{ github.sha }}
           path: target/parity/
