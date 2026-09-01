@@ -14,10 +14,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#b85c30" />
     <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../styles.css?v=1.0.0-mobile2" />
+    <link rel="stylesheet" href="../styles.css?v=1.1.0" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Reproducible performance","description":"Reproduce isolated benchmark tiers, inspect raw evidence, and understand material regression thresholds.","url":"https://othmaneblial.github.io/rusdox/docs/performance.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
   </head>
   <body data-page="docs-static">
@@ -54,7 +51,7 @@
           <article class="docs-article docs-static-article">
             <nav class="docs-toc" aria-label="On this page"><p>On this page</p><ol><li class="toc-level-2"><a href="#reproduce-a-run">Reproduce a Run</a></li><li class="toc-level-2"><a href="#recorded-fields">Recorded Fields</a></li><li class="toc-level-2"><a href="#regression-policy">Regression Policy</a></li><li class="toc-level-2"><a href="#update-published-history">Update Published History</a></li><li class="toc-level-2"><a href="#interpretation-limits">Interpretation Limits</a></li></ol></nav>
             <div class="docs-content prose"><p>RusDox performance claims come from a versioned protocol, not a hand-timed screenshot. The checked-in JSON reports contain the machine, toolchain, exact input hashes, command flags, output sizes, median timings, and peak resident memory needed to interpret each result.</p>
-<figure><img src="../assets/benchmark-history.svg" alt="RusDox reproducible benchmark history" loading="lazy" /><figcaption>RusDox reproducible benchmark history</figcaption></figure>
+<figure><img src="../assets/benchmark-history.svg" width="1200" height="680" alt="RusDox reproducible benchmark history" loading="lazy" /><figcaption>RusDox reproducible benchmark history</figcaption></figure>
 <p>Open the <a href="https://othmaneblial.github.io/rusdox/benchmarks/" target="_blank" rel="noreferrer">long-term performance budget dashboard</a> for per-scenario runtime, peak-memory ceilings, current usage, and headroom. Its machine-readable source is <code>benchmarks/budgets.json</code>; every scheduled run must stay inside both the relative regression policy and these absolute ceilings.</p>
 <p>The chart is generated from <a href="../benchmarks/history.json"><code>benchmarks/history.json</code></a>. Full, unrounded evidence lives in <a href="../benchmarks/results"><code>benchmarks/results/</code></a>. Results from different CPUs or operating systems are separate observations, not interchangeable scores.</p>
 <h2 id="reproduce-a-run">Reproduce a Run</h2>

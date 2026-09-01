@@ -14,10 +14,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#b85c30" />
     <link rel="icon" href="../assets/rusdox-mark.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="../styles.css?v=1.0.0-mobile2" />
+    <link rel="stylesheet" href="../styles.css?v=1.1.0" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"RusDox Project overview","description":"The product promise, benchmark, examples, installation paths, and current support boundary.","url":"https://othmaneblial.github.io/rusdox/docs/project-overview.html","author":{"@type":"Person","name":"Othmane Blial","url":"https://github.com/OthmaneBlial"},"isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script>
   </head>
   <body data-page="docs-static">
@@ -56,13 +53,13 @@
             <div class="docs-content prose"><p><strong>Turn structured data or an approved Word template into an editable DOCX, a directly rendered PDF, and reviewable parity evidence from one local binary.</strong></p>
 <p>No Microsoft Word, LibreOffice, LaTeX, cloud account, or document upload is required.</p>
 <p><a href="https://othmaneblial.github.io/rusdox/" target="_blank" rel="noreferrer">Website</a> · <a href="https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief" target="_blank" rel="noreferrer">Explore an example</a> · <a href="https://othmaneblial.github.io/rusdox/registry/v1/preview.html" target="_blank" rel="noreferrer">Template registry</a> · <a href="https://othmaneblial.github.io/rusdox/docs.html" target="_blank" rel="noreferrer">Documentation</a> · <a href="https://othmaneblial.github.io/rusdox/docs/compatibility.html" target="_blank" rel="noreferrer">Compatibility</a> · <a href="https://github.com/OthmaneBlial/rusdox/releases" target="_blank" rel="noreferrer">Releases</a> · <a href="https://crates.io/crates/rusdox" target="_blank" rel="noreferrer">crates.io</a></p>
-<figure><img src="../assets/social-preview-rusdox.png" alt="RusDox turns one structured source into editable DOCX and native PDF output" loading="lazy" /><figcaption>RusDox turns one structured source into editable DOCX and native PDF output</figcaption></figure>
+<figure><img src="../assets/social-preview-rusdox.png" width="1280" height="640" alt="RusDox turns one structured source into editable DOCX and native PDF output" loading="lazy" /><figcaption>RusDox turns one structured source into editable DOCX and native PDF output</figcaption></figure>
 <h2 id="why-rusdox">Why RusDox</h2>
 <p>Business-document automation usually forces a compromise: keep Word files editable, generate a dependable PDF, avoid an Office runtime, or make the pipeline testable. RusDox targets the intersection.</p>
 <ul><li>Recipients get a real <code>.docx</code> they can continue editing.</li><li>Automation gets PDF bytes emitted directly from the same typed document model, not a DOCX-to-PDF conversion.</li><li>Authors can use schema-backed YAML/JSON/TOML or retain a designer-authored Word template and populate it from JSON.</li><li>CI can inspect source-located validation, package structure, semantic parity, artifact hashes, page snapshots, and optional visual diffs.</li><li>Documents stay local unless the caller explicitly uploads its own artifacts.</li></ul>
 <p>RusDox is not a universal converter or a full Word implementation. If you need arbitrary format conversion, start with <a href="https://pandoc.org/" target="_blank" rel="noreferrer">Pandoc</a>. If you only need publication-grade PDF typesetting, start with <a href="https://typst.app/" target="_blank" rel="noreferrer">Typst</a>. RusDox is for workflows that need the editable Word handoff and the directly rendered PDF together.</p>
 <h2 id="see-the-complete-workflow">See the complete workflow</h2>
-<figure><img src="../assets/quick-demo.svg" alt="Animated RusDox workflow from verified install to YAML editing and real DOCX/PDF output" loading="lazy" /><figcaption>Animated RusDox workflow from verified install to YAML editing and real DOCX/PDF output</figcaption></figure>
+<figure><img src="../assets/quick-demo.svg" width="1200" height="675" alt="Animated RusDox workflow from verified install to YAML editing and real DOCX/PDF output" loading="lazy" /><figcaption>Animated RusDox workflow from verified install to YAML editing and real DOCX/PDF output</figcaption></figure>
 <p>The demo ends with inspectable artifacts from the same source:</p>
 <ul><li><a href="../examples/product_launch_brief.yaml">YAML input</a></li><li><a href="../generated/product-launch-brief.docx">editable DOCX</a></li><li><a href="../rendered/product-launch-brief.pdf">native PDF</a></li><li><a href="../parity/product-launch-brief-parity.html">parity report</a></li></ul>
 <p>The browser <a href="https://othmaneblial.github.io/rusdox/playground/?example=product-launch-brief" target="_blank" rel="noreferrer">example explorer</a> is a local structural preview, not a fake PDF renderer. Edited YAML remains in the tab; the page shows the exact CLI command needed to produce verified files.</p>

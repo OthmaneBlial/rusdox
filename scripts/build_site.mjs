@@ -9,6 +9,14 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const siteRoot = path.join(root, "site");
 const baseUrl = "https://othmaneblial.github.io/rusdox/";
 const checkOnly = process.argv.includes("--check");
+const publicExtras = [
+  "playground/",
+  "registry/v1/preview.html",
+  "benchmarks/",
+  "templates/invoice-parity.html",
+  "templates/proposal-parity.html",
+  "templates/board-report-parity.html",
+];
 
 const pages = [
   ["docs/README.md", "docs.html", "Documentation", "Start here", "Choose the shortest path from installation to a trustworthy DOCX and PDF workflow.", "Overview"],
@@ -39,7 +47,7 @@ const pages = [
   ["docs/troubleshooting.md", "docs/troubleshooting.html", "Troubleshooting", "Operations", "Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.", "Trust & operations"],
   ["docs/gallery.md", "docs/gallery.html", "Template gallery", "Examples", "Browse real YAML inputs and generated DOCX/PDF output previews.", "Examples"],
   ["examples/README.md", "docs/examples.html", "Examples guide", "Examples", "Understand every bundled document fixture and how to render it.", "Examples"],
-  ["ROADMAP.md", "docs/roadmap.html", "Roadmap", "Project", "Follow the path to verified parity, Word templates, integrations, and v1.", "Project"],
+  ["ROADMAP.md", "docs/roadmap.html", "Roadmap", "Project", "Follow the evidence-led priorities for viewer coverage, external pilots, templates, dependencies, release targets, and PDF conformance.", "Project"],
   ["CHANGELOG.md", "docs/changelog.html", "Changelog", "Project", "Review user-facing additions, changes, fixes, and migrations.", "Project"],
   ["CONTRIBUTING.md", "docs/contributing.html", "Contributing", "Community", "Set up the repository and submit a focused contribution.", "Community"],
   ["docs/architecture.md", "docs/architecture.html", "Architecture", "Community", "Follow one typed document model from authoring and validation through DOCX, PDF, parity, and every adapter.", "Community"],
@@ -105,9 +113,29 @@ for (const [sourceName, outputName] of [
     for (const file of walkFiles(sourceRoot)) {
       if (file.endsWith("-summary.json")) continue;
       const relative = normalize(path.relative(sourceRoot, file));
-      generated.set(`${outputName}/${relative}`, fs.readFileSync(file));
+      const output = `${outputName}/${relative}`;
+      let content = fs.readFileSync(file);
+      if (file.endsWith(".html") && (sourceName === "template-evidence" || relative.includes("/evidence/"))) {
+        content = Buffer.from(addRobotsMeta(content.toString("utf8")), "utf8");
+      }
+      if (output === "registry/preview.html") {
+        content = Buffer.from(addRobotsMeta(content.toString("utf8").replace(
+          /<link rel="canonical" href="[^"]+">/,
+          `<link rel="canonical" href="${baseUrl}registry/v1/preview.html">`,
+        )), "utf8");
+      }
+      generated.set(output, content);
     }
   }
+}
+
+for (const id of ["invoice", "proposal", "board-report"]) {
+  const evidence = path.join(root, "registry", "v1", "evidence", id, "reports", `${id}-parity.html`);
+  const html = fs.readFileSync(evidence, "utf8").replaceAll(
+    `src="${id}-pages/`,
+    `src="../registry/v1/evidence/${id}/reports/${id}-pages/`,
+  );
+  generated.set(`templates/${id}-parity.html`, html);
 }
 
 const sourceCopies = [
@@ -250,10 +278,7 @@ function renderPage(page, rendered) {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#b85c30" />
     <link rel="icon" href="${prefix}assets/rusdox-mark.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="${prefix}styles.css?v=1.0.0-mobile2" />
+    <link rel="stylesheet" href="${prefix}styles.css?v=1.1.0" />
     <script type="application/ld+json">${structuredData}</script>
   </head>
   <body data-page="docs-static">
@@ -425,7 +450,7 @@ function renderMarkdown(markdown, page) {
 
     const image = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
     if (image) {
-      blocks.push(`<figure><img src="${escapeAttribute(resolveHref(image[2], page))}" alt="${escapeAttribute(image[1])}" loading="lazy" /><figcaption>${escapeHtml(image[1])}</figcaption></figure>`);
+      blocks.push(`<figure><img src="${escapeAttribute(resolveHref(image[2], page))}"${imageSizeAttributes(image[2], page)} alt="${escapeAttribute(image[1])}" loading="lazy" /><figcaption>${escapeHtml(image[1])}</figcaption></figure>`);
       index += 1;
       continue;
     }
@@ -456,7 +481,7 @@ function renderInline(value, page) {
   };
   let text = value
     .replace(/`([^`]+)`/g, (_, code) => reserve(`<code>${escapeHtml(code)}</code>`))
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, href) => reserve(`<img src="${escapeAttribute(resolveHref(href, page))}" alt="${escapeAttribute(alt)}" loading="lazy" />`))
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, href) => reserve(`<img src="${escapeAttribute(resolveHref(href, page))}"${imageSizeAttributes(href, page)} alt="${escapeAttribute(alt)}" loading="lazy" />`))
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
       const external = /^(https?:|mailto:)/.test(href);
       const labelHtml = restoreTokens(escapeHtml(label));
@@ -486,6 +511,31 @@ function resolveHref(rawHref, page) {
   return fragment ? `${target}#${fragment}` : target;
 }
 
+function imageSizeAttributes(rawHref, page) {
+  const href = rawHref.trim().replace(/^<|>$/g, "");
+  if (/^(https?:|data:)/.test(href)) return "";
+  const pathname = href.split(/[?#]/, 1)[0];
+  let resolved = normalize(path.posix.join(path.posix.dirname(page.source), pathname));
+  if (resolved.startsWith("site/")) resolved = resolved.slice("site/".length);
+  const candidates = [path.join(root, resolved), path.join(siteRoot, resolved)];
+  const file = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!file) return "";
+  const buffer = fs.readFileSync(file);
+  if (buffer.length >= 24 && buffer.subarray(1, 4).toString("ascii") === "PNG") {
+    return ` width="${buffer.readUInt32BE(16)}" height="${buffer.readUInt32BE(20)}"`;
+  }
+  if (path.extname(file).toLowerCase() === ".svg") {
+    const svg = buffer.toString("utf8", 0, Math.min(buffer.length, 4096));
+    const width = svg.match(/\bwidth="([0-9.]+)"/i)?.[1];
+    const height = svg.match(/\bheight="([0-9.]+)"/i)?.[1];
+    const viewBox = svg.match(/\bviewBox="([^"]+)"/i)?.[1]?.trim().split(/\s+/);
+    const resolvedWidth = width || viewBox?.[2];
+    const resolvedHeight = height || viewBox?.[3];
+    if (resolvedWidth && resolvedHeight) return ` width="${resolvedWidth}" height="${resolvedHeight}"`;
+  }
+  return "";
+}
+
 function pageHref(from, to) {
   return path.posix.relative(path.posix.dirname(from.output), to.output) || path.posix.basename(to.output);
 }
@@ -509,16 +559,16 @@ function isParagraph(lines, index) {
 }
 
 function renderSitemap() {
-  const urls = ["", ...pages.map((page) => page.output)];
+  const urls = ["", ...pages.map((page) => page.output), ...publicExtras];
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
     .map((url) => `  <url><loc>${new URL(url, baseUrl).href}</loc></url>`)
     .join("\n")}\n</urlset>\n`;
 }
 
 function renderLlmsIndex() {
-  return `# RusDox\n\n> Pure-Rust document engine: one readable spec to editable DOCX and native PDF without Word or LibreOffice.\n\n## Documentation\n\n${pages
+  return `# RusDox\n\n> Local document engine: structured data or Word templates to editable DOCX, native PDF, and parity evidence without Office.\n\n## Documentation\n\n${pages
     .map((page) => `- [${page.title}](${new URL(page.output, baseUrl).href}): ${page.summary}`)
-    .join("\n")}\n\n## Source\n\n- Repository: https://github.com/OthmaneBlial/rusdox\n- License: MIT\n`;
+    .join("\n")}\n\n## Complete corpus\n\n- [All public documentation in one file](${baseUrl}llms-full.txt)\n\n## Source\n\n- Repository: https://github.com/OthmaneBlial/rusdox\n- License: MIT\n`;
 }
 
 function renderLlmsFull() {
@@ -526,8 +576,30 @@ function renderLlmsFull() {
     .map((page) => `# ${page.title}\n\nSource: ${new URL(page.output, baseUrl).href}\n\n${fs
       .readFileSync(path.join(root, page.source), "utf8")
       .replace(/^#\s+.*\n+/, "")
+      .replace(/(!?\[[^\]]*\])\(([^)]+)\)/g, (_, label, href) => `${label}(${absoluteCorpusHref(href, page)})`)
       .trim()}`)
     .join("\n\n---\n\n");
+}
+
+function absoluteCorpusHref(rawHref, page) {
+  const href = rawHref.trim().replace(/^<|>$/g, "");
+  if (/^(https?:|mailto:)/.test(href)) return href;
+  if (href.startsWith("#")) return `${new URL(page.output, baseUrl).href}${href}`;
+
+  const [pathname, fragment = ""] = href.split("#", 2);
+  let resolved = normalize(path.posix.join(path.posix.dirname(page.source), pathname));
+  if (resolved.startsWith("site/")) resolved = resolved.slice("site/".length);
+  let targetPage = pageBySource.get(resolved);
+  if (!targetPage && resolved.endsWith("/")) targetPage = pageBySource.get(`${resolved}README.md`);
+  const absolute = targetPage
+    ? new URL(targetPage.output, baseUrl).href
+    : `https://github.com/OthmaneBlial/rusdox/blob/main/${resolved}`;
+  return fragment ? `${absolute}#${fragment}` : absolute;
+}
+
+function addRobotsMeta(html) {
+  if (/name="robots"/i.test(html)) return html;
+  return html.replace(/(<meta name="viewport"[^>]*>)/i, '$1<meta name="robots" content="noindex,follow">');
 }
 
 function uniqueSlug(value, ids) {

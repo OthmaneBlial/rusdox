@@ -94,10 +94,11 @@ function localPathForUrl(url, baseUrl) {
 
 function renderRegistry(value, sha256, keyId, rootPrefix, canonicalUrl) {
   const cards = value.templates.map((entry) => {
-    const featured = entry.id === value.template_of_the_month ? '<span class="featured">Template of the month</span>' : "";
+    const featured = entry.id === value.template_of_the_month ? '<span class="featured">Featured verified template</span>' : "";
+    const previewDimensions = pngDimensions(localPathForUrl(entry.preview.url, value.base_url));
     const inputs = entry.inputs.map((input) => `<li><code>${escapeHtml(input.path)}</code><span>${escapeHtml(input.description)}</span></li>`).join("");
     return `<article class="template-card">
-      <img src="${rootPrefix}/${relativeUrl(entry.preview.url, value.base_url)}" alt="${escapeAttribute(entry.preview.alt)}" loading="lazy" />
+      <img src="${rootPrefix}/${relativeUrl(entry.preview.url, value.base_url)}" width="${previewDimensions.width}" height="${previewDimensions.height}" alt="${escapeAttribute(entry.preview.alt)}" loading="lazy" />
       <div class="template-copy">${featured}<p class="category">${entry.categories.map(escapeHtml).join(" · ")}</p><h2>${escapeHtml(entry.title)}</h2><p>${escapeHtml(entry.description)}</p>
       <p class="credit">By <a href="${escapeAttribute(entry.author.url)}">${escapeHtml(entry.author.name)}</a> · ${escapeHtml(entry.license.spdx)} · v${escapeHtml(entry.version)}</p>
       <details><summary>Documented inputs</summary><ul>${inputs}</ul><p>${escapeHtml(entry.accessibility.notes)}</p></details>
@@ -105,7 +106,7 @@ function renderRegistry(value, sha256, keyId, rootPrefix, canonicalUrl) {
     </article>`;
   }).join("");
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verified template registry | RusDox</title><meta name="description" content="Signed, hash-verified Word templates for RusDox."><link rel="canonical" href="${escapeAttribute(canonicalUrl)}"><style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verified Word template registry | RusDox</title><meta name="description" content="Curated Word templates with authorship, licensing, hashes, accessibility notes, and inspectable DOCX/PDF parity evidence."><link rel="canonical" href="${escapeAttribute(canonicalUrl)}"><meta property="og:title" content="Verified Word template registry | RusDox"><meta property="og:description" content="Curated Word templates with signed metadata and inspectable DOCX/PDF parity evidence."><meta property="og:image" content="https://othmaneblial.github.io/rusdox/assets/social-preview-rusdox.png"><meta property="og:url" content="${escapeAttribute(canonicalUrl)}"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image"><script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"RusDox verified Word template registry","url":"${escapeAttribute(canonicalUrl)}","isPartOf":{"@type":"WebSite","name":"RusDox","url":"https://othmaneblial.github.io/rusdox/"}}</script><style>
 :root{--ink:#17211b;--paper:#fffdf8;--bg:#f2ede4;--line:#d9cfc0;--accent:#b85c30;--green:#17633a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,sans-serif}main{width:min(1180px,calc(100% - 28px));margin:40px auto 80px}header{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;padding-bottom:24px;border-bottom:2px solid var(--ink)}h1,h2{font-family:Georgia,serif;letter-spacing:-.025em}h1{max-width:12ch;margin:.3rem 0;font-size:clamp(2.8rem,7vw,6rem);line-height:.92}.eyebrow,.category{color:var(--accent);font:bold .72rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.12em}.trust{padding:16px;border:1px solid #a9c8ae;background:#eaf3e9}.trust strong{color:var(--green)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:28px}.template-card{overflow:hidden;border:1px solid var(--line);background:var(--paper);box-shadow:0 12px 30px #392b1c12}.template-card img{width:100%;aspect-ratio:1.55/1;object-fit:cover;border-bottom:1px solid var(--line)}.template-copy{padding:22px}.template-copy h2{margin:.4rem 0;font-size:1.8rem}.featured{display:inline-block;padding:6px 8px;background:var(--accent);color:white;font:bold .68rem ui-monospace,monospace;text-transform:uppercase}.credit{color:#657067}.credit a{color:var(--accent)}details{margin:18px 0;padding:12px;border:1px solid var(--line)}summary{cursor:pointer;font-weight:700}details ul{padding:0;list-style:none}details li{display:grid;gap:2px;margin:9px 0}details span{color:#657067}.actions{display:flex;flex-wrap:wrap;gap:8px}.actions a{padding:9px 11px;background:#eee5d8;color:var(--ink);text-decoration:none;font-weight:700}.actions a:first-child{background:var(--accent);color:white}footer{margin-top:32px;color:#657067}@media(max-width:760px){header,.grid{grid-template-columns:1fr}h1{max-width:none}}
 </style></head><body><main><header><div><p class="eyebrow">RusDox curated registry</p><h1>Word templates with receipts.</h1><p>Every entry has a license, author, documented inputs, preview, output hashes, parity evidence, and accessibility notes.</p></div><div class="trust"><strong>Ed25519 verified</strong><br><code>${escapeHtml(keyId)}</code><br><small>SHA-256 ${escapeHtml(sha256.slice(0, 16))}…</small></div></header><section class="grid">${cards}</section><footer><p>Install with <code>rusdox template add &lt;id&gt;</code>. Templates remain outside the core crate.</p><p><a href="${rootPrefix}/docs/template-registry.html">Registry trust and contribution contract</a> · <a href="https://github.com/OthmaneBlial/rusdox">Source</a></p></footer></main></body></html>`;
 }
@@ -120,6 +121,12 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value);
+}
+
+function pngDimensions(file) {
+  const buffer = fs.readFileSync(file);
+  assert(buffer.length >= 24 && buffer.subarray(1, 4).toString("ascii") === "PNG", `preview must be PNG: ${file}`);
+  return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
 }
 
 function assert(condition, message) {

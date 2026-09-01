@@ -1,6 +1,6 @@
 # RusDox
 
-> Pure-Rust document engine: one readable spec to editable DOCX and native PDF without Word or LibreOffice.
+> Local document engine: structured data or Word templates to editable DOCX, native PDF, and parity evidence without Office.
 
 ## Documentation
 
@@ -32,7 +32,7 @@
 - [Troubleshooting](https://othmaneblial.github.io/rusdox/docs/troubleshooting.html): Diagnose installers, paths, fonts, viewer differences, large files, and CI failures.
 - [Template gallery](https://othmaneblial.github.io/rusdox/docs/gallery.html): Browse real YAML inputs and generated DOCX/PDF output previews.
 - [Examples guide](https://othmaneblial.github.io/rusdox/docs/examples.html): Understand every bundled document fixture and how to render it.
-- [Roadmap](https://othmaneblial.github.io/rusdox/docs/roadmap.html): Follow the path to verified parity, Word templates, integrations, and v1.
+- [Roadmap](https://othmaneblial.github.io/rusdox/docs/roadmap.html): Follow the evidence-led priorities for viewer coverage, external pilots, templates, dependencies, release targets, and PDF conformance.
 - [Changelog](https://othmaneblial.github.io/rusdox/docs/changelog.html): Review user-facing additions, changes, fixes, and migrations.
 - [Contributing](https://othmaneblial.github.io/rusdox/docs/contributing.html): Set up the repository and submit a focused contribution.
 - [Architecture](https://othmaneblial.github.io/rusdox/docs/architecture.html): Follow one typed document model from authoring and validation through DOCX, PDF, parity, and every adapter.
@@ -41,6 +41,10 @@
 - [Support](https://othmaneblial.github.io/rusdox/docs/support.html): Find the right place for questions, reproducible bugs, and security reports.
 - [Security policy](https://othmaneblial.github.io/rusdox/docs/security.html): Understand supported releases, reporting scope, and private disclosure.
 - [Code of conduct](https://othmaneblial.github.io/rusdox/docs/code-of-conduct.html): Behavior and enforcement standards for a healthy community.
+
+## Complete corpus
+
+- [All public documentation in one file](https://othmaneblial.github.io/rusdox/llms-full.txt)
 
 ## Source
 
